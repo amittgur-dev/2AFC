@@ -1,0 +1,14 @@
+{
+  "name": "line-similarity-experiment",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Calibrated online 2AFC line-similarity experiment (static site)",
+  "scripts": {
+    "serve": "npx --yes http-server site -p 8000 -c-1",
+    "test": "node --check site/app.js && node tests/test.mjs",
+    "test:browser": "node tests/browser-test.mjs",
+    "check:data": "python3 -I tools/check_data.py",
+    "build:sheet": "python3 tools/build_notation_sheet.py"
+  }
+}

@@ -1,0 +1,115 @@
+[
+  {
+    "id": 0,
+    "name": "Plain line",
+    "previous_measured_figure": "\u2014",
+    "group": "Control",
+    "display_scale_from_measured_master": 1,
+    "variants": [
+      "A",
+      "L",
+      "P"
+    ]
+  },
+  {
+    "id": 1,
+    "name": "Double-headed arrow",
+    "previous_measured_figure": "1",
+    "group": "Bi-directional",
+    "display_scale_from_measured_master": 0.9,
+    "variants": [
+      "A",
+      "E",
+      "L",
+      "P"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Circles at both ends",
+    "previous_measured_figure": "4",
+    "group": "Bi-directional",
+    "display_scale_from_measured_master": 0.9,
+    "variants": [
+      "A",
+      "E",
+      "L",
+      "P"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Colored end segments",
+    "previous_measured_figure": "5",
+    "group": "Bi-directional",
+    "display_scale_from_measured_master": 0.9,
+    "variants": [
+      "A",
+      "E",
+      "L",
+      "P"
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Short vertical end lines",
+    "previous_measured_figure": "6",
+    "group": "Bi-directional",
+    "display_scale_from_measured_master": 0.9,
+    "variants": [
+      "A",
+      "E",
+      "L",
+      "P"
+    ]
+  },
+  {
+    "id": 5,
+    "name": "One abstract right end",
+    "previous_measured_figure": "3",
+    "group": "Uni-directional",
+    "display_scale_from_measured_master": 0.9,
+    "variants": [
+      "A",
+      "E",
+      "L",
+      "P"
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Snake",
+    "previous_measured_figure": "7.1",
+    "group": "Uni-directional",
+    "display_scale_from_measured_master": 0.9,
+    "variants": [
+      "A",
+      "L",
+      "P"
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Train",
+    "previous_measured_figure": "7.2",
+    "group": "Uni-directional",
+    "display_scale_from_measured_master": 0.6,
+    "variants": [
+      "A",
+      "L",
+      "P"
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Lamp",
+    "previous_measured_figure": "7.3",
+    "group": "Uni-directional",
+    "display_scale_from_measured_master": 0.75,
+    "variants": [
+      "A",
+      "L",
+      "P"
+    ]
+  }
+]

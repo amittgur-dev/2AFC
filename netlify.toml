@@ -1,0 +1,10 @@
+# Static site: no build step. Everything in site/ is published as-is.
+[build]
+  publish = "site"
+  command = ""
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+    Cache-Control = "no-cache"

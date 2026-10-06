@@ -1,0 +1,154 @@
+[
+  {
+    "id": "0.1",
+    "name": "Plain line",
+    "group": "Control",
+    "family": 0,
+    "left": "L",
+    "right": "P"
+  },
+  {
+    "id": "1.1",
+    "family": 1,
+    "name": "Double-headed arrow",
+    "group": "Bi-directional",
+    "left": "E",
+    "right": "L"
+  },
+  {
+    "id": "1.2",
+    "family": 1,
+    "name": "Double-headed arrow",
+    "group": "Bi-directional",
+    "left": "E",
+    "right": "P"
+  },
+  {
+    "id": "1.3",
+    "family": 1,
+    "name": "Double-headed arrow",
+    "group": "Bi-directional",
+    "left": "L",
+    "right": "P"
+  },
+  {
+    "id": "2.1",
+    "family": 2,
+    "name": "Circles at both ends",
+    "group": "Bi-directional",
+    "left": "E",
+    "right": "L"
+  },
+  {
+    "id": "2.2",
+    "family": 2,
+    "name": "Circles at both ends",
+    "group": "Bi-directional",
+    "left": "E",
+    "right": "P"
+  },
+  {
+    "id": "2.3",
+    "family": 2,
+    "name": "Circles at both ends",
+    "group": "Bi-directional",
+    "left": "L",
+    "right": "P"
+  },
+  {
+    "id": "3.1",
+    "family": 3,
+    "name": "Colored end segments",
+    "group": "Bi-directional",
+    "left": "E",
+    "right": "L"
+  },
+  {
+    "id": "3.2",
+    "family": 3,
+    "name": "Colored end segments",
+    "group": "Bi-directional",
+    "left": "E",
+    "right": "P"
+  },
+  {
+    "id": "3.3",
+    "family": 3,
+    "name": "Colored end segments",
+    "group": "Bi-directional",
+    "left": "L",
+    "right": "P"
+  },
+  {
+    "id": "4.1",
+    "family": 4,
+    "name": "Short vertical end lines",
+    "group": "Bi-directional",
+    "left": "E",
+    "right": "L"
+  },
+  {
+    "id": "4.2",
+    "family": 4,
+    "name": "Short vertical end lines",
+    "group": "Bi-directional",
+    "left": "E",
+    "right": "P"
+  },
+  {
+    "id": "4.3",
+    "family": 4,
+    "name": "Short vertical end lines",
+    "group": "Bi-directional",
+    "left": "L",
+    "right": "P"
+  },
+  {
+    "id": "5.1",
+    "family": 5,
+    "name": "One abstract right end",
+    "group": "Uni-directional",
+    "left": "E",
+    "right": "L"
+  },
+  {
+    "id": "5.2",
+    "family": 5,
+    "name": "One abstract right end",
+    "group": "Uni-directional",
+    "left": "E",
+    "right": "P"
+  },
+  {
+    "id": "5.3",
+    "family": 5,
+    "name": "One abstract right end",
+    "group": "Uni-directional",
+    "left": "L",
+    "right": "P"
+  },
+  {
+    "id": "6.1",
+    "family": 6,
+    "name": "Snake",
+    "group": "Uni-directional",
+    "left": "L",
+    "right": "P"
+  },
+  {
+    "id": "7.1",
+    "family": 7,
+    "name": "Train",
+    "group": "Uni-directional",
+    "left": "L",
+    "right": "P"
+  },
+  {
+    "id": "8.1",
+    "family": 8,
+    "name": "Lamp",
+    "group": "Uni-directional",
+    "left": "L",
+    "right": "P"
+  }
+]

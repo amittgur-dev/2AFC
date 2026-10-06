@@ -1,0 +1,20 @@
+trial_id,family,family_name,group,reference,comparison_1_code,comparison_1,comparison_2_code,comparison_2,comparison,comparison_1_asset,comparison_2_asset,canonical_left,canonical_right
+0.1,0,Plain line,Control,B,L,Bext,P,Benl,Bext  vs  Benl,0-L,0-P,L,P
+1.1,1,Double-headed arrow,Bi-directional,B E,E,B Eenl,L,Bext E,B Eenl  vs  Bext E,1-E,1-L,E,L
+1.2,1,Double-headed arrow,Bi-directional,B E,E,B Eenl,P,Benl Eenl,B Eenl  vs  Benl Eenl,1-E,1-P,E,P
+1.3,1,Double-headed arrow,Bi-directional,B E,L,Bext E,P,Benl Eenl,Bext E  vs  Benl Eenl,1-L,1-P,L,P
+2.1,2,Circles at both ends,Bi-directional,B E,E,B Eenl,L,Bext E,B Eenl  vs  Bext E,2-E,2-L,E,L
+2.2,2,Circles at both ends,Bi-directional,B E,E,B Eenl,P,Benl Eenl,B Eenl  vs  Benl Eenl,2-E,2-P,E,P
+2.3,2,Circles at both ends,Bi-directional,B E,L,Bext E,P,Benl Eenl,Bext E  vs  Benl Eenl,2-L,2-P,L,P
+3.1,3,Colored end segments,Bi-directional,B E,E,B Eext,L,Bext E,B Eext  vs  Bext E,3-E,3-L,E,L
+3.2,3,Colored end segments,Bi-directional,B E,E,B Eext,P,Benl Eenl,B Eext  vs  Benl Eenl,3-E,3-P,E,P
+3.3,3,Colored end segments,Bi-directional,B E,L,Bext E,P,Benl Eenl,Bext E  vs  Benl Eenl,3-L,3-P,L,P
+4.1,4,Short vertical end lines,Bi-directional,B E,E,B Eext,L,Bext E,B Eext  vs  Bext E,4-E,4-L,E,L
+4.2,4,Short vertical end lines,Bi-directional,B E,E,B Eext,P,Benl Eenl,B Eext  vs  Benl Eenl,4-E,4-P,E,P
+4.3,4,Short vertical end lines,Bi-directional,B E,L,Bext E,P,Benl Eenl,Bext E  vs  Benl Eenl,4-L,4-P,L,P
+5.1,5,One abstract right end,Uni-directional,B E,E,B Eenl,L,Bext E,B Eenl  vs  Bext E,5-E,5-L,E,L
+5.2,5,One abstract right end,Uni-directional,B E,E,B Eenl,P,Benl Eenl,B Eenl  vs  Benl Eenl,5-E,5-P,E,P
+5.3,5,One abstract right end,Uni-directional,B E,L,Bext E,P,Benl Eenl,Bext E  vs  Benl Eenl,5-L,5-P,L,P
+6.1,6,Snake,Uni-directional,B E,L,Bext E,P,Benl Eenl,Bext E  vs  Benl Eenl,6-L,6-P,L,P
+7.1,7,Train,Uni-directional,B E,L,Bext E,P,Benl Eenl,Bext E  vs  Benl Eenl,7-L,7-P,L,P
+8.1,8,Lamp,Uni-directional,B E,L,Bext E,P,Benl Eenl,Bext E  vs  Benl Eenl,8-L,8-P,L,P
