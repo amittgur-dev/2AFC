@@ -34,10 +34,6 @@ input[type=range]{width:100%;accent-color:#000;min-width:30px}
 details{font-size:13px;margin-top:30px}
 details p{font-size:13px}
 summary{cursor:pointer;text-decoration:underline;text-underline-offset:4px}
-.verify-area{padding:42px 0 30px;display:flex;flex-direction:column;align-items:center;gap:52px}
-#one-mm{background:#000;flex:none}
-#ruler{height:12px;border:1px solid #000;border-top:0;position:relative;flex:none}
-#ruler span{position:absolute;left:50%;top:22px;transform:translateX(-50%);font-size:13px;white-space:nowrap}
 #experiment{padding:0 16px;user-select:none;-webkit-user-select:none}
 .trial-header{height:28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;max-width:1200px;margin:auto}
 .trial-header button{border:0;padding:5px 8px;text-decoration:underline;font-size:12px}

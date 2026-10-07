@@ -60,17 +60,28 @@ Append `?reset=1` to the URL to discard the session stored in that browser
 and start afresh (useful while testing; a returning participant otherwise
 resumes or sees their completion code).
 
+## Two experiments, one app
+
+`site/config.js` names the experiment (`experiment.id`), and every session
+and submission carries that id. The second 2AFC experiment reuses this app
+unchanged in design: deploy it as a second Netlify project from a copy of
+`site/` (or a second branch) with its own `stimuli.js` and `assets/`, its own
+`experiment.id` and `storage.localKey`, and its own `data/` files. Everything
+else (calibration, interleaving, counterbalancing, timing, storage) stays
+identical, so the two data sets are directly comparable.
+
 ## Participant flow
 
-1. **Information** — a few lines (the pilot has no consent checkbox; set
-   `study.requireConsentCheckbox: true` to add one), Continue.
+1. **Information** — the pilot text: "Similarity judgment", one sentence of
+   instructions, Continue. (Set `study.requireConsentCheckbox: true` to add
+   a consent checkbox.)
 2. **Calibration** — match a card to the outline; pixels per mm = matched
-   width / 85.60.
-3. **Verification** — a 1 mm × 40 mm line and a 50 mm span for a ruler check.
-4. **Instructions** — one sentence; all SVGs are preloaded and decoded here.
+   width / 85.60. The separate 1 mm ruler check was removed at the
+   researcher's request; the first trial's control line is 1 mm thick.
+3. **Instructions** — one sentence; all SVGs are preloaded and decoded here.
    If the window is too small for the stage at this calibration, a notice says
    how many pixels are needed.
-5. **Trials** — one response each, by click/tap on B or C or the ← / →
+4. **Trials** — one response each, by click/tap on B or C or the ← / →
    (also b / c) keys. Timing starts in the frame that first paints the three
    decoded images. A 500 ms blank follows each response. No back navigation.
    If the window becomes too small, the tab is hidden, or an image fails to
@@ -80,16 +91,22 @@ resumes or sees their completion code).
    change forces recalibration (Safari's zoom is detected from the viewport
    width since it does not change the device pixel ratio). Objects are never
    scaled to fit.
-6. **Completion** — the record is sent; the participant sees a completion
-   code (the session id unless `completion.code` is set) and optional
-   download buttons and return link. If sending fails, they can retry or
-   download the JSON/CSV to email.
+5. **Completion** — in the pilot configuration just "Finished. Thank you.":
+   nothing is sent and nothing is shown. With `storage.mode` set to
+   `netlify-forms` or `endpoint` the record is sent and, if
+   `completion.showCode` is on, a completion code (the session id unless
+   `completion.code` is set) plus optional download buttons and return link
+   appear; if sending fails, the participant can retry or download the
+   JSON/CSV to email.
 
-Each response is saved to localStorage immediately. A reload resumes at the
-next unanswered screen after recalibration, with the same assigned order,
-provided the stored session was made by the same protocol, stimulus set and
-design and belongs to the participant id in the URL; otherwise a fresh
-session starts. Browsers that block storage get a warning not to reload.
+Each response is saved to localStorage immediately. In the pilot
+(`participant.rememberSession: false`) every visit starts a fresh session, so
+the researcher can run through it repeatedly from the same browser. With
+`rememberSession: true` a reload resumes at the next unanswered screen after
+recalibration, with the same assigned order, provided the stored session was
+made by the same experiment, protocol, stimulus set and design and belongs to
+the participant id in the URL; a finished participant sees the completion
+page again. Browsers that block storage get a warning not to reload.
 
 ## Protocol decisions (working defaults — confirm before recruiting)
 
@@ -107,11 +124,12 @@ mixed together is reflected in the first three rows.
 | Timing | No response deadline; 500 ms blank between screens; RT from onset. | `interTrialIntervalMs`. |
 | Response input | Click/tap or keyboard; method recorded. | `design.keys`. |
 | Breaks | None (19 screens, a few minutes). | — |
-| Consent / instructions | Minimal pilot text, no checkbox. | `study.requireConsentCheckbox`, text fields in `study`, and the HTML in `index.html`. |
+| Consent / instructions | Minimal pilot text, no checkbox, no duration or "no right or wrong" sentence. | `study.requireConsentCheckbox`, text fields in `study`, and the HTML in `index.html`. |
+| Session memory | Off for the pilot: every visit is a new session. | `participant.rememberSession: true` for real data collection. |
 | Participant ID | From `?pid=`, `?PROLIFIC_PID=` or `?participant=`; otherwise a random session id. `STUDY_ID`, `SESSION_ID`, `source` pass through. A stored session is resumed only for the same participant id. | `participant.idParams`, `participant.passthroughParams`. |
-| Completion / return | Session id shown as the completion code; no redirect. | `completion.code`, `completion.redirectUrl`. |
+| Completion / return | "Finished. Thank you." only; no code, no redirect. | `completion.showCode`, `completion.code`, `completion.redirectUrl`. |
 | Dropout handling | An interim record flagged `abandoned` is sent when a participant leaves after at least one response (each reload mid-study sends one; dedupe by session id). Dropouts before the first response leave no server-side trace. Partial data also stays in the browser so they can resume. | `storage.submitPartialOnLeave: false`. |
-| Data destination | Netlify Forms on this site (below). | `storage.mode: 'endpoint'` with a JSON POST URL (e.g. a Netlify Function, Google Apps Script or your own server), or `'local'` (download only). |
+| Data destination | None for the pilot (`storage.mode: 'local'`, downloads off): responses stay in the browser only. | `storage.mode: 'netlify-forms'` (set up below) or `'endpoint'` with a JSON POST URL (e.g. a Netlify Function, Google Apps Script or your own server); `storage.allowDownload: true` for a download button. |
 | Fullscreen | Offered, not required. | — |
 | Font | System Optima where installed, otherwise Segoe UI / Arial; labels are only A, B, C. | — |
 | Screen size | Blocked when the stage does not fit; most laptops fit (about 1157 × 704 CSS px at 5.1 px/mm). Phones and small tablets cannot run it. Large iPads in landscape can; they are not blocked but are identifiable in the data (`max_touch_points`). | — |
@@ -166,7 +184,10 @@ The handoff's cautions still apply. No human physical-size validation or
 cross-browser validation has been performed.
 
 - Open the deployed page on each target device type. Physically match a card,
-  then check the 1 mm control line and the 50 mm span with a ruler.
+  then check the control question's 1 mm line with a ruler.
+- Switch on data collection: `storage.mode: 'netlify-forms'`,
+  `participant.rememberSession: true`, and `completion.showCode` if a
+  platform needs a code.
 - Inspect every stimulus (19 screens; use `?reset=1` to repeat).
 - Exercise browser zoom (including Safari), full screen, window resizing,
   tab switching and monitor switching; confirm recalibration prompts, the

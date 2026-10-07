@@ -2,6 +2,10 @@
 // Values marked DECISION are protocol choices made as working defaults; review
 // them against README.md before recruiting.
 export const config = {
+  // Which of the two 2AFC experiments this deployment runs. Recorded in every
+  // session and submission. The second experiment reuses this app with its own
+  // stimuli.js / assets and its own experiment id (see README).
+  experiment: {id: 'exp1-line-similarity', name: 'Line similarity'},
   // Bump protocolVersion whenever the design or participant-facing procedure
   // changes. A session stored in a participant's browser is continued only if
   // protocolVersion, stimulusSetVersion, layoutVersion and the whole `design`
@@ -11,7 +15,7 @@ export const config = {
   layoutVersion: '2026-10-05-compact-control-v1',
 
   study: {
-    title: 'Which object looks more similar?',
+    title: 'Similarity judgment',
     // Shown on the information/consent page. Fill these in before recruiting.
     institution: '',
     researcher: '',
@@ -54,6 +58,10 @@ export const config = {
   },
 
   participant: {
+    // Remember a participant's session in their browser so a reload resumes
+    // it and a finished participant sees the completion page again. Off for
+    // the pilot: every visit starts a fresh run.
+    rememberSession: false,
     // URL parameters searched, in order, for a participant identifier.
     // e.g. ?pid=123 or Prolific's ?PROLIFIC_PID={{%PROLIFIC_PID%}}
     idParams: ['pid', 'PROLIFIC_PID', 'participant'],
@@ -67,7 +75,8 @@ export const config = {
     //                   (form "line-similarity-responses" in index.html).
     // 'endpoint'      - POSTs the session as JSON to `endpoint` below.
     // 'local'         - nothing is sent; participants download their file.
-    mode: 'netlify-forms',
+    // The pilot collects nothing yet: 'local'.
+    mode: 'local',
     endpoint: '',
     formName: 'line-similarity-responses',
     // Send an interim record (flagged 'abandoned') if the participant leaves
@@ -76,14 +85,16 @@ export const config = {
     // reload mid-study sends one; records share the session_id.
     submitPartialOnLeave: true,
     // Offer a JSON/CSV download of the session on the completion page.
-    allowDownload: true,
+    allowDownload: false,
     // localStorage key for crash/reload recovery.
-    localKey: 'line-similarity:session:v1',
+    localKey: 'line-similarity:session:v1', // keep distinct per experiment
   },
 
   completion: {
-    // Shown to the participant when the data has been saved. Leave empty to
-    // show the session id instead.
+    // Show a completion code on the final page (config.completion.code, or
+    // the session id when that is empty). Off for the pilot.
+    showCode: false,
+    // The completion code. Leave empty to use the session id.
     code: '',
     // If set, a link/redirect offered after submission (e.g. a Prolific
     // completion URL). Leave empty for none.

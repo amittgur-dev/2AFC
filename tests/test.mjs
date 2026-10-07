@@ -117,11 +117,11 @@ const seq = buildSequence(config.design, 1);
 const session = {session_id: 's', participant_id: 'p', protocol_version: 'v', stimulus_set_version: 'sv', layout_version: 'lv', sequence: seq,
   trials: [{...seq[0], chosen_side: 'left', chosen_condition: seq[0].left_condition, chosen_asset_id: seq[0].left_asset_id, response_method: 'keyboard', reaction_time_ms: 812.3, stimulus_onset_iso: 'a', response_iso: 'b', attempts: 1, interruptions: [{type: 'hidden'}], pixels_per_mm: 5}]};
 const csv = trialsToCsv(session).split('\n');
-assert.equal(csv[0].split(',')[0], 'session_id');
+assert.deepEqual(csv[0].split(',').slice(0, 2), ['experiment_id', 'session_id']);
 assert.equal(csv.length, 3);
 assert.ok(csv[1].includes(',812.3,') && csv[1].includes(seq[0].trial_id) && csv[1].includes('""type"":""hidden""'));
-assert.ok(trialsToCsv({...session, participant_id: '=HYPERLINK("x")'}).split('\n')[1].startsWith("s,\"'=HYPERLINK(\"\"x\"\")\""), 'formula-leading text is neutralised');
-assert.ok(trialsToCsv({...session, participant_id: '-12'}).split('\n')[1].startsWith("s,'-12,"));
+assert.ok(trialsToCsv({...session, experiment_id: 'e', participant_id: '=HYPERLINK("x")'}).split('\n')[1].startsWith("e,s,\"'=HYPERLINK(\"\"x\"\")\""), 'formula-leading text is neutralised');
+assert.ok(trialsToCsv({...session, experiment_id: 'e', participant_id: '-12'}).split('\n')[1].startsWith("e,s,'-12,"));
 // Compact beacon record: every trial keeps its identity and response but drops the copied presentation fields.
 const fullSession = {...session, events: [{type: 'x'}], trials: seq.map(p => ({...p, chosen_side: 'left', chosen_condition: p.left_condition, chosen_asset_id: p.left_asset_id, response_method: 'keyboard', reaction_time_ms: 500, stimulus_onset_iso: 'a', response_iso: 'b', attempts: 1, interruptions: [], pixels_per_mm: 5}))};
 const compact = compactRecord(fullSession, 'abandoned');
@@ -155,4 +155,6 @@ assert.ok(html.includes(`name="${config.storage.formName}"`) && html.includes('d
 const storageSource = fs.readFileSync(path.join(APP, 'storage.js'), 'utf8');
 for (const field of [...storageSource.matchAll(/params\.set\('([a-z_-]+)'/g)].map(m => m[1])) assert.ok(html.includes(`name="${field}"`), 'form field registered: ' + field);
 assert.ok(!html.includes('id="previous"') && !html.includes('id="next"'), 'no preview navigation');
+assert.ok(!html.includes('id="verification"') && !/no photo|right or wrong|about .* minutes/i.test(html), 'pilot text trimmed');
+assert.ok(config.experiment.id && config.storage.localKey, 'experiment identified');
 console.log('Passed: 32 assets, 19 questions, physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');

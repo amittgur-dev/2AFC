@@ -16,8 +16,17 @@ const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../site'
 const {chromium} = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright');
 const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml'};
 const posts = [];
+// The pilot config sends nothing; the main run is served a config that
+// exercises the Netlify Forms path, the download buttons and the completion
+// code. (Served by the test server rather than Playwright routing, which
+// would also intercept and drop the pagehide beacon.)
+const configSource = fs.readFileSync(path.join(APP, 'config.js'), 'utf8');
+const testConfig = configSource.replace("mode: 'local'", "mode: 'netlify-forms'").replace('allowDownload: false', 'allowDownload: true').replace('showCode: false', 'showCode: true').replace('rememberSession: false', 'rememberSession: true');
+assert.notEqual(testConfig, configSource);
+let serveTestConfig = true;
 const server = http.createServer((req, res) => {
   if (req.method === 'POST') { let body = ''; req.on('data', c => body += c); req.on('end', () => { posts.push({url: req.url, body}); res.writeHead(200); res.end('ok'); }); return; }
+  if (req.url.split('?')[0] === '/config.js' && serveTestConfig) { res.writeHead(200, {'Content-Type': 'text/javascript', 'Cache-Control': 'no-store'}); return res.end(testConfig); }
   const file = path.join(APP, req.url.split('?')[0] === '/' ? 'index.html' : req.url.split('?')[0]);
   if (!fs.existsSync(file)) { res.writeHead(404); return res.end(); }
   res.writeHead(200, {'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store'});
@@ -45,16 +54,12 @@ await page.click('#begin');
 assert.equal((await state()).mode, 'calibration');
 // Calibrate at 5.11 px/mm by setting the card width directly.
 await page.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
-await page.click('#confirm-card');
-assert.equal((await state()).mode, 'verification');
-ppmm = (await state()).pixelsPerMm;
-assert.ok(Math.abs(ppmm - target) < .01, 'calibration close to target: ' + ppmm);
-const mm = await page.$eval('#one-mm', e => e.getBoundingClientRect());
-assert.ok(Math.abs(mm.height - ppmm) < .05 && Math.abs(mm.width - 40 * ppmm) < .05, '1 mm × 40 mm reference line');
 // Stimuli that cannot be downloaded leave a message and a retry, not a dead end.
 await page.route('**/assets/*.svg', route => route.abort());
-await page.click('#to-instructions');
+await page.click('#confirm-card');
 assert.equal((await state()).mode, 'instructions');
+ppmm = (await state()).pixelsPerMm;
+assert.ok(Math.abs(ppmm - target) < .01, 'calibration close to target: ' + ppmm);
 await page.waitForFunction(() => /could not be loaded/.test(document.getElementById('instructions-notice').textContent));
 assert.ok(!(await page.isDisabled('#start')), 'Start is usable again after a failed preload');
 await page.unroute('**/assets/*.svg');
@@ -67,7 +72,6 @@ await page.goto(base + '?pid=TEST-001&STUDY_ID=S1&reset=1');
 await page.click('#begin');
 await page.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page.click('#confirm-card');
-await page.click('#to-instructions');
 assert.equal((await state()).mode, 'instructions');
 await page.waitForSelector('#start:not([disabled])');
 assert.equal(await page.textContent('#trial-count'), '19');
@@ -127,7 +131,6 @@ assert.ok((await page.textContent('#resume-notice')).includes('3 of 19'));
 await page.click('#begin');
 await page.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page.click('#confirm-card');
-await page.click('#to-instructions');
 await page.waitForFunction(() => lineSimilarityState().mode === 'experiment' && lineSimilarityState().ready);
 s = await state(); assert.equal(s.completed, 3); assert.equal(s.session_id, saved.session_id);
 assert.equal(s.presentation.presentation_index, 3);
@@ -152,7 +155,7 @@ await page.evaluate(() => { Object.defineProperty(window, 'devicePixelRatio', {g
 assert.equal((await state()).mode, 'calibration');
 assert.ok((await page.textContent('#calibration-notice')).includes('zoom changed'));
 await page.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
-await page.click('#confirm-card'); await page.click('#to-instructions');
+await page.click('#confirm-card');
 await page.waitForFunction(() => lineSimilarityState().mode === 'experiment' && lineSimilarityState().ready);
 assert.equal((await state()).completed, 3); assert.equal((await state()).attempts, 3);
 
@@ -187,13 +190,13 @@ assert.ok(saved.ended_at && saved.environment_at_end && saved.environment_at_end
 assert.ok(saved.events.some(e => e.type === 'resumed') && saved.events.some(e => e.type === 'consented'));
 // Two Netlify-style posts: the partial record sent when the page was left
 // mid-session, then the complete record.
-assert.equal(posts.length, 2);
+assert.equal(posts.length, 2, 'posts: ' + JSON.stringify(posts.map(p => [p.url, new URLSearchParams(p.body).get('completion_status'), new URLSearchParams(p.body).get('trials_completed')])) + ' submissions: ' + JSON.stringify(saved.submissions));
 const partial = new URLSearchParams(posts[0].body);
 assert.equal(partial.get('completion_status'), 'abandoned'); assert.equal(partial.get('trials_completed'), '3');
 assert.equal(JSON.parse(partial.get('payload')).session_id, saved.session_id);
 const form = new URLSearchParams(posts[1].body);
 assert.equal(form.get('form-name'), 'line-similarity-responses');
-assert.equal(form.get('completion_status'), 'complete'); assert.equal(form.get('trials_completed'), '19');
+assert.equal(form.get('completion_status'), 'complete'); assert.equal(form.get('trials_completed'), '19'); assert.equal(form.get('experiment_id'), 'exp1-line-similarity');
 const payload = JSON.parse(form.get('payload'));
 assert.equal(payload.session_id, saved.session_id); assert.equal(payload.trials.length, 19);
 assert.ok(posts[0].body.length < 60000, 'partial beacon stayed under the 64 KiB cap: ' + posts[0].body.length);
@@ -236,7 +239,7 @@ await page2.route('**/*', route => route.request().method() === 'POST' ? route.f
 await page2.goto(base + '?reset=1');
 await page2.click('#begin');
 await page2.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
-await page2.click('#confirm-card'); await page2.click('#to-instructions');
+await page2.click('#confirm-card');
 await page2.waitForSelector('#start:not([disabled])'); await page2.click('#start');
 for (let i = 0; i < 19; i++) { await page2.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page2.keyboard.press('b'); }
 await page2.waitForFunction(() => /could not be sent/.test(document.getElementById('submit-status').textContent));
@@ -244,11 +247,36 @@ assert.ok(await page2.isVisible('#retry-submit') && await page2.isVisible('#down
 const [downloadEvent] = await Promise.all([page2.waitForEvent('download'), page2.click('#download-csv')]);
 const csvText = fs.readFileSync(await downloadEvent.path(), 'utf8');
 assert.equal(csvText.trim().split('\n').length, 20);
-assert.ok(csvText.startsWith('session_id,participant_id'));
+assert.ok(csvText.startsWith('experiment_id,session_id,participant_id'));
 const saved2 = await page2.evaluate(k => JSON.parse(localStorage.getItem(k)), 'line-similarity:session:v1');
 assert.ok(saved2.trials.every(t => t.chosen_side === 'left' && t.response_method === 'keyboard'));
 assert.ok(saved2.submissions.some(s => s.ok === false));
 
+// The deployed pilot config: nothing is sent, and the final page says only thank you.
+serveTestConfig = false;
+const pilot = await browser.newContext({viewport: {width: 1300, height: 820}});
+const page3 = await pilot.newPage();
+page3.on('pageerror', e => errors.push(String(e)));
+const before = posts.length;
+await page3.goto(base + '?reset=1');
+assert.equal(await page3.textContent('#study-title'), 'Similarity judgment');
+assert.ok((await page3.textContent('#information')).includes('reference object (A)'));
+await page3.click('#begin');
+await page3.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
+await page3.click('#confirm-card');
+assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'instructions');
+await page3.waitForSelector('#start:not([disabled])'); await page3.click('#start');
+for (let i = 0; i < 19; i++) { await page3.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page3.keyboard.press('ArrowRight'); }
+await page3.waitForFunction(() => lineSimilarityState().mode === 'complete');
+assert.equal((await page3.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you.');
+assert.ok(await page3.isHidden('#completion-code') && await page3.isHidden('#download-csv'));
+const pilotSaved = await page3.evaluate(k => JSON.parse(localStorage.getItem(k)), 'line-similarity:session:v1');
+assert.equal(pilotSaved.experiment_id, 'exp1-line-similarity'); assert.equal(pilotSaved.trials.length, 19);
+await page3.goto(base);
+assert.equal(posts.length, before, 'pilot sends nothing');
+assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');
+assert.notEqual((await page3.evaluate(() => lineSimilarityState())).session_id, pilotSaved.session_id);
+
 assert.deepEqual(errors.filter(e => !/Failed to load resource/.test(e)), [], 'no page errors beyond the deliberately aborted image loads');
 await browser.close(); server.close();
-console.log('Passed real-browser flow: calibration at 5.11 px/mm, 1 mm line, calibrated object sizes, tab-hidden re-presentation, keyboard and mouse responses, double-response guard, onset-based timing, reload recovery with identical order, fit block, zoom invalidation, failed image load, completion post under the beacon cap, completion-page stability, repeat-visit guard, participant switch, Safari-style zoom, failed-submission fallback and CSV download.');
+console.log('Passed real-browser flow: calibration at 5.11 px/mm, calibrated object sizes, tab-hidden re-presentation, keyboard and mouse responses, double-response guard, onset-based timing, reload recovery with identical order, fit block, zoom invalidation, failed image load, completion post under the beacon cap, completion-page stability, repeat-visit guard, participant switch, Safari-style zoom, failed-submission fallback and CSV download.');

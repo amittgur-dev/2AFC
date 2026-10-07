@@ -27,6 +27,7 @@ the record waits in the browser for a later visit.
 | Field | Meaning |
 |---|---|
 | `schema_version` | 1 |
+| `experiment_id`, `experiment_name` | Which of the two 2AFC experiments produced the record (`config.experiment`). |
 | `session_id` | Random 16-character code generated on first load. Shown as the completion code unless `completion.code` is set. |
 | `participant_id` | First matching URL parameter from `participant.idParams` (`pid`, `PROLIFIC_PID`, `participant`), else null. |
 | `url_parameters` | Verbatim copies of `participant.passthroughParams` present in the URL (e.g. `STUDY_ID`, `SESSION_ID`). |

@@ -6,7 +6,7 @@ import {loadSession, saveSession, clearSession, storageAvailable, randomId, tria
 
 const $ = id => document.getElementById(id);
 const KEY = config.storage.localKey;
-const SECTIONS = ['information', 'calibration', 'verification', 'instructions', 'experiment', 'complete'];
+const SECTIONS = ['information', 'calibration', 'instructions', 'experiment', 'complete'];
 const now = () => new Date().toISOString();
 const perf = () => (globalThis.performance?.now ? performance.now() : Date.now());
 const DECODE_TIMEOUT_MS = 8000;  // a decode that never settles after the image has loaded is treated as a failure
@@ -57,7 +57,7 @@ function newSession() {
   const seed = (globalThis.crypto?.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32)) >>> 0;
   const built = buildDesign(config.design, seed);
   return {
-    schema_version: 1, session_id: randomId(), ...urlIdentity(),
+    schema_version: 1, experiment_id: config.experiment.id, experiment_name: config.experiment.name, session_id: randomId(), ...urlIdentity(),
     protocol_version: config.protocolVersion, stimulus_set_version: config.stimulusSetVersion, layout_version: config.layoutVersion,
     consent_version: config.study.consentVersion,
     design: {...config.design, seed, interleaved: built.interleaved}, sequence: built.sequence,
@@ -72,7 +72,7 @@ function newSession() {
 // configuration and belongs to the participant named in the URL.
 function resumable(existing) {
   if (!existing || existing.schema_version !== 1) return false;
-  if (existing.protocol_version !== config.protocolVersion || existing.stimulus_set_version !== config.stimulusSetVersion || existing.layout_version !== config.layoutVersion) return false;
+  if (existing.experiment_id !== config.experiment.id || existing.protocol_version !== config.protocolVersion || existing.stimulus_set_version !== config.stimulusSetVersion || existing.layout_version !== config.layoutVersion) return false;
   const stored = {...existing.design}; delete stored.seed; delete stored.interleaved;
   if (JSON.stringify(stored) !== JSON.stringify(config.design)) return false;
   const {participant_id} = urlIdentity();
@@ -89,7 +89,7 @@ function show(next) {
 }
 // The notice element of the screen the participant is looking at.
 function notice(text) {
-  const target = {calibration: 'calibration-notice', verification: 'verification-notice', instructions: 'instructions-notice', experiment: 'fit-message'}[mode];
+  const target = {calibration: 'calibration-notice', instructions: 'instructions-notice', experiment: 'fit-message'}[mode];
   if (target) $(target).textContent = text;
 }
 function updateCard(value) {
@@ -115,9 +115,8 @@ function confirmCard() {
   fingerprint = snapshot();
   const record = {card_width_px: width, pixels_per_mm: scale, at: now(), environment: environment()};
   session.calibration = record; session.calibration_history.push(record); persist();
-  $('one-mm').style.width = 40 * scale + 'px'; $('one-mm').style.height = scale + 'px';
-  $('ruler').style.width = 50 * scale + 'px';
-  show('verification');
+  if (resumeAfterCalibration || session.trials.length) start();
+  else { show('instructions'); preload(); }
 }
 function describeFit() {
   const need = requiredPixels(scale);
@@ -152,7 +151,7 @@ function environmentChanged() {
   if (fingerprint) {
     const after = snapshot();
     if (changedScreen(fingerprint, after) || zoomSuspected(fingerprint, after)) {
-      if (['verification', 'instructions', 'experiment'].includes(mode)) calibrate('The screen or zoom changed. Please match the card again.', 'screen-change');
+      if (['instructions', 'experiment'].includes(mode)) calibrate('The screen or zoom changed. Please match the card again.', 'screen-change');
       else fingerprint = null;
       return;
     }
@@ -188,7 +187,7 @@ function preload() {
   decodedAssets = Promise.all(allAssetIds().map(id => { const img = new Image(); img.src = assets[id].src; return loadImage(img).then(ok => ok ? null : id); })).then(results => {
     const failed = results.filter(Boolean);
     $('start').disabled = false;
-    if (failed.length) { notice('Some objects could not be loaded. Check your connection, then press ' + (mode === 'instructions' ? 'Start' : 'Looks right') + ' to try again.'); logEvent('preload-failed', {failed}); decodedAssets = null; return false; }
+    if (failed.length) { notice('Some objects could not be loaded. Check your connection, then press ' + (mode === 'instructions' ? 'Start' : 'The edges match') + ' to try again.'); logEvent('preload-failed', {failed}); decodedAssets = null; return false; }
     notice('');
     return true;
   });
@@ -294,9 +293,9 @@ async function start() {
   if (!fingerprint || changedScreen(fingerprint, snapshot())) return calibrate('The screen or zoom changed. Please match the card again.', 'screen-change');
   starting = true;
   const generation = calibrationGeneration;
-  $('to-instructions').disabled = true;
+  $('confirm-card').disabled = true;
   let loaded = false;
-  try { loaded = await preload(); } finally { starting = false; $('to-instructions').disabled = false; }
+  try { loaded = await preload(); } finally { starting = false; $('confirm-card').disabled = false; }
   if (generation !== calibrationGeneration) return; // the participant recalibrated while loading
   if (!loaded) return;
   resumeAfterCalibration = false;
@@ -320,11 +319,13 @@ async function finish() {
 }
 function showSaved(alreadyDone = false) {
   const code = config.completion.code || session.session_id;
-  $('submit-status').textContent = alreadyDone ? 'You have already completed this study. Thank you.'
-    : config.storage.mode === 'local' ? 'Your responses are complete. Please download the file below and send it to the researcher.' : 'Your responses have been saved.';
-  $('completion-code').hidden = false; $('completion-code').textContent = 'Completion code: ' + code;
+  const local = config.storage.mode === 'local';
+  $('submit-status').textContent = alreadyDone ? (local ? '' : 'You have already completed this study. Thank you.')
+    : local ? (config.storage.allowDownload ? 'Your responses are complete. Please download the file below and send it to the researcher.' : '') : 'Your responses have been saved.';
+  $('completion-code').hidden = !config.completion.showCode;
+  $('completion-code').textContent = 'Completion code: ' + code;
   if (config.completion.redirectUrl) { $('redirect-link').hidden = false; $('redirect-link').href = config.completion.redirectUrl; }
-  $('complete-note').textContent = 'You can close this page.';
+  $('complete-note').textContent = local && !config.storage.allowDownload ? '' : 'You can close this page.';
   $('retry-submit').hidden = true;
   $('download-json').hidden = $('download-csv').hidden = !config.storage.allowDownload;
 }
@@ -340,6 +341,7 @@ async function submit(status) {
   submitting = false;
   $('retry-submit').disabled = false;
   if (result.ok) { showSaved(); return; }
+  $('completion-code').hidden = !config.completion.showCode;
   $('submit-status').textContent = 'Your responses could not be sent (' + result.status + '). Please try again, or download the file and send it to the researcher' + (config.study.contactEmail ? ' at ' + config.study.contactEmail : '') + '.';
   $('retry-submit').hidden = false;
   $('download-json').hidden = false; $('download-csv').hidden = false;
@@ -359,7 +361,7 @@ function leaving() {
 // ---------- wiring ----------
 function init() {
   const url = new URL(location.href);
-  if (url.searchParams.get('reset') === '1') clearSession(KEY);
+  if (url.searchParams.get('reset') === '1' || !config.participant.rememberSession) clearSession(KEY);
   const existing = loadSession(KEY);
   if (resumable(existing)) {
     session = existing;
@@ -378,7 +380,6 @@ function init() {
     persist();
   }
   $('study-title').textContent = config.study.title; document.title = config.study.title;
-  $('duration').textContent = String(config.study.durationMinutes);
   $('trial-count').textContent = String(session.sequence.length);
   $('pid-note').textContent = session.participant_id ? ' Your responses are stored under the participant identifier in your study link.' : '';
   $('storage-note').textContent = session.storage_available ? '' : 'This browser does not allow the page to store progress, so please do not reload or close it until you have finished.';
@@ -398,8 +399,6 @@ $('smaller').onclick = () => updateCard(Number($('card-size').value) - 1);
 $('larger').onclick = () => updateCard(Number($('card-size').value) + 1);
 $('confirm-card').onclick = confirmCard;
 $('adjust-again').onclick = () => calibrate();
-$('to-instructions').onclick = () => { if (resumeAfterCalibration || session.trials.length) { start(); } else { show('instructions'); preload(); } };
-$('verification-notice').textContent = '';
 $('start').onclick = start;
 $('recalibrate').onclick = () => calibrate();
 $('fit-calibrate').onclick = () => calibrate();

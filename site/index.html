@@ -12,12 +12,12 @@
   <main id="app">
 
     <section id="information" class="setup">
-      <p class="eyebrow">A SHORT STUDY</p>
-      <h1 id="study-title">Which object looks more similar?</h1>
+      <p class="eyebrow">PILOT STUDY</p>
+      <h1 id="study-title">Similarity judgment</h1>
       <p id="resume-notice" class="notice" role="status" hidden></p>
-      <p>You will see an object <strong>A</strong> and two objects <strong>B</strong> and <strong>C</strong>. Choose the one that looks more similar to A. There are no right or wrong answers. It takes about <span id="duration">5</span> minutes.</p>
-      <p>You need a laptop or desktop screen and a bank card, which is only used to measure your screen. Your choices and your screen settings are recorded anonymously.<span id="pid-note"></span></p>
+      <p>You will see a reference object (<strong>A</strong>) and two comparison objects (<strong>B</strong> and <strong>C</strong>). Choose which comparison object looks most similar to A.</p>
       <p id="contact-line"></p>
+      <span id="pid-note" hidden></span><span id="duration" hidden></span>
       <p id="storage-note" class="notice" role="status"></p>
       <label class="consent" id="consent-row" hidden><input type="checkbox" id="consent"> I agree to take part.</label>
       <div class="actions"><button id="begin" class="primary">Continue</button></div>
@@ -25,7 +25,7 @@
     </section>
 
     <section id="calibration" class="setup" hidden>
-      <p class="eyebrow">SCREEN CALIBRATION · STEP 1 OF 2</p>
+      <p class="eyebrow">SCREEN CALIBRATION</p>
       <h1>Match your card to the outline.</h1>
       <p>Hold a standard credit, debit or ID card against the screen. Adjust the outline until its <strong>outside edges</strong> match your card’s width and height.</p>
       <div class="card-area"><div id="card" aria-hidden="true"><span>Place your card here</span></div></div>
@@ -34,20 +34,10 @@
         <input id="card-size" type="range" min="180" max="850" step="0.25" value="324" aria-label="Card size">
         <button id="larger" aria-label="Make card one pixel larger">+</button>
       </div>
-      <p class="hint">Use − and + for fine adjustments. No photo or card details are collected.</p>
+      <p class="hint">Use − and + for fine adjustments.</p>
       <div class="actions"><button id="confirm-card" class="primary">The edges match</button><button class="fullscreen">Full screen</button></div>
       <p id="calibration-notice" class="notice" role="status"></p>
       <details><summary>About physical size</summary><p>The outline represents a standard <a href="https://www.iso.org/standard/31432.html" target="_blank" rel="noopener">85.60 × 53.98 mm card</a>. The match determines pixels per millimetre for this screen so that the objects appear at their intended physical size. Recalibrate after changing screen or zoom.</p></details>
-    </section>
-
-    <section id="verification" class="setup" hidden>
-      <p class="eyebrow">SCREEN CALIBRATION · STEP 2 OF 2</p>
-      <h1>This line is 1 mm thick.</h1>
-      <p>It is also 40 mm long. If you have a ruler, check the 50 mm span below before continuing.</p>
-      <div class="verify-area"><div id="one-mm"></div><div id="ruler"><span>50 mm</span></div></div>
-      <p>Keep this screen, browser zoom and viewing distance unchanged for the rest of the study.</p>
-      <p id="verification-notice" class="notice" role="status"></p>
-      <div class="actions"><button id="to-instructions" class="primary">Looks right</button><button id="adjust-again">Adjust calibration</button></div>
     </section>
 
     <section id="instructions" class="setup" hidden>
@@ -56,7 +46,7 @@
       <p>Click <strong>B</strong> or <strong>C</strong>, or press <kbd>←</kbd> for B and <kbd>→</kbd> for C. Each choice is final. <span id="trial-count">19</span> screens.</p>
       <p id="instructions-notice" class="notice" role="status"></p>
       <p id="preload-status" class="hint" role="status"></p>
-      <div class="actions"><button id="start" class="primary">Start</button><button class="fullscreen">Full screen</button></div>
+      <div class="actions"><button id="start" class="primary">Start</button><button class="fullscreen">Full screen</button><button id="adjust-again">Adjust calibration</button></div>
     </section>
 
     <section id="experiment" hidden>
@@ -68,7 +58,7 @@
 
     <section id="complete" class="setup" hidden>
       <p class="eyebrow">FINISHED</p>
-      <h1>Thank you.</h1>
+      <h1 id="complete-title">Thank you.</h1>
       <p id="submit-status" role="status"></p>
       <p id="completion-code" hidden></p>
       <div class="actions">
@@ -90,6 +80,7 @@
     <form name="line-similarity-responses" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
       <input type="hidden" name="form-name" value="line-similarity-responses">
       <input type="text" name="bot-field">
+      <input type="text" name="experiment_id">
       <input type="text" name="session_id">
       <input type="text" name="participant_id">
       <input type="text" name="protocol_version">

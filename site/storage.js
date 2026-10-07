@@ -28,7 +28,7 @@ export function randomId(length = 16) {
 }
 
 const TRIAL_COLUMNS = [
-  'session_id', 'participant_id', 'protocol_version', 'stimulus_set_version', 'layout_version',
+  'experiment_id', 'session_id', 'participant_id', 'protocol_version', 'stimulus_set_version', 'layout_version',
   'presentation_index', 'trial_id', 'family_id', 'family_name', 'group', 'repetition_index',
   'reference_asset_id', 'left_asset_id', 'right_asset_id', 'left_condition', 'right_condition', 'side_assignment',
   'chosen_side', 'chosen_condition', 'chosen_asset_id', 'response_method', 'reaction_time_ms',
@@ -45,7 +45,7 @@ const csvCell = v => {
 };
 export function trialsToCsv(session) {
   const rows = session.trials.map(t => ({
-    session_id: session.session_id, participant_id: session.participant_id,
+    experiment_id: session.experiment_id, session_id: session.session_id, participant_id: session.participant_id,
     protocol_version: session.protocol_version, stimulus_set_version: session.stimulus_set_version, layout_version: session.layout_version,
     ...t, interruptions: t.interruptions?.length ? t.interruptions : '',
   }));
@@ -66,6 +66,7 @@ export function compactRecord(session, status) {
 function formBody(session, config, status, record = {...session, completion_status: status}) {
   const params = new URLSearchParams();
   params.set('form-name', config.storage.formName);
+  params.set('experiment_id', session.experiment_id ?? '');
   params.set('session_id', session.session_id);
   params.set('participant_id', session.participant_id ?? '');
   params.set('protocol_version', session.protocol_version);
