@@ -40,7 +40,8 @@ export const config = {
     // 'fixed'   - the canonical order from data/trials.json (19 presentations)
     // 'both'    - every pair in both orders (38 presentations). The interim
     //             record sent on leaving is then too large for the browser's
-    //             64 KiB beacon limit and a compact version is sent instead.
+    //             64 KiB beacon limit, so a compact version is sent (a minimal
+    //             one from about 70 answered screens); see EXPERIMENT_DATA.md.
     sideAssignment: 'random',
     // DECISION: how many times the whole set is presented. Each pass is
     // interleaved separately; the family constraint is also enforced across

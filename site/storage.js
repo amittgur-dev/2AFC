@@ -80,31 +80,59 @@ function formBody(session, config, status, record = {...session, completion_stat
   return params.toString();
 }
 
-// Sends the session. Resolves to {ok, status, detail}. Never throws.
-// With beacon: true (used on pagehide) the request must be small: the full
-// record is tried first, then the compact one; above the limit nothing is
-// sent and the record stays in localStorage for the next visit.
-export async function submitSession(session, config, {status = 'complete', beacon = false} = {}) {
+// Smallest record for the beacon path: identifiers, calibration summary and
+// one compact row per trial. Everything else is derivable or diagnostic.
+export function minimalRecord(session, status) {
+  const c = compactRecord(session, status);
+  const {calibration_history, environment_at_start, environment_at_end, ...rest} = c;
+  return {
+    ...rest, minimal: true,
+    calibration: c.calibration ? {card_width_px: c.calibration.card_width_px, pixels_per_mm: c.calibration.pixels_per_mm, at: c.calibration.at} : null,
+    trials: c.trials.map(t => ({
+      presentation_index: t.presentation_index, trial_id: t.trial_id, chosen_side: t.chosen_side, chosen_condition: t.chosen_condition, chosen_asset_id: t.chosen_asset_id,
+      response_method: t.response_method, reaction_time_ms: t.reaction_time_ms, response_iso: t.response_iso, attempts: t.attempts, interruption_count: t.interruptions?.length ?? 0,
+    })),
+  };
+}
+function destination(config) {
   const mode = config.storage.mode;
-  if (mode === 'local') return {ok: true, status: 'local', detail: 'Local-only mode; nothing sent.'};
-  const target = mode === 'netlify-forms' ? location.pathname : mode === 'endpoint' ? config.storage.endpoint : null;
-  if (mode === 'endpoint' && !target) return {ok: false, status: 'unconfigured', detail: 'storage.endpoint is empty'};
-  if (!target) return {ok: false, status: 'unknown-mode', detail: mode};
-  const encode = record => mode === 'netlify-forms'
-    ? {body: formBody(session, config, status, record), type: 'application/x-www-form-urlencoded'}
-    : {body: JSON.stringify(record), type: 'application/json'};
+  if (mode === 'local') return {skip: {ok: true, status: 'local', detail: 'Local-only mode; nothing sent.'}};
+  if (mode === 'netlify-forms') return {target: location.pathname, mode};
+  if (mode === 'endpoint') return config.storage.endpoint ? {target: config.storage.endpoint, mode} : {skip: {ok: false, status: 'unconfigured', detail: 'storage.endpoint is empty'}};
+  return {skip: {ok: false, status: 'unknown-mode', detail: mode}};
+}
+const encode = (session, config, status, record, mode) => mode === 'netlify-forms'
+  ? {body: formBody(session, config, status, record), type: 'application/x-www-form-urlencoded'}
+  : {body: JSON.stringify(record), type: 'application/json'};
+
+// Sends the session while the page is being left, synchronously, with
+// navigator.sendBeacon (64 KiB cap). Tries the full record, then the compact
+// and minimal ones; above the limit nothing is sent and the record stays in
+// localStorage for the next visit. Returns {ok, status, bytes}; never throws.
+export function beaconSession(session, config, status) {
+  const {skip, target, mode} = destination(config);
+  if (skip) return skip;
   try {
-    if (beacon) {
-      if (!navigator.sendBeacon) return {ok: false, status: 'beacon-unsupported'};
-      for (const [record, label] of [[{...session, completion_status: status}, 'beacon'], [compactRecord(session, status), 'beacon-compact']]) {
-        const {body, type} = encode(record);
-        if (new Blob([body]).size > BEACON_LIMIT_BYTES) continue;
-        const sent = navigator.sendBeacon(target, new Blob([body], {type}));
-        return {ok: sent, status: sent ? label : label + '-failed', bytes: body.length};
-      }
-      return {ok: false, status: 'beacon-too-large'};
+    if (!navigator.sendBeacon) return {ok: false, status: 'beacon-unsupported'};
+    for (const [record, label] of [[{...session, completion_status: status}, 'beacon'], [compactRecord(session, status), 'beacon-compact'], [minimalRecord(session, status), 'beacon-minimal']]) {
+      const {body, type} = encode(session, config, status, record, mode);
+      if (new Blob([body]).size > BEACON_LIMIT_BYTES) continue;
+      const sent = navigator.sendBeacon(target, new Blob([body], {type}));
+      return {ok: sent, status: sent ? label : label + '-failed', bytes: body.length};
     }
-    const {body, type} = encode({...session, completion_status: status});
+    return {ok: false, status: 'beacon-too-large'};
+  } catch (e) {
+    return {ok: false, status: 'beacon-error', detail: String(e?.message ?? e)};
+  }
+}
+// Sends the full session with a normal fetch (no size cap). Resolves to
+// {ok, status, detail, bytes}; never throws.
+export async function submitSession(session, config, {status = 'complete', beacon = false} = {}) {
+  if (beacon) return beaconSession(session, config, status);
+  const {skip, target, mode} = destination(config);
+  if (skip) return skip;
+  try {
+    const {body, type} = encode(session, config, status, {...session, completion_status: status}, mode);
     const res = await fetch(target, {method: 'POST', headers: {'Content-Type': type}, body});
     return {ok: res.ok, status: String(res.status), detail: res.ok ? '' : await res.text().catch(() => ''), bytes: body.length};
   } catch (e) {

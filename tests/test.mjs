@@ -11,7 +11,7 @@ const {assets, trials} = await import(path.join(APP, 'stimuli.js'));
 const {CARD, STAGE, LABEL, pixelsPerMm, dimensions, fits, requiredPixels, changedScreen, zoomSuspected} = await import(path.join(APP, 'geometry.js'));
 const {buildSequence, buildDesign, validateDesign, interleave, hasConsecutiveSameFamily, rng, shuffle} = await import(path.join(APP, 'design.js'));
 const {config} = await import(path.join(APP, 'config.js'));
-const {trialsToCsv, compactRecord, BEACON_LIMIT_BYTES} = await import(path.join(APP, 'storage.js'));
+const {trialsToCsv, compactRecord, minimalRecord, BEACON_LIMIT_BYTES} = await import(path.join(APP, 'storage.js'));
 
 // Stimuli and physical layout
 assert.equal(trials.length, 19);
@@ -129,6 +129,24 @@ assert.equal(compact.trials.length, 19); assert.ok(!('sequence' in compact) && c
 assert.ok(compact.trials.every(t => t.presentation_index !== undefined && t.trial_id && t.chosen_condition && !('left_asset_id' in t)));
 assert.ok(JSON.stringify(compact).length < JSON.stringify(fullSession).length / 2);
 assert.ok(encodeURIComponent(JSON.stringify(compact)).length < BEACON_LIMIT_BYTES);
+// The minimal record keeps the beacon under the cap even for the largest design (76 answered screens).
+const big = buildSequence({...config.design, sideAssignment: 'both', repetitions: 2}, 3);
+const env = {timestamp: 'x', user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15', inner_width: 1440, inner_height: 820, outer_width: 1440, outer_height: 900, screen_width: 1512, screen_height: 982};
+const bigSession = {...session, participant_id: '5f3b2c9d8e7a6b5c4d3e2f1a0b9c8d7e', url_parameters: {STUDY_ID: '66f1a2b3c4d5e6f7a8b9c0d1', SESSION_ID: '66f1a2b3c4d5e6f7a8b9c0d2'}, sequence: big,
+  calibration: {card_width_px: 437.5, pixels_per_mm: 5.11, at: 'x', environment: env}, calibration_history: [{environment: env}, {environment: env}, {environment: env}], environment_at_start: env, environment_at_end: env,
+  events: Array.from({length: 40}, (_, i) => ({type: 'interruption', at: 'x', t: i, presentation_index: i, interruption: 'hidden'})),
+  trials: big.map(p => ({...p, chosen_side: 'left', chosen_label: 'B', chosen_condition: p.left_condition, chosen_asset_id: p.left_asset_id, response_method: 'keyboard', reaction_time_ms: 1234.5, stimulus_onset_iso: '2026-10-07T10:00:00.000Z', response_iso: '2026-10-07T10:00:01.234Z', attempts: 1, interruptions: [], pixels_per_mm: 5.11, viewport: {inner_width: 1440, inner_height: 820, fullscreen: false}, reference_width_mm: 45, reference_height_mm: 4.5, left_width_mm: 54, left_height_mm: 9, right_width_mm: 81, right_height_mm: 4.5}))};
+const formBytes = r => new URLSearchParams({'form-name': 'x', payload: JSON.stringify(r)}).toString().length;
+const minimal = minimalRecord(bigSession, 'abandoned');
+assert.equal(minimal.trials.length, 76); assert.ok(minimal.minimal && minimal.compact && !('sequence' in minimal) && !('calibration_history' in minimal));
+assert.equal(minimal.calibration.pixels_per_mm, 5.11);
+assert.ok(minimal.trials.every(t => t.trial_id && t.chosen_condition && t.reaction_time_ms === 1234.5 && t.interruption_count === 0));
+assert.ok(formBytes(minimal) < BEACON_LIMIT_BYTES, 'minimal 76-trial form body under the cap: ' + formBytes(minimal));
+assert.ok(formBytes(compactRecord(bigSession, 'abandoned')) > formBytes(minimal));
+// `interleaved` reports on the shuffled segments only; a deliberate leading control block does not count.
+assert.equal(buildDesign({...config.design, controlPosition: 'first', sideAssignment: 'both'}, 5).interleaved, true);
+assert.equal(buildDesign({...config.design, avoidConsecutiveSameFamily: false}, 5).interleaved, null);
+assert.equal(buildDesign({...config.design, randomizeTrialOrder: false}, 5).interleaved, null);
 
 // Deployed HTML and Netlify form registration
 const html = fs.readFileSync(path.join(APP, 'index.html'), 'utf8');

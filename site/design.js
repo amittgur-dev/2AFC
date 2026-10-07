@@ -94,23 +94,30 @@ export function interleave(items, random, previous = null, maxTries = 200) {
 
 // Builds one participant's presentation order. Returns {sequence, interleaved}
 // where `interleaved` reports whether the no-consecutive-family constraint was
-// met (only meaningful when design.avoidConsecutiveSameFamily is set).
+// met over the segments that were shuffled (true/false), or null when the
+// constraint was not requested.
 export function buildDesign(design, seed) {
   validateDesign(design);
   const random = rng(seed);
   const control = trials.filter(t => t.family === 0);
   const others = trials.filter(t => t.family !== 0);
   const sequence = [];
+  const constrained = design.randomizeTrialOrder && design.avoidConsecutiveSameFamily;
+  let interleaved = constrained ? true : null; // null: the constraint was not requested
+  const last = () => (sequence.length ? sequence[sequence.length - 1] : null);
+  const mix = items => {
+    const prev = last();
+    const mixed = !design.randomizeTrialOrder ? items : constrained ? interleave(items, random, prev) : shuffle(items, random);
+    if (constrained && (hasConsecutiveSameFamily(mixed) || (prev && mixed.length && mixed[0].family_id === prev.family_id))) interleaved = false;
+    return mixed;
+  };
   for (let rep = 0; rep < design.repetitions; rep++) {
     const pool = others.flatMap(t => variants(t, design, random, rep));
     const controls = design.controlPosition === 'excluded' ? [] : control.flatMap(t => variants(t, design, random, rep));
-    const previous = sequence.length ? sequence[sequence.length - 1] : null;
-    const mix = (items, prev) => !design.randomizeTrialOrder ? items : design.avoidConsecutiveSameFamily ? interleave(items, random, prev) : shuffle(items, random);
-    if (design.controlPosition === 'random') sequence.push(...mix([...pool, ...controls], previous));
-    else { sequence.push(...controls); sequence.push(...mix(pool, sequence.length ? sequence[sequence.length - 1] : null)); }
+    if (design.controlPosition === 'random') sequence.push(...mix([...pool, ...controls]));
+    else { sequence.push(...controls); sequence.push(...mix(pool)); } // a leading control block is deliberate, not a constraint failure
   }
-  const numbered = sequence.map((p, i) => ({presentation_index: i, ...p}));
-  return {sequence: numbered, interleaved: !hasConsecutiveSameFamily(numbered)};
+  return {sequence: sequence.map((p, i) => ({presentation_index: i, ...p})), interleaved};
 }
 // Convenience: the ordered presentations only.
 export function buildSequence(design, seed) { return buildDesign(design, seed).sequence; }

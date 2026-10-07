@@ -74,7 +74,8 @@ resumes or sees their completion code).
    decoded images. A 500 ms blank follows each response. No back navigation.
    If the window becomes too small, the tab is hidden, or an image fails to
    load, the screen goes blank, responses are blocked, and the trial is drawn
-   again with timing restarted once the problem clears; a zoom or screen
+   again with timing restarted once the problem clears (slow connections
+   simply take longer to load; a failed download shows a retry message); a zoom or screen
    change forces recalibration (Safari's zoom is detected from the viewport
    width since it does not change the device pixel ratio). Objects are never
    scaled to fit.

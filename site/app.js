@@ -2,14 +2,14 @@ import {assets} from './stimuli.js';
 import {config} from './config.js';
 import {CARD, STAGE, LABEL, pixelsPerMm, dimensions, fits, requiredPixels, changedScreen, zoomSuspected} from './geometry.js';
 import {buildDesign, allAssetIds} from './design.js';
-import {loadSession, saveSession, clearSession, storageAvailable, randomId, trialsToCsv, submitSession, download} from './storage.js';
+import {loadSession, saveSession, clearSession, storageAvailable, randomId, trialsToCsv, submitSession, beaconSession, download} from './storage.js';
 
 const $ = id => document.getElementById(id);
 const KEY = config.storage.localKey;
 const SECTIONS = ['information', 'calibration', 'verification', 'instructions', 'experiment', 'complete'];
 const now = () => new Date().toISOString();
 const perf = () => (globalThis.performance?.now ? performance.now() : Date.now());
-const IMAGE_TIMEOUT_MS = 8000;   // a decode that never settles is treated as a failed load
+const DECODE_TIMEOUT_MS = 8000;  // a decode that never settles after the image has loaded is treated as a failure
 const IMAGE_RETRY_MS = 1500;     // pause before re-presenting after a failed load
 
 let mode = 'information';
@@ -21,6 +21,8 @@ let resumeAfterCalibration = false;
 let decodedAssets = null; // Promise resolving when every SVG is decoded
 let itiTimer = 0;
 let submitting = false;
+let starting = false;
+let calibrationGeneration = 0; // bumped by every calibrate(); lets start() notice a recalibration during preload
 
 // ---------- environment & session records ----------
 const snapshot = () => ({
@@ -87,7 +89,7 @@ function show(next) {
 }
 // The notice element of the screen the participant is looking at.
 function notice(text) {
-  const target = {calibration: 'calibration-notice', instructions: 'instructions-notice', experiment: 'fit-message'}[mode];
+  const target = {calibration: 'calibration-notice', verification: 'verification-notice', instructions: 'instructions-notice', experiment: 'fit-message'}[mode];
   if (target) $(target).textContent = text;
 }
 function updateCard(value) {
@@ -100,6 +102,7 @@ function updateCard(value) {
 }
 function calibrate(message = '', reason = 'recalibration') {
   if (mode === 'experiment') { resumeAfterCalibration = true; interrupt(reason); }
+  calibrationGeneration++;
   clearTimeout(itiTimer);
   fingerprint = null;
   $('calibration-notice').textContent = message;
@@ -160,27 +163,33 @@ function environmentChanged() {
 }
 
 // ---------- images ----------
-// Resolves true when the image has loaded and decoded, false on error or timeout.
+// Resolves true when the image has loaded and decoded, false on a load error
+// or when decoding does not settle. The network fetch itself is not timed:
+// slow connections just take longer.
 function loadImage(img) {
   return new Promise(resolve => {
-    let settled = false;
+    let settled = false, timer = 0;
     const done = ok => { if (!settled) { settled = true; clearTimeout(timer); resolve(ok); } };
-    const timer = setTimeout(() => done(false), IMAGE_TIMEOUT_MS);
-    const decode = () => (img.decode ? img.decode() : Promise.resolve()).then(() => done(true), () => done(false));
+    const decode = () => {
+      timer = setTimeout(() => done(false), DECODE_TIMEOUT_MS);
+      (img.decode ? img.decode() : Promise.resolve()).then(() => done(true), () => done(false));
+    };
     img.addEventListener('error', () => done(false), {once: true});
     if (img.complete && img.naturalWidth !== 0) decode();
     else img.addEventListener('load', decode, {once: true});
   });
 }
+// Loads and decodes every stimulus once. Resolves true on success; on failure
+// the message is shown on the visible screen and the participant can retry.
 function preload() {
   if (decodedAssets) return decodedAssets;
-  $('preload-status').textContent = 'Loading objects…';
+  notice('Loading objects…');
   $('start').disabled = true;
   decodedAssets = Promise.all(allAssetIds().map(id => { const img = new Image(); img.src = assets[id].src; return loadImage(img).then(ok => ok ? null : id); })).then(results => {
     const failed = results.filter(Boolean);
-    if (failed.length) { $('preload-status').textContent = 'Some objects could not be loaded. Check your connection and reload the page.'; logEvent('preload-failed', {failed}); decodedAssets = null; return false; }
-    $('preload-status').textContent = '';
     $('start').disabled = false;
+    if (failed.length) { notice('Some objects could not be loaded. Check your connection, then press ' + (mode === 'instructions' ? 'Start' : 'Looks right') + ' to try again.'); logEvent('preload-failed', {failed}); decodedAssets = null; return false; }
+    notice('');
     return true;
   });
   return decodedAssets;
@@ -236,8 +245,9 @@ async function present() {
   stage.append(...nodes);
   $('progress').textContent = `${index + 1} / ${session.sequence.length}`;
   $('trial-notice').textContent = '';
+  const wasBlocked = !$('fit-overlay').hidden; // a block that began during the inter-trial blank, when nothing could record it
   show('experiment');
-  if (!$('fit-overlay').hidden) { interrupt('insufficient-space'); return; }
+  if (!$('fit-overlay').hidden) { if (wasBlocked) interrupt('insufficient-space'); return; }
   const loaded = await Promise.all(nodes.map(n => loadImage(n.querySelector('img'))));
   if (current?.token !== token || mode !== 'experiment' || !$('fit-overlay').hidden) return;
   if (loaded.some(ok => !ok)) {
@@ -280,15 +290,24 @@ function choose(side, method) {
   itiTimer = setTimeout(present, design().interTrialIntervalMs);
 }
 async function start() {
+  if (starting) return;
   if (!fingerprint || changedScreen(fingerprint, snapshot())) return calibrate('The screen or zoom changed. Please match the card again.', 'screen-change');
-  if (!(await preload())) { show('instructions'); return; }
-  if (fingerprint === null) return; // the screen changed while loading
+  starting = true;
+  const generation = calibrationGeneration;
+  $('to-instructions').disabled = true;
+  let loaded = false;
+  try { loaded = await preload(); } finally { starting = false; $('to-instructions').disabled = false; }
+  if (generation !== calibrationGeneration) return; // the participant recalibrated while loading
+  if (!loaded) return;
   resumeAfterCalibration = false;
   if (!session.first_trial_at) { session.first_trial_at = now(); persist(); }
   present();
 }
 
 // ---------- completion & submission ----------
+// A beacon's delivery cannot be observed, so only a fetch response counts as a
+// confirmed send.
+const confirmedSend = () => session.submissions.some(s => s.ok && !String(s.status).startsWith('beacon'));
 function markComplete() {
   if (session.completion_status === 'complete') return;
   session.completion_status = 'complete'; session.ended_at = now(); session.environment_at_end = environment();
@@ -297,7 +316,7 @@ async function finish() {
   current = null;
   markComplete(); persist();
   show('complete');
-  if (session.submissions.some(s => s.ok)) showSaved(); else await submit('complete');
+  if (confirmedSend()) showSaved(); else await submit('complete');
 }
 function showSaved(alreadyDone = false) {
   const code = config.completion.code || session.session_id;
@@ -330,10 +349,10 @@ async function submit(status) {
 // completed record is sent as 'complete' if the final send has not happened).
 function leaving() {
   if (!session || !config.storage.submitPartialOnLeave) return;
-  if (session.trials.length === 0 || session.submissions.some(s => s.ok)) return;
+  if (session.trials.length === 0 || confirmedSend()) return;
   const status = session.completion_status === 'complete' ? 'complete' : 'abandoned';
-  const result = submitSession(session, config, {status, beacon: true});
-  session.submissions.push({...(result && typeof result.then !== 'function' ? result : {status: 'beacon-attempted'}), status_sent: status, attempt: session.submissions.length + 1, at: now()});
+  const result = beaconSession(session, config, status);
+  session.submissions.push({...result, status_sent: status, attempt: session.submissions.length + 1, at: now()});
   persist();
 }
 
@@ -347,7 +366,7 @@ function init() {
     session.storage_available = storageAvailable();
     if (session.completion_status === 'complete') {
       show('complete');
-      if (session.submissions.some(s => s.ok)) showSaved(true); else submit('complete');
+      if (confirmedSend()) showSaved(true); else submit('complete');
       return;
     }
     $('resume-notice').hidden = false;
@@ -380,6 +399,7 @@ $('larger').onclick = () => updateCard(Number($('card-size').value) + 1);
 $('confirm-card').onclick = confirmCard;
 $('adjust-again').onclick = () => calibrate();
 $('to-instructions').onclick = () => { if (resumeAfterCalibration || session.trials.length) { start(); } else { show('instructions'); preload(); } };
+$('verification-notice').textContent = '';
 $('start').onclick = start;
 $('recalibrate').onclick = () => calibrate();
 $('fit-calibrate').onclick = () => calibrate();
@@ -392,8 +412,9 @@ window.visualViewport?.addEventListener('resize', environmentChanged);
 document.addEventListener('fullscreenchange', environmentChanged);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { if (mode === 'experiment') interrupt('hidden'); return; }
-  environmentChanged();
-  if (mode === 'experiment' && current && !current.ready && $('fit-overlay').hidden) represent();
+  const token = current?.token;
+  environmentChanged(); // may itself re-present when a fit block has just cleared
+  if (mode === 'experiment' && current && !current.ready && current.token === token && $('fit-overlay').hidden) represent();
 });
 window.addEventListener('focus', environmentChanged);
 window.addEventListener('pagehide', leaving);

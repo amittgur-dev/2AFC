@@ -6,15 +6,21 @@ produced by `site/app.js` (schema_version 1).
 One **session record** is produced per participant. It is saved to the
 browser's localStorage after every response (for reload/crash recovery) and
 sent to the configured destination at completion. If the participant leaves
-after answering at least one screen but before the final record was sent, an
-interim copy flagged `abandoned` is sent on the way out
-(`storage.submitPartialOnLeave`). Nothing is sent for dropouts before the
-first response, and every reload or navigation mid-study sends one interim
-copy; all copies share the `session_id`. The interim copy is sent with the
-browser's beacon mechanism, which is limited to 64 KiB, so for large designs
-(for example `sideAssignment: 'both'`) a `compact: true` record is sent
-instead: the same trials without the repeated presentation fields, without
-`sequence` (reproducible from `design.seed`) and without `events`.
+after answering at least one screen but before the final record was
+confirmed sent, an interim copy is sent on the way out
+(`storage.submitPartialOnLeave`), flagged `abandoned`, or `complete` if the
+last response had already been given (for example leaving during the final
+blank interval). Nothing is sent for dropouts before the first response, and
+every reload or navigation mid-study sends one interim copy; all copies share
+the `session_id`. The interim copy is sent with the browser's beacon
+mechanism, which is limited to 64 KiB. The full record is tried first; if it
+is too large (from about 38 answered screens) a `compact: true` record is
+sent: the same trials without the repeated presentation fields, without
+`sequence` (reproducible from `design.seed`) and without `events`. If that is
+still too large (from about 70 answered screens) a `minimal: true` record is
+sent: one short row per trial, a three-field calibration summary and no
+environment snapshots. Beyond that nothing is sent (`beacon-too-large`) and
+the record waits in the browser for a later visit.
 
 ## Session fields
 
@@ -25,7 +31,7 @@ instead: the same trials without the repeated presentation fields, without
 | `participant_id` | First matching URL parameter from `participant.idParams` (`pid`, `PROLIFIC_PID`, `participant`), else null. |
 | `url_parameters` | Verbatim copies of `participant.passthroughParams` present in the URL (e.g. `STUDY_ID`, `SESSION_ID`). |
 | `protocol_version`, `stimulus_set_version`, `layout_version`, `consent_version` | From `config.js`. |
-| `design` | The `config.design` block plus the random `seed` and `interleaved` (whether the no-consecutive-family constraint was met). `buildDesign(design, seed)` reproduces `sequence`. The app reads the inter-trial interval and response keys from this block, so the record describes what was run even if `config.js` changed later. |
+| `design` | The `config.design` block plus the random `seed` and `interleaved` (true/false: whether the no-consecutive-family constraint was met over the shuffled segments; null when it was not requested; a deliberate leading control block under `controlPosition: 'first'` does not count against it). `buildDesign(design, seed)` reproduces `sequence`. The app reads the inter-trial interval and response keys from this block, so the record describes what was run even if `config.js` changed later. |
 | `sequence` | The assigned presentation order (see presentation fields below), fixed at session creation. |
 | `stage_mm`, `label_mm`, `card_mm` | The physical layout constants in force. |
 | `started_at`, `consented_at`, `first_trial_at`, `ended_at` | ISO timestamps. |
@@ -36,7 +42,7 @@ instead: the same trials without the repeated presentation fields, without
 | `environment_at_start`, `environment_at_end` | Device pixel ratio, screen, window (inner and outer) size, visual-viewport scale, fullscreen state, user agent, language, colour depth, `max_touch_points`, `pointer_coarse` and `hover_none`. Diagnostic only; none of these is used to compute physical size. iPads report a Macintosh user agent, so use `max_touch_points > 1` with a Macintosh user agent to identify them. |
 | `trials` | One record per answered presentation (below). |
 | `events` | Timeline of `consented`, `resumed`, `interruption`, `preload-failed`. |
-| `submissions` | Every send attempt: `status_sent` (`complete`/`abandoned`), `attempt` number, `ok`, `status` (HTTP status, `beacon`, `beacon-compact`, `beacon-too-large`, `network-error`, …), `bytes`, `at`. A beacon's delivery cannot be observed, so `ok: true` there means only that the browser accepted it. |
+| `submissions` | Every send attempt: `status_sent` (`complete`/`abandoned`), `attempt` number, `ok`, `status` (HTTP status for fetches; `beacon`, `beacon-compact`, `beacon-minimal`, `*-failed`, `beacon-too-large`, `beacon-unsupported` for the leaving path; `network-error`), `bytes`, `at`. A beacon's delivery cannot be observed, so `ok: true` there means only that the browser accepted it, and the app still sends the full record by fetch at completion or on the next visit. |
 
 ## Presentation fields (in `sequence` and copied into each trial)
 
@@ -71,7 +77,10 @@ instead: the same trials without the repeated presentation fields, without
 
 `storage.trialsToCsv` flattens one row per trial with the session identifiers
 and versions repeated on each row. Column order is `TRIAL_COLUMNS` in
-`site/storage.js`. The `interruptions` cell is JSON.
+`site/storage.js`. The `interruptions` cell is JSON. String cells that begin
+with `=`, `+`, `-`, `@`, tab or CR (in practice only a URL-supplied
+`participant_id`) are written with a leading apostrophe so spreadsheets do not
+evaluate them as formulas; the JSON record holds the unmodified value.
 
 ## Netlify Forms submission fields
 
@@ -90,11 +99,14 @@ with `completion_status != 'complete'`.
 ## Deduplication
 
 Several records can share one `session_id`: interim `abandoned` copies from
-each reload, and more than one `complete` copy if a send reached the server
-but its response was lost and the participant pressed "Try sending again" or
-reopened the page. Procedure: group by `session_id`; keep the single record
-with `completion_status = 'complete'` and the latest `submissions[*].at`;
-discard every `abandoned` record for that session. A `compact: true` record
-is only ever an interim copy. Several `session_id`s with the same
-`participant_id` indicate a repeat visit from a different browser or after a
-reset; check `started_at`.
+each reload, a `complete` copy sent by beacon if the participant left before
+the completion fetch returned, and more than one `complete` copy if a send
+reached the server but its response was lost and the participant pressed
+"Try sending again" or reopened the page. Procedure: group by `session_id`;
+among records with `completion_status = 'complete'` prefer a full one (no
+`compact` flag) with the latest `submissions[*].at`, falling back to a
+`compact`/`minimal` one (reconstruct `sequence` with
+`buildDesign(design, design.seed)` if needed); discard every `abandoned`
+record for that session. Several `session_id`s with the same `participant_id`
+indicate a repeat visit from a different browser or after a reset; check
+`started_at`.
