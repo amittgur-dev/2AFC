@@ -25,9 +25,15 @@ QA renders) is not in this repository; keep the original zip if you need it.
 The two studies are separate links built from the same repository. Each
 Netlify project runs `node tools/build_site.mjs` (from `netlify.toml`), which
 copies one study folder plus `site/shared/` into `dist/` and publishes that,
-so each study sits at the root of its own address, for example
-`https://<project-1>.netlify.app/` and `https://<project-2>.netlify.app/`,
-with nothing nested under the other. Which study a project builds comes from
+so each study sits at the root of its own address, with nothing nested under
+the other. The projects are named `2AFC-STUDY-1` and `2AFC-STUDY-2`:
+
+| Study | Netlify project | Address |
+|---|---|---|
+| Lines with edges | `2AFC-STUDY-1` | <https://2afc-study-1.netlify.app/> |
+| Similarity with rotation | `2AFC-STUDY-2` | <https://2afc-study-2.netlify.app/> |
+
+A personal link adds the participant code: `https://2afc-study-2.netlify.app/?pid=CODE`. Which study a project builds comes from
 the environment variable `STUDY` (`1` by default, `2` for the rotation study).
 Every push to the default branch redeploys both projects.
 
@@ -178,13 +184,15 @@ the code reaches the experiment and the database (`participant_id`); the list
 that ties codes to names stays on your computer.
 
 ```sh
-python3 tools/make_participant_links.py names.txt --site1 https://PROJECT-1.netlify.app --site2 https://PROJECT-2.netlify.app --out participants-private.xlsx
+python3 tools/make_participant_links.py names.txt --out participants-private.xlsx
 ```
 
 `names.txt` has one name (or email) per line. The output lists, per person, a
-six-character code and two links (`<project-1>/?pid=CODE` for Lines with
-edges, `<project-2>/?pid=CODE` for Similarity with rotation), both carrying
-the same code so the two data sets can be joined on `participant_id`. The file is
+six-character code and two links (`https://2afc-study-1.netlify.app/?pid=CODE`
+for Lines with edges, `https://2afc-study-2.netlify.app/?pid=CODE` for
+Similarity with rotation; `--site1`/`--site2` for other addresses), both
+carrying the same code so the two data sets can be joined on
+`participant_id`. The file is
 private: `participants-private*` is git-ignored, and you share only each
 person's links. Re-run with `--existing participants-private.csv` to add
 people while keeping earlier codes, or `--codes-only 10` for codes without

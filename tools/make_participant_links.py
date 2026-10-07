@@ -6,8 +6,8 @@ code ever reaches the experiment and the database; keep the output file out of
 the repository (participants-private* is git-ignored) and share only the links.
 
 Usage:
-  python3 tools/make_participant_links.py names.txt --site1 https://STUDY-1.netlify.app --site2 https://STUDY-2.netlify.app
-  python3 tools/make_participant_links.py names.txt --site1 ... --site2 ... --out participants-private.xlsx
+  python3 tools/make_participant_links.py names.txt --out participants-private.xlsx
+  python3 tools/make_participant_links.py names.txt --site1 https://... --site2 https://...   (other addresses)
 Options:
   --existing participants-private.csv   keep the codes already assigned in that file
   --codes-only 12                       no names: make 12 anonymous codes/links
@@ -26,8 +26,8 @@ def make_code(n=6):
 
 ap = argparse.ArgumentParser()
 ap.add_argument('names', nargs='?', help='text file with one name per line')
-ap.add_argument('--site1', required=True, help='address of the Lines with edges project, e.g. https://STUDY-1.netlify.app')
-ap.add_argument('--site2', required=True, help='address of the Similarity with rotation project')
+ap.add_argument('--site1', default='https://2afc-study-1.netlify.app', help='address of the Lines with edges project (default: the 2AFC-STUDY-1 Netlify project)')
+ap.add_argument('--site2', default='https://2afc-study-2.netlify.app', help='address of the Similarity with rotation project (default: the 2AFC-STUDY-2 Netlify project)')
 ap.add_argument('--out', default='participants-private.csv', help='.csv or .xlsx (default participants-private.csv)')
 ap.add_argument('--existing', help='previous output file; its codes are kept')
 ap.add_argument('--codes-only', type=int, default=0, help='make this many codes without names')
