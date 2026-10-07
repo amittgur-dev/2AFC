@@ -200,8 +200,7 @@ names.
 
 Alternatively, and this is how the pilot is set up, send everyone the bare
 study links and let each person make up their own code: the first page asks
-for an 8-digit number and tells them to use the same number in both studies,
-and the final page shows the number back as a reminder
+for an 8-digit number and tells them to use the same number in both studies
 (`participant.requireCode`, `participant.codePattern`). Then no list ties
 codes to people unless they tell you their number; the price is that the join
 between the two studies depends on them typing the same number twice. The

@@ -230,7 +230,6 @@ assert.deepEqual(saved.submissions.map(s => s.status_sent), ['abandoned', 'compl
 assert.equal(saved.submissions[0].status, 'keepalive-compact'); assert.equal(saved.submissions[0].ok, true); assert.equal(saved.submissions[0].unconfirmed, true);
 assert.equal(saved.submissions[1].status, 'supabase'); assert.equal(saved.submissions[1].ok, true); assert.ok(saved.submissions[1].bytes > 10000);
 assert.ok((await page.textContent('#completion-code')).includes(saved.session_id));
-assert.ok(await page.isHidden('#your-code'), 'no code reminder when the code came from the link');
 assert.ok(await page.isVisible('#download-csv'));
 if (shots) await page.screenshot({path: path.join(shots, 'complete.png')});
 // A zoom change on the completion page neither recalibrates nor resubmits.
@@ -307,7 +306,7 @@ assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'instruct
 await page3.waitForSelector('#start:not([disabled])'); await page3.click('#start');
 for (let i = 0; i < 19; i++) { await page3.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page3.keyboard.press('ArrowRight'); }
 await page3.waitForFunction(() => lineSimilarityState().mode === 'complete');
-assert.equal((await page3.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you. Your code: 12345678. Please use the same number in the other study.');
+assert.equal((await page3.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you.');
 assert.ok(await page3.isHidden('#completion-code') && await page3.isHidden('#download-csv'));
 const pilotSaved = await page3.evaluate(k => JSON.parse(localStorage.getItem(k)), 'line-similarity:session:v1');
 assert.equal(pilotSaved.experiment_id, 'exp1-lines-with-edges'); assert.equal(pilotSaved.trials.length, 19);

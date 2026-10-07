@@ -213,7 +213,7 @@ assert.ok(config.participant.requireCode && rotConfig.participant.requireCode, '
 for (const good of ['12345678', '00000000']) assert.ok(new RegExp(config.participant.codePattern).test(good), good);
 for (const bad of ['', '1234567', '123456789', 'K7P3QM', '1234 5678', '=1234567']) assert.ok(!new RegExp(config.participant.codePattern).test(bad), 'rejects ' + JSON.stringify(bad));
 assert.equal(rotConfig.participant.codePattern, config.participant.codePattern);
-for (const h of [fs.readFileSync(path.join(APP, '1/index.html'), 'utf8'), rotHtml]) assert.ok(h.includes('make up an 8-digit number') && h.includes('id="your-code"'));
+for (const h of [fs.readFileSync(path.join(APP, '1/index.html'), 'utf8'), rotHtml]) assert.ok(h.includes('make up an 8-digit number') && !h.includes('your-code'));
 assert.ok(rotHtml.includes('id="participant-code"') && fs.readFileSync(path.join(APP, '1/index.html'), 'utf8').includes('id="participant-code"'));
 
 // Supabase rows match the migration's columns exactly, for both experiments.
