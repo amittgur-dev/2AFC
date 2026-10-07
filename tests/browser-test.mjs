@@ -215,7 +215,7 @@ assert.ok(saved.events.some(e => e.type === 'resumed') && saved.events.some(e =>
 const sb = table => sbPosts.filter(p => p.table === table);
 assert.equal(posts.length, 0, 'nothing went to Netlify');
 assert.equal(sbPosts.length, 4, JSON.stringify(sbPosts.map(p => [p.table, p.rows.length])) + ' submissions: ' + JSON.stringify(saved.submissions));
-for (const p of sbPosts) { assert.equal(p.apikey, 'test-anon-key'); assert.equal(p.auth, 'Bearer test-anon-key'); assert.ok(Array.isArray(p.rows) && p.rows.length > 0); }
+for (const p of sbPosts) { assert.equal(p.apikey, 'test-anon-key'); assert.equal(p.auth, undefined, 'a non-JWT key is sent as apikey only'); assert.ok(Array.isArray(p.rows) && p.rows.length > 0); }
 const [abandonedRow, completeRow] = sb('lines_with_edges_sessions').map(p => p.rows[0]);
 assert.equal(abandonedRow.submitted_status, 'abandoned'); assert.equal(abandonedRow.trials_completed, 3); assert.equal(abandonedRow.attempt, 1); assert.ok(abandonedRow.record.compact);
 assert.equal(completeRow.submitted_status, 'complete'); assert.equal(completeRow.completion_status, 'complete'); assert.equal(completeRow.trials_completed, 19); assert.equal(completeRow.attempt, 2);

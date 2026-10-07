@@ -141,8 +141,11 @@ function supabaseInsert(config, table, rows, {keepalive = false} = {}) {
   const sb = config.storage.supabase;
   const url = sb.url.replace(/\/+$/, '') + '/rest/v1/rpc/record_rows';
   const body = JSON.stringify({p_table: table, p_rows: rows});
+  // A classic anon key is a JWT and also goes in the Authorization header;
+  // a newer publishable key (sb_publishable_...) goes in apikey only.
+  const jwt = /^eyJ/.test(sb.anonKey);
   return {promise: fetch(url, {method: 'POST', keepalive, body, headers: {
-    apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey, 'Content-Type': 'application/json', Prefer: 'return=minimal',
+    apikey: sb.anonKey, ...(jwt ? {Authorization: 'Bearer ' + sb.anonKey} : {}), 'Content-Type': 'application/json', Prefer: 'return=minimal',
   }}), bytes: body.length};
 }
 async function supabaseSubmit(session, config, status) {
