@@ -1,0 +1,65 @@
+question,variant,relation_to_reference,base_rotation_delta,sub_rotation_delta,stimulus,shape,sub_shape,density,base_rotation,sub_rotation,frame,figure_width_mm,figure_height_mm,image_mm,handoff_role,svg
+1,A,reference,0,0,S001,square,square,4,0,0,screen,24.17,24.17,41.33,A,S001.svg
+1,sub,sub-shapes rotated 45°,0,45,S002,square,square,4,0,45,screen,25.27,25.27,41.33,B,S002.svg
+1,whole,whole object rotated 45°,45,45,S003,square,square,4,45,45,screen,34.18,34.18,41.33,C,S003.svg
+1,shape,base shape rotated 45°,45,0,S004,square,square,4,45,0,screen,33.08,33.08,41.33,D,S004.svg
+2,A,reference,0,0,S002,square,square,4,0,45,screen,25.27,25.27,41.33,A,S002.svg
+2,sub,sub-shapes rotated 45°,0,45,S005,square,square,4,0,90,screen,24.17,24.17,41.33,B,S005.svg
+2,whole,whole object rotated 45°,45,45,S006,square,square,4,45,90,screen,33.08,33.08,41.33,C,S006.svg
+2,shape,base shape rotated 45°,45,0,S003,square,square,4,45,45,screen,34.18,34.18,41.33,D,S003.svg
+3,A,reference,0,0,S004,square,square,4,45,0,screen,33.08,33.08,41.33,A,S004.svg
+3,sub,sub-shapes rotated 45°,0,45,S003,square,square,4,45,45,screen,34.18,34.18,41.33,B,S003.svg
+3,whole,whole object rotated 45°,45,45,S007,square,square,4,90,45,screen,25.27,25.27,41.33,C,S007.svg
+3,shape,base shape rotated 45°,45,0,S008,square,square,4,90,0,screen,24.17,24.17,41.33,D,S008.svg
+4,A,reference,0,0,S003,square,square,4,45,45,screen,34.18,34.18,41.33,A,S003.svg
+4,sub,sub-shapes rotated 45°,0,45,S006,square,square,4,45,90,screen,33.08,33.08,41.33,B,S006.svg
+4,whole,whole object rotated 45°,45,45,S009,square,square,4,90,90,screen,24.17,24.17,41.33,C,S009.svg
+4,shape,base shape rotated 45°,45,0,S007,square,square,4,90,45,screen,25.27,25.27,41.33,D,S007.svg
+5,A,reference,0,0,S010,square,triangle,4,0,0,screen,25.23,24.73,41.33,A,S010.svg
+5,sub,sub-shapes rotated 45°,0,45,S011,square,triangle,4,0,45,screen,25.11,25.11,41.33,B,S011.svg
+5,whole,whole object rotated 45°,45,45,S012,square,triangle,4,45,45,screen,34.01,34.01,41.33,C,S012.svg
+5,shape,base shape rotated 45°,45,0,S013,square,triangle,4,45,0,screen,34.14,33.64,41.33,D,S013.svg
+6,A,reference,0,0,S014,diamond,triangle,4,0,0,screen,34.14,33.64,41.33,A,S014.svg
+6,sub,sub-shapes rotated 45°,0,45,S015,diamond,triangle,4,0,45,screen,34.01,34.01,41.33,B,S015.svg
+6,whole,whole object rotated 45°,45,45,S016,diamond,triangle,4,45,45,screen,25.11,25.11,41.33,C,S016.svg
+6,shape,base shape rotated 45°,45,0,S017,diamond,triangle,4,45,0,screen,25.23,24.73,41.33,D,S017.svg
+7,A,reference,0,0,S018,square,triangle,4,0,180,screen,25.23,24.73,41.33,A,S018.svg
+7,sub,sub-shapes rotated 45°,0,45,S019,square,triangle,4,0,225,screen,25.11,25.11,41.33,B,S019.svg
+7,whole,whole object rotated 45°,45,45,S020,square,triangle,4,45,225,screen,34.01,34.01,41.33,C,S020.svg
+7,shape,base shape rotated 45°,45,0,S021,square,triangle,4,45,180,screen,34.14,33.64,41.33,D,S021.svg
+8,A,reference,0,0,S022,diamond,triangle,4,0,180,screen,34.14,33.64,41.33,A,S022.svg
+8,sub,sub-shapes rotated 45°,0,45,S023,diamond,triangle,4,0,225,screen,34.01,34.01,41.33,B,S023.svg
+8,whole,whole object rotated 45°,45,45,S024,diamond,triangle,4,45,225,screen,25.11,25.11,41.33,C,S024.svg
+8,shape,base shape rotated 45°,45,0,S025,diamond,triangle,4,45,180,screen,25.23,24.73,41.33,D,S025.svg
+9,A,reference,0,0,S026,up-triangle,down-triangle,5,0,0,screen,29.76,25.78,41.33,A,S026.svg
+9,sub,sub-shapes rotated 45°,0,45,S027,up-triangle,down-triangle,5,0,45,screen,29.65,26.12,41.33,B,S027.svg
+9,whole,whole object rotated 45°,45,45,S028,up-triangle,down-triangle,5,45,45,screen,28.75,28.75,41.33,C,S028.svg
+9,shape,base shape rotated 45°,45,0,S029,up-triangle,down-triangle,5,45,0,screen,28.87,28.41,41.33,D,S029.svg
+10,A,reference,0,0,S030,up-triangle,up-triangle,5,0,0,screen,29.76,25.78,41.33,A,S030.svg
+10,sub,sub-shapes rotated 45°,0,45,S031,up-triangle,up-triangle,5,0,45,screen,29.65,26.12,41.33,B,S031.svg
+10,whole,whole object rotated 45°,45,45,S032,up-triangle,up-triangle,5,45,45,screen,28.75,28.75,41.33,C,S032.svg
+10,shape,base shape rotated 45°,45,0,S033,up-triangle,up-triangle,5,45,0,screen,28.87,28.41,41.33,D,S033.svg
+11,A,reference,0,0,S034,down-triangle,down-triangle,5,0,0,screen,29.76,25.78,41.33,A,S034.svg
+11,sub,sub-shapes rotated 45°,0,45,S035,down-triangle,down-triangle,5,0,45,screen,29.65,26.12,41.33,B,S035.svg
+11,whole,whole object rotated 45°,45,45,S036,down-triangle,down-triangle,5,45,45,screen,28.75,28.75,41.33,C,S036.svg
+11,shape,base shape rotated 45°,45,0,S037,down-triangle,down-triangle,5,45,0,screen,28.87,28.41,41.33,D,S037.svg
+12,A,reference,0,0,S038,down-triangle,up-triangle,5,0,0,screen,29.76,25.78,41.33,A,S038.svg
+12,sub,sub-shapes rotated 45°,0,45,S039,down-triangle,up-triangle,5,0,45,screen,29.65,26.12,41.33,B,S039.svg
+12,whole,whole object rotated 45°,45,45,S040,down-triangle,up-triangle,5,45,45,screen,28.75,28.75,41.33,C,S040.svg
+12,shape,base shape rotated 45°,45,0,S041,down-triangle,up-triangle,5,45,0,screen,28.87,28.41,41.33,D,S041.svg
+13,A,reference,0,0,S042,up-triangle,square,5,0,0,screen,29.14,25.61,41.33,A,S042.svg
+13,sub,sub-shapes rotated 45°,0,45,S043,up-triangle,square,5,0,45,screen,30.29,26.76,41.33,B,S043.svg
+13,whole,whole object rotated 45°,45,45,S044,up-triangle,square,5,45,45,screen,29.39,29.39,41.33,C,S044.svg
+13,shape,base shape rotated 45°,45,0,S045,up-triangle,square,5,45,0,screen,28.24,28.24,41.33,D,S045.svg
+14,A,reference,0,0,S046,down-triangle,square,5,0,0,screen,29.14,25.61,41.33,A,S046.svg
+14,sub,sub-shapes rotated 45°,0,45,S047,down-triangle,square,5,0,45,screen,30.29,26.76,41.33,B,S047.svg
+14,whole,whole object rotated 45°,45,45,S048,down-triangle,square,5,45,45,screen,29.39,29.39,41.33,C,S048.svg
+14,shape,base shape rotated 45°,45,0,S049,down-triangle,square,5,45,0,screen,28.24,28.24,41.33,D,S049.svg
+15,A,reference,0,0,S050,up-triangle,diamond,5,0,0,screen,30.29,26.76,41.33,A,S050.svg
+15,sub,sub-shapes rotated 45°,0,45,S051,up-triangle,diamond,5,0,45,screen,29.14,25.61,41.33,B,S051.svg
+15,whole,whole object rotated 45°,45,45,S052,up-triangle,diamond,5,45,45,screen,28.24,28.24,41.33,C,S052.svg
+15,shape,base shape rotated 45°,45,0,S053,up-triangle,diamond,5,45,0,screen,29.39,29.39,41.33,D,S053.svg
+16,A,reference,0,0,S054,down-triangle,diamond,5,0,0,screen,30.29,26.76,41.33,A,S054.svg
+16,sub,sub-shapes rotated 45°,0,45,S055,down-triangle,diamond,5,0,45,screen,29.14,25.61,41.33,B,S055.svg
+16,whole,whole object rotated 45°,45,45,S056,down-triangle,diamond,5,45,45,screen,28.24,28.24,41.33,C,S056.svg
+16,shape,base shape rotated 45°,45,0,S057,down-triangle,diamond,5,45,0,screen,29.39,29.39,41.33,D,S057.svg

@@ -1,0 +1,49 @@
+trial_id,question,name,group,reference,comparison_1,comparison_1_stimulus,comparison_2,comparison_2_stimulus,comparison
+1.1,1,square of squares,square-square,S001,sub,S002,whole,S003,sub-shapes rotated 45°  vs  whole object rotated 45°
+1.2,1,square of squares,square-square,S001,sub,S002,shape,S004,sub-shapes rotated 45°  vs  base shape rotated 45°
+1.3,1,square of squares,square-square,S001,whole,S003,shape,S004,whole object rotated 45°  vs  base shape rotated 45°
+2.1,2,square of squares,square-square,S002,sub,S005,whole,S006,sub-shapes rotated 45°  vs  whole object rotated 45°
+2.2,2,square of squares,square-square,S002,sub,S005,shape,S003,sub-shapes rotated 45°  vs  base shape rotated 45°
+2.3,2,square of squares,square-square,S002,whole,S006,shape,S003,whole object rotated 45°  vs  base shape rotated 45°
+3.1,3,square of squares,square-square,S004,sub,S003,whole,S007,sub-shapes rotated 45°  vs  whole object rotated 45°
+3.2,3,square of squares,square-square,S004,sub,S003,shape,S008,sub-shapes rotated 45°  vs  base shape rotated 45°
+3.3,3,square of squares,square-square,S004,whole,S007,shape,S008,whole object rotated 45°  vs  base shape rotated 45°
+4.1,4,square of squares,square-square,S003,sub,S006,whole,S009,sub-shapes rotated 45°  vs  whole object rotated 45°
+4.2,4,square of squares,square-square,S003,sub,S006,shape,S007,sub-shapes rotated 45°  vs  base shape rotated 45°
+4.3,4,square of squares,square-square,S003,whole,S009,shape,S007,whole object rotated 45°  vs  base shape rotated 45°
+5.1,5,square of triangles,square-triangle,S010,sub,S011,whole,S012,sub-shapes rotated 45°  vs  whole object rotated 45°
+5.2,5,square of triangles,square-triangle,S010,sub,S011,shape,S013,sub-shapes rotated 45°  vs  base shape rotated 45°
+5.3,5,square of triangles,square-triangle,S010,whole,S012,shape,S013,whole object rotated 45°  vs  base shape rotated 45°
+6.1,6,diamond of triangles,diamond-triangle,S014,sub,S015,whole,S016,sub-shapes rotated 45°  vs  whole object rotated 45°
+6.2,6,diamond of triangles,diamond-triangle,S014,sub,S015,shape,S017,sub-shapes rotated 45°  vs  base shape rotated 45°
+6.3,6,diamond of triangles,diamond-triangle,S014,whole,S016,shape,S017,whole object rotated 45°  vs  base shape rotated 45°
+7.1,7,square of triangles,square-triangle,S018,sub,S019,whole,S020,sub-shapes rotated 45°  vs  whole object rotated 45°
+7.2,7,square of triangles,square-triangle,S018,sub,S019,shape,S021,sub-shapes rotated 45°  vs  base shape rotated 45°
+7.3,7,square of triangles,square-triangle,S018,whole,S020,shape,S021,whole object rotated 45°  vs  base shape rotated 45°
+8.1,8,diamond of triangles,diamond-triangle,S022,sub,S023,whole,S024,sub-shapes rotated 45°  vs  whole object rotated 45°
+8.2,8,diamond of triangles,diamond-triangle,S022,sub,S023,shape,S025,sub-shapes rotated 45°  vs  base shape rotated 45°
+8.3,8,diamond of triangles,diamond-triangle,S022,whole,S024,shape,S025,whole object rotated 45°  vs  base shape rotated 45°
+9.1,9,up-triangle of down-triangles,up-triangle-down-triangle,S026,sub,S027,whole,S028,sub-shapes rotated 45°  vs  whole object rotated 45°
+9.2,9,up-triangle of down-triangles,up-triangle-down-triangle,S026,sub,S027,shape,S029,sub-shapes rotated 45°  vs  base shape rotated 45°
+9.3,9,up-triangle of down-triangles,up-triangle-down-triangle,S026,whole,S028,shape,S029,whole object rotated 45°  vs  base shape rotated 45°
+10.1,10,up-triangle of up-triangles,up-triangle-up-triangle,S030,sub,S031,whole,S032,sub-shapes rotated 45°  vs  whole object rotated 45°
+10.2,10,up-triangle of up-triangles,up-triangle-up-triangle,S030,sub,S031,shape,S033,sub-shapes rotated 45°  vs  base shape rotated 45°
+10.3,10,up-triangle of up-triangles,up-triangle-up-triangle,S030,whole,S032,shape,S033,whole object rotated 45°  vs  base shape rotated 45°
+11.1,11,down-triangle of down-triangles,down-triangle-down-triangle,S034,sub,S035,whole,S036,sub-shapes rotated 45°  vs  whole object rotated 45°
+11.2,11,down-triangle of down-triangles,down-triangle-down-triangle,S034,sub,S035,shape,S037,sub-shapes rotated 45°  vs  base shape rotated 45°
+11.3,11,down-triangle of down-triangles,down-triangle-down-triangle,S034,whole,S036,shape,S037,whole object rotated 45°  vs  base shape rotated 45°
+12.1,12,down-triangle of up-triangles,down-triangle-up-triangle,S038,sub,S039,whole,S040,sub-shapes rotated 45°  vs  whole object rotated 45°
+12.2,12,down-triangle of up-triangles,down-triangle-up-triangle,S038,sub,S039,shape,S041,sub-shapes rotated 45°  vs  base shape rotated 45°
+12.3,12,down-triangle of up-triangles,down-triangle-up-triangle,S038,whole,S040,shape,S041,whole object rotated 45°  vs  base shape rotated 45°
+13.1,13,up-triangle of squares,up-triangle-square,S042,sub,S043,whole,S044,sub-shapes rotated 45°  vs  whole object rotated 45°
+13.2,13,up-triangle of squares,up-triangle-square,S042,sub,S043,shape,S045,sub-shapes rotated 45°  vs  base shape rotated 45°
+13.3,13,up-triangle of squares,up-triangle-square,S042,whole,S044,shape,S045,whole object rotated 45°  vs  base shape rotated 45°
+14.1,14,down-triangle of squares,down-triangle-square,S046,sub,S047,whole,S048,sub-shapes rotated 45°  vs  whole object rotated 45°
+14.2,14,down-triangle of squares,down-triangle-square,S046,sub,S047,shape,S049,sub-shapes rotated 45°  vs  base shape rotated 45°
+14.3,14,down-triangle of squares,down-triangle-square,S046,whole,S048,shape,S049,whole object rotated 45°  vs  base shape rotated 45°
+15.1,15,up-triangle of diamonds,up-triangle-diamond,S050,sub,S051,whole,S052,sub-shapes rotated 45°  vs  whole object rotated 45°
+15.2,15,up-triangle of diamonds,up-triangle-diamond,S050,sub,S051,shape,S053,sub-shapes rotated 45°  vs  base shape rotated 45°
+15.3,15,up-triangle of diamonds,up-triangle-diamond,S050,whole,S052,shape,S053,whole object rotated 45°  vs  base shape rotated 45°
+16.1,16,down-triangle of diamonds,down-triangle-diamond,S054,sub,S055,whole,S056,sub-shapes rotated 45°  vs  whole object rotated 45°
+16.2,16,down-triangle of diamonds,down-triangle-diamond,S054,sub,S055,shape,S057,sub-shapes rotated 45°  vs  base shape rotated 45°
+16.3,16,down-triangle of diamonds,down-triangle-diamond,S054,whole,S056,shape,S057,whole object rotated 45°  vs  base shape rotated 45°

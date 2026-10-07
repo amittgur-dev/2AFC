@@ -80,6 +80,22 @@ then drop the SVGs into `site/exp2/assets/`, fill `site/exp2/stimuli.js` in
 the same shape as experiment 1's, and review `site/exp2/config.js`. Because
 the runner is identical, the two data sets are directly comparable.
 
+### Experiment 2: Similarity with Rotation (`/rotation/`)
+
+Built from the designer's handoff of 2026-10-07 (`data/rotation/handoff-*`,
+57 SVGs). Sixteen handoff questions each have a reference and three
+comparisons that differ from it by a 45° rotation of the sub-shapes only
+(`sub`), of the whole object (`whole`) or of the base shape only (`shape`);
+the relation is computed from each stimulus's base/sub-shape rotation, not
+from the handoff's B/C/D letters. Each question yields three 2AFC screens
+(sub vs whole, sub vs shape, whole vs shape): 48 in all, interleaved like
+experiment 1, no control question. Every image is the handoff's 512 px square
+shown at 41.33 mm (the designer's calibrated size), centred on the rotation
+centre so the three objects align; the fill was normalised from #111 to pure
+black. `python3 tools/build_rotation_stimuli.py` regenerates
+`site/rotation/stimuli.js`, the assets and `data/rotation/{stimuli,comparisons}.csv`;
+`npm run build:pdf:rotation` makes `data/rotation/questions-by-reference.pdf`.
+
 ## Participant flow
 
 1. **Information** — the pilot text: "Similarity judgment", one sentence of

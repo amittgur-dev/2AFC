@@ -27,7 +27,8 @@ let serveTestConfig = true;
 const server = http.createServer((req, res) => {
   if (req.method === 'POST') { let body = ''; req.on('data', c => body += c); req.on('end', () => { posts.push({url: req.url, body}); res.writeHead(200); res.end('ok'); }); return; }
   if (req.url.split('?')[0] === '/config.js' && serveTestConfig) { res.writeHead(200, {'Content-Type': 'text/javascript', 'Cache-Control': 'no-store'}); return res.end(testConfig); }
-  const file = path.join(APP, req.url.split('?')[0] === '/' ? 'index.html' : req.url.split('?')[0]);
+  let file = path.join(APP, req.url.split('?')[0]);
+  if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
   if (!fs.existsSync(file)) { res.writeHead(404); return res.end(); }
   res.writeHead(200, {'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store'});
   fs.createReadStream(file).pipe(res);
@@ -276,6 +277,25 @@ await page3.goto(base);
 assert.equal(posts.length, before, 'pilot sends nothing');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');
 assert.notEqual((await page3.evaluate(() => lineSimilarityState())).session_id, pilotSaved.session_id);
+
+// Experiment 2 runs from its own folder on the same site: 48 questions, 41.33 mm images.
+const page4 = await pilot.newPage();
+page4.on('pageerror', e => errors.push(String(e)));
+await page4.goto(base + 'rotation/?reset=1');
+await page4.click('#begin');
+await page4.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
+await page4.click('#confirm-card');
+await page4.waitForSelector('#start:not([disabled])'); await page4.click('#start');
+await page4.waitForFunction(() => lineSimilarityState().ready);
+const s4 = await page4.evaluate(() => lineSimilarityState());
+assert.equal(s4.total, 48); assert.ok(['sub', 'whole', 'shape'].includes(s4.presentation.left_condition));
+const objs4 = await page4.$$eval('#stage .object', els => els.map(e => ({w: e.getBoundingClientRect().width, src: e.querySelector('img').currentSrc})));
+assert.equal(objs4.length, 3);
+for (const o of objs4) { assert.ok(Math.abs(o.w - 41.33 * ppmm) < .1); assert.ok(/\/rotation\/assets\/S\d{3}\.svg$/.test(o.src), o.src); }
+if (shots) await page4.screenshot({path: path.join(shots, 'rotation-trial-1.png')});
+for (let i = 0; i < 3; i++) { await page4.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page4.keyboard.press('ArrowLeft'); }
+const rotSaved = await page4.evaluate(() => JSON.parse(localStorage.getItem('line-similarity:rotation:session:v1')));
+assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.trials.length, 3);
 
 assert.deepEqual(errors.filter(e => !/Failed to load resource/.test(e)), [], 'no page errors beyond the deliberately aborted image loads');
 await browser.close(); server.close();

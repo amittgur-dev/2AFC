@@ -158,6 +158,41 @@ assert.equal(buildDesign({...config.design, controlPosition: 'first', sideAssign
 assert.equal(buildDesign({...config.design, avoidConsecutiveSameFamily: false}, 5).interleaved, null);
 assert.equal(buildDesign({...config.design, randomizeTrialOrder: false}, 5).interleaved, null);
 
+// Experiment 2: Similarity with Rotation. 16 questions x 3 pairs, every
+// comparison classified from the rotation parameters, same stage.
+const rot = await import(path.join(APP, 'rotation/stimuli.js'));
+const rotConfig = (await import(path.join(APP, 'rotation/config.js'))).config;
+assert.equal(rot.trials.length, 48);
+assert.equal(Object.keys(rot.assets).length, 64);
+assert.equal(rotConfig.experiment.id, 'exp2-similarity-with-rotation');
+assert.notEqual(rotConfig.storage.localKey, config.storage.localKey, 'experiments do not share stored sessions');
+for (let q = 1; q <= 16; q++) {
+  assert.deepEqual(rot.trials.filter(t => t.family === q).map(t => t.left + '/' + t.right), ['sub/whole', 'sub/shape', 'whole/shape']);
+  const a = rot.assets[`${q}-A`];
+  for (const v of ['sub', 'whole', 'shape']) {
+    const c = rot.assets[`${q}-${v}`];
+    assert.ok(fs.existsSync(path.join(APP, 'rotation', c.src)) && c.widthMm === 41.33 && c.heightMm === 41.33);
+    assert.equal(c.shape, a.shape); assert.equal(c.sub, a.sub);
+    const db = (c.baseRot - a.baseRot + 360) % 360, ds = (c.subRot - a.subRot + 360) % 360;
+    assert.deepEqual([db, ds], {sub: [0, 45], whole: [45, 45], shape: [45, 0]}[v], `question ${q} ${v}`);
+    assert.equal(c.relationToReference, v);
+  }
+}
+assert.ok(!Object.values(rot.assets).some(a => fs.readFileSync(path.join(APP, 'rotation', a.src), 'utf8').includes('#111')), 'pure black artwork');
+for (const t of rot.trials) for (const reversed of [false, true]) {
+  const left = reversed ? t.right : t.left, right = reversed ? t.left : t.right;
+  const boxes = [[`${t.family}-A`, 'A'], [`${t.family}-${left}`, 'B'], [`${t.family}-${right}`, 'C']].map(([id, label]) => { const a = rot.assets[id]; const [x, y] = STAGE.positions[label]; return {x0: x - a.widthMm / 2, x1: x + a.widthMm / 2, y0: y - a.heightMm / 2, y1: y + a.heightMm / 2}; });
+  for (const b of boxes) assert.ok(b.x0 > 0 && b.x1 < STAGE.width && b.y0 - LABEL.offsetAboveMm > 0 && b.y1 < STAGE.height, `rotation ${t.id} inside stage`);
+  assert.ok(boxes[2].x0 - boxes[1].x1 >= 13.4);
+}
+for (let seed = 0; seed < 100; seed++) {
+  const s = buildDesign(rotConfig.design, seed, rot.trials);
+  assert.equal(s.sequence.length, 48); assert.ok(s.interleaved);
+  assert.deepEqual(s.sequence.map(p => p.trial_id).sort(), rot.trials.map(t => t.id).sort());
+}
+const rotHtml = fs.readFileSync(path.join(APP, 'rotation/index.html'), 'utf8');
+assert.ok(rotHtml.includes('../shared/style.css') && rotHtml.includes('main.js') && fs.existsSync(path.join(APP, 'rotation/main.js')));
+
 // Deployed HTML and Netlify form registration
 const html = fs.readFileSync(path.join(APP, 'index.html'), 'utf8');
 for (const source of ['shared/style.css', 'main.js']) assert.ok(html.includes(source) && fs.existsSync(path.join(APP, source)));
@@ -168,4 +203,4 @@ for (const field of [...storageSource.matchAll(/params\.set\('([a-z_-]+)'/g)].ma
 assert.ok(!html.includes('id="previous"') && !html.includes('id="next"'), 'no preview navigation');
 assert.ok(!html.includes('id="verification"') && !/no photo|right or wrong|about .* minutes/i.test(html), 'pilot text trimmed');
 assert.ok(config.experiment.id && config.storage.localKey, 'experiment identified');
-console.log('Passed: 32 assets, 19 questions, physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');
+console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (57 files, 48 questions, relations verified), physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');

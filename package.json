@@ -10,6 +10,7 @@
     "test:browser": "node tests/browser-test.mjs",
     "check:data": "python3 -I tools/check_data.py",
     "build:sheet": "python3 tools/build_notation_sheet.py",
-    "build:pdf": "node tools/build_questions_pdf.mjs"
+    "build:pdf": "node tools/build_questions_pdf.mjs",
+    "build:pdf:rotation": "node tools/build_questions_pdf.mjs rotation"
   }
 }
