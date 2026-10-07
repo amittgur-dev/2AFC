@@ -90,7 +90,7 @@ export const config = {
     // Supabase project URL (https://<ref>.supabase.co) and anon/publishable
     // key, from the project's API settings. The anon key is public by design;
     // row level security lets it insert only.
-    supabase: {url: '', anonKey: '', sessionsTable: 'similarity_with_rotation_sessions', trialsTable: 'similarity_with_rotation_trials'},
+    supabase: {url: 'https://yrgwlvqkqgqxcfcyxkta.supabase.co', anonKey: '', sessionsTable: 'similarity_with_rotation_sessions', trialsTable: 'similarity_with_rotation_trials'},
     endpoint: '',
     formName: 'line-similarity-responses',
     // Send an interim record (flagged 'abandoned') if the participant leaves

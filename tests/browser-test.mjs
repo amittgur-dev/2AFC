@@ -25,11 +25,11 @@ const sbPosts = []; // Supabase-style inserts: {table, query, apikey, auth, pref
 const configSource = fs.readFileSync(path.join(APP, '1/config.js'), 'utf8');
 const configSource2 = fs.readFileSync(path.join(APP, '2/config.js'), 'utf8');
 let configVariant2 = null; // study 2: null (deployed pilot config) or 'supabase'
-const configFor2 = () => { const c = configSource2.replace("mode: 'local'", "mode: 'supabase'").replace("supabase: {url: '', anonKey: ''", `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`); assert.notEqual(c, configSource2); return c; };
+const configFor2 = () => { const c = configSource2.replace("mode: 'local'", "mode: 'supabase'").replace(/supabase: \{url: '[^']*', anonKey: '[^']*'/, `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`); assert.notEqual(c, configSource2); return c; };
 let configVariant = 'supabase'; // 'supabase' | 'netlify' | null (deployed pilot config)
 const configFor = variant => {
   let c = configSource.replace('allowDownload: false', 'allowDownload: true').replace('showCode: false', 'showCode: true').replace('rememberSession: false', 'rememberSession: true');
-  if (variant === 'supabase') c = c.replace("mode: 'local'", "mode: 'supabase'").replace("supabase: {url: '', anonKey: ''", `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`);
+  if (variant === 'supabase') c = c.replace("mode: 'local'", "mode: 'supabase'").replace(/supabase: \{url: '[^']*', anonKey: '[^']*'/, `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`);
   else c = c.replace("mode: 'local'", "mode: 'netlify-forms'");
   assert.notEqual(c, configSource);
   return c;
