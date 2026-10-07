@@ -321,12 +321,15 @@ async function finish() {
 function showSaved(alreadyDone = false) {
   const code = config.completion.code || session.session_id;
   const local = config.storage.mode === 'local';
-  $('submit-status').textContent = alreadyDone ? (local ? '' : 'You have already completed this study. Thank you.')
+  // With nothing to show (no code, no download), a successful save ends on
+  // the bare "Finished. Thank you." page.
+  const quiet = !config.completion.showCode && !config.storage.allowDownload;
+  $('submit-status').textContent = quiet ? '' : alreadyDone ? (local ? '' : 'You have already completed this study. Thank you.')
     : local ? (config.storage.allowDownload ? 'Your responses are complete. Please download the file below and send it to the researcher.' : '') : 'Your responses have been saved.';
   $('completion-code').hidden = !config.completion.showCode;
   $('completion-code').textContent = 'Completion code: ' + code;
   if (config.completion.redirectUrl) { $('redirect-link').hidden = false; $('redirect-link').href = config.completion.redirectUrl; }
-  $('complete-note').textContent = local && !config.storage.allowDownload ? '' : 'You can close this page.';
+  $('complete-note').textContent = quiet || (local && !config.storage.allowDownload) ? '' : 'You can close this page.';
   $('retry-submit').hidden = true;
   $('download-json').hidden = $('download-csv').hidden = !config.storage.allowDownload;
 }
@@ -448,6 +451,7 @@ globalThis.lineSimilarityState = () => ({
   session_id: session?.session_id, participant_id: session?.participant_id, completed: session?.trials.length ?? 0, total: session?.sequence.length ?? 0,
   presentation: current ? session.sequence[current.index] : null, ready: !!current?.ready, attempts: current?.attempts ?? 0,
   interruptions: current?.interruptions.map(i => i.type) ?? [], storage_available: session?.storage_available ?? null,
+  submitted: !!session?.submissions.some(s => s.ok && !s.unconfirmed), submissions: session?.submissions.length ?? 0,
 });
 try { init(); }
 catch (e) {

@@ -130,13 +130,12 @@ black. `python3 tools/build_rotation_stimuli.py` regenerates
    change forces recalibration (Safari's zoom is detected from the viewport
    width since it does not change the device pixel ratio). Objects are never
    scaled to fit.
-5. **Completion** — in the pilot configuration just "Finished. Thank you.":
-   nothing is sent and nothing is shown. With `storage.mode` set to
-   `netlify-forms` or `endpoint` the record is sent and, if
-   `completion.showCode` is on, a completion code (the session id unless
-   `completion.code` is set) plus optional download buttons and return link
-   appear; if sending fails, the participant can retry or download the
-   JSON/CSV to email.
+5. **Completion** — the record is sent to Supabase while the page shows
+   "Finished. Thank you." and nothing else. If `completion.showCode` or
+   `storage.allowDownload` is on, a completion code (the session id unless
+   `completion.code` is set), download buttons and an optional return link
+   appear. If sending fails, a message says so and offers a retry (and the
+   downloads, when enabled).
 
 Each response is saved to localStorage immediately. In the pilot
 (`participant.rememberSession: false`) every visit starts a fresh session, so
@@ -168,7 +167,7 @@ mixed together is reflected in the first three rows.
 | Participant ID | From `?pid=`, `?PROLIFIC_PID=` or `?participant=`; otherwise an 8-digit number the participant makes up on the first page. `STUDY_ID`, `SESSION_ID`, `source` pass through. A stored session is resumed only for the same participant id. | `participant.idParams`, `participant.requireCode`, `participant.codePattern`, `participant.passthroughParams`. |
 | Completion / return | "Finished. Thank you." only; no code, no redirect. | `completion.showCode`, `completion.code`, `completion.redirectUrl`. |
 | Dropout handling | An interim record flagged `abandoned` is sent when a participant leaves after at least one response (each reload mid-study sends one; dedupe by session id). Dropouts before the first response leave no server-side trace. Partial data also stays in the browser so they can resume. | `storage.submitPartialOnLeave: false`. |
-| Data destination | Supabase tables per experiment (`storage.mode: 'supabase'`; see `supabase/README.md`). Until the project URL and anon key are filled in the mode is `'local'` and nothing is sent. | `'netlify-forms'` (set up below), `'endpoint'` with a JSON POST URL, or `'local'`; `storage.allowDownload: true` for a download button. |
+| Data destination | Supabase tables per experiment (`storage.mode: 'supabase'`, project URL and publishable key in each config; see `supabase/README.md`). A successful save shows nothing extra on the final page; a failed one offers a retry. | `'netlify-forms'` (set up below), `'endpoint'` with a JSON POST URL, or `'local'`; `storage.allowDownload: true` for a download button. |
 | Fullscreen | Offered, not required. | — |
 | Font | System Optima where installed, otherwise Segoe UI / Arial; labels are only A, B, C. | — |
 | Screen size | Blocked when the stage does not fit; most laptops fit (about 1157 × 704 CSS px at 5.1 px/mm). Phones and small tablets cannot run it. Large iPads in landscape can; they are not blocked but are identifiable in the data (`max_touch_points`). | — |
@@ -267,9 +266,9 @@ cross-browser validation has been performed.
 
 - Open the deployed page on each target device type. Physically match a card,
   then check the control question's 1 mm line with a ruler.
-- Switch on data collection: `storage.mode: 'supabase'` with the project URL
-  and anon key, `participant.rememberSession: true` for real participants,
-  and `completion.showCode` if a platform needs a code.
+- Data collection is on (`storage.mode: 'supabase'`). Consider
+  `participant.rememberSession: true` for real participants and
+  `completion.showCode` if a platform needs a code.
 - Inspect every stimulus (19 screens; use `?reset=1` to repeat).
 - Exercise browser zoom (including Safari), full screen, window resizing,
   tab switching and monitor switching; confirm recalibration prompts, the

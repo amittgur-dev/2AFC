@@ -25,12 +25,20 @@ const sbPosts = []; // Supabase-style inserts: {table, query, apikey, auth, pref
 const configSource = fs.readFileSync(path.join(APP, '1/config.js'), 'utf8');
 const configSource2 = fs.readFileSync(path.join(APP, '2/config.js'), 'utf8');
 let configVariant2 = null; // study 2: null (deployed pilot config) or 'supabase'
-const configFor2 = () => { const c = configSource2.replace("mode: 'local'", "mode: 'supabase'").replace(/supabase: \{url: '[^']*', anonKey: '[^']*'/, `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`); assert.notEqual(c, configSource2); return c; };
-let configVariant = 'supabase'; // 'supabase' | 'netlify' | null (deployed pilot config)
+const configFor2 = () => { const c = configSource2.replace(/supabase: \{url: '[^']*', anonKey: '[^']*'/, `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`); assert.notEqual(c, configSource2); return c; };
+// Variants: 'supabase' (deployed settings with the download buttons, code
+// and session memory on, pointed at this server's fake Supabase), 'netlify'
+// (Netlify Forms mode, for the failure path), 'deployed' (exactly the
+// deployed config, only pointed at the fake Supabase).
+let configVariant = 'supabase';
+const fakeSupabase = c => c.replace(/supabase: \{url: '[^']*', anonKey: '[^']*'/, `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`);
 const configFor = variant => {
-  let c = configSource.replace('allowDownload: false', 'allowDownload: true').replace('showCode: false', 'showCode: true').replace('rememberSession: false', 'rememberSession: true');
-  if (variant === 'supabase') c = c.replace("mode: 'local'", "mode: 'supabase'").replace(/supabase: \{url: '[^']*', anonKey: '[^']*'/, `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`);
-  else c = c.replace("mode: 'local'", "mode: 'netlify-forms'");
+  let c = configSource;
+  if (variant === 'deployed') c = fakeSupabase(c);
+  else {
+    c = c.replace('allowDownload: false', 'allowDownload: true').replace('showCode: false', 'showCode: true').replace('rememberSession: false', 'rememberSession: true');
+    c = variant === 'supabase' ? fakeSupabase(c) : c.replace("mode: 'supabase'", "mode: 'netlify-forms'");
+  }
   assert.notEqual(c, configSource);
   return c;
 };
@@ -279,12 +287,12 @@ const saved2 = await page2.evaluate(k => JSON.parse(localStorage.getItem(k)), 'l
 assert.ok(saved2.trials.every(t => t.chosen_side === 'left' && t.response_method === 'keyboard'));
 assert.ok(saved2.submissions.some(s => s.ok === false));
 
-// The deployed pilot config: nothing is sent, and the final page says only thank you.
-configVariant = null;
+// The deployed config (pointed at the fake Supabase): the run is recorded and the final page says only thank you.
+configVariant = 'deployed';
 const pilot = await browser.newContext({viewport: {width: 1300, height: 820}});
 const page3 = await pilot.newPage();
 page3.on('pageerror', e => errors.push(String(e)));
-const before = posts.length + sbPosts.length;
+const before = sbPosts.length;
 await page3.goto(exp1 + '?reset=1');
 assert.equal(await page3.textContent('#study-title'), 'Similarity judgment');
 assert.ok((await page3.textContent('#information')).includes('reference object (A)'));
@@ -305,14 +313,16 @@ await page3.click('#confirm-card');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'instructions');
 await page3.waitForSelector('#start:not([disabled])'); await page3.click('#start');
 for (let i = 0; i < 19; i++) { await page3.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page3.keyboard.press('ArrowRight'); }
-await page3.waitForFunction(() => lineSimilarityState().mode === 'complete');
-assert.equal((await page3.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you.');
+await page3.waitForFunction(() => lineSimilarityState().mode === 'complete' && lineSimilarityState().submitted);
+assert.equal((await page3.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you.', 'a successful save shows nothing extra');
 assert.ok(await page3.isHidden('#completion-code') && await page3.isHidden('#download-csv'));
 const pilotSaved = await page3.evaluate(k => JSON.parse(localStorage.getItem(k)), 'line-similarity:session:v1');
 assert.equal(pilotSaved.experiment_id, 'exp1-lines-with-edges'); assert.equal(pilotSaved.trials.length, 19);
 assert.equal(pilotSaved.participant_id, '12345678'); assert.equal(pilotSaved.participant_id_source, 'typed');
+assert.deepEqual(sbPosts.slice(before).map(p => [p.table, p.rows.length]), [['lines_with_edges_sessions', 1], ['lines_with_edges_trials', 19]], 'the deployed config records the run');
+assert.equal(sbPosts[before].rows[0].participant_id, '12345678');
 await page3.goto(exp1);
-assert.equal(posts.length + sbPosts.length, before, 'pilot sends nothing');
+assert.equal(sbPosts.length, before + 2, 'a confirmed save is not re-sent on the next visit');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');
 assert.notEqual((await page3.evaluate(() => lineSimilarityState())).session_id, pilotSaved.session_id);
 
@@ -335,8 +345,8 @@ assert.equal(objs4.length, 3);
 for (const o of objs4) { assert.ok(Math.abs(o.w - 41.33 * ppmm) < .1); assert.ok(/\/2\/assets\/S\d{3}\.svg$/.test(o.src), o.src); }
 if (shots) await page4.screenshot({path: path.join(shots, 'rotation-trial-1.png')});
 for (let i = 0; i < 48; i++) { await page4.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page4.keyboard.press(i % 3 ? 'ArrowLeft' : 'ArrowRight'); }
-await page4.waitForFunction(() => lineSimilarityState().mode === 'complete');
-await page4.waitForFunction(() => /saved|could not/.test(document.getElementById('submit-status').textContent));
+await page4.waitForFunction(() => lineSimilarityState().mode === 'complete' && lineSimilarityState().submitted);
+assert.equal((await page4.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you.');
 const rotSaved = await page4.evaluate(() => JSON.parse(localStorage.getItem('line-similarity:rotation:session:v1')));
 assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.experiment_name, 'Similarity with rotation'); assert.equal(rotSaved.trials.length, 48);
 assert.equal(rotSaved.submissions.at(-1).status, 'supabase'); assert.equal(rotSaved.submissions.at(-1).ok, true);

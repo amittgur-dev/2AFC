@@ -225,6 +225,12 @@ for (const prefix of ['lines_with_edges', 'similarity_with_rotation']) assert.ok
 assert.ok(sql.includes('create or replace function public.record_rows(p_table text, p_rows jsonb)') && sql.includes('security definer') && sql.includes('on conflict do nothing'), 'inserts go through record_rows');
 assert.ok(sql.includes("revoke all on %I from anon, authenticated") && !sql.includes('create policy'), 'the anon key has no table privileges');
 { const st = fs.readFileSync(path.join(APP, 'shared/storage.js'), 'utf8'); assert.ok(st.includes("'/rest/v1/rpc/record_rows'") && st.includes('p_table: table, p_rows: rows'), 'the app calls record_rows'); }
+for (const [label, c] of [['study 1', config], ['study 2', rotConfig]]) {
+  assert.equal(c.storage.mode, 'supabase', label + ' records to Supabase');
+  assert.equal(c.storage.supabase.url, 'https://yrgwlvqkqgqxcfcyxkta.supabase.co');
+  assert.ok(/^(sb_publishable_|eyJ)/.test(c.storage.supabase.anonKey), label + ' has a public key');
+  assert.ok(!/service_role|sb_secret_/.test(c.storage.supabase.anonKey), label + ' never ships a secret key');
+}
 assert.deepEqual([config.storage.supabase.sessionsTable, config.storage.supabase.trialsTable, rotConfig.storage.supabase.sessionsTable, rotConfig.storage.supabase.trialsTable],
   ['lines_with_edges_sessions', 'lines_with_edges_trials', 'similarity_with_rotation_sessions', 'similarity_with_rotation_trials']);
 const sRow = sessionRow({...bigSession, submissions: [], completion_status: 'complete', experiment_id: 'e', experiment_name: 'E', design: {seed: 1}}, 'complete');

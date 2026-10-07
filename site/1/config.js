@@ -85,12 +85,11 @@ export const config = {
     //                   (form "line-similarity-responses" in index.html).
     // 'endpoint'      - POSTs the session as JSON to `endpoint` below.
     // 'local'         - nothing is sent; participants download their file.
-    // Set to 'supabase' once `supabase.url` and `supabase.anonKey` are filled in.
-    mode: 'local',
+    mode: 'supabase',
     // Supabase project URL (https://<ref>.supabase.co) and anon/publishable
     // key, from the project's API settings. The anon key is public by design;
     // row level security lets it insert only.
-    supabase: {url: 'https://yrgwlvqkqgqxcfcyxkta.supabase.co', anonKey: '', sessionsTable: 'lines_with_edges_sessions', trialsTable: 'lines_with_edges_trials'},
+    supabase: {url: 'https://yrgwlvqkqgqxcfcyxkta.supabase.co', anonKey: 'sb_publishable_xHK8bsu5oSo-xhYo8bk2lg_HIv6fHy2', sessionsTable: 'lines_with_edges_sessions', trialsTable: 'lines_with_edges_trials'},
     endpoint: '',
     formName: 'line-similarity-responses',
     // Send an interim record (flagged 'abandoned') if the participant leaves

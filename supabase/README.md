@@ -16,10 +16,10 @@ be read, changed or deleted with it.
    - `similarity_with_rotation_sessions`, `similarity_with_rotation_trials`, `similarity_with_rotation_latest_sessions`
 
    It is safe to run again.
-2. Copy the project URL and the anon key from **Project Settings → API**
-   into `site/1/config.js` and `site/2/config.js`
-   (`storage.supabase.url`, `storage.supabase.anonKey`) and set
-   `storage.mode: 'supabase'` in both. Push; Netlify redeploys.
+2. The project URL and publishable (anon) key are in `site/1/config.js` and
+   `site/2/config.js` (`storage.supabase.url`, `storage.supabase.anonKey`)
+   with `storage.mode: 'supabase'`. If the key is ever rotated, update both
+   files and push; Netlify redeploys.
 3. Run through each experiment once and check **Table Editor** for the rows.
 
 ## What is stored
