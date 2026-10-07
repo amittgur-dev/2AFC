@@ -18,6 +18,7 @@
       <p>You will see an object <strong>A</strong> and two objects <strong>B</strong> and <strong>C</strong>. Choose the one that looks more similar to A. There are no right or wrong answers. It takes about <span id="duration">5</span> minutes.</p>
       <p>You need a laptop or desktop screen and a bank card, which is only used to measure your screen. Your choices and your screen settings are recorded anonymously.<span id="pid-note"></span></p>
       <p id="contact-line"></p>
+      <p id="storage-note" class="notice" role="status"></p>
       <label class="consent" id="consent-row" hidden><input type="checkbox" id="consent"> I agree to take part.</label>
       <div class="actions"><button id="begin" class="primary">Continue</button></div>
       <p class="hint" id="version-line"></p>
@@ -61,7 +62,7 @@
       <header class="trial-header"><span id="progress"></span><button id="recalibrate">Recalibrate</button></header>
       <h1 id="question">Which is more similar to A?</h1>
       <div id="stage-wrap"><div id="stage" aria-label="Reference A above comparison B on the left and C on the right"></div></div>
-      <footer class="trial-footer"><span>Click B or C · or press ← or →</span></footer>
+      <footer class="trial-footer"><span id="trial-notice" role="status"></span><span>Click B or C · or press ← or →</span></footer>
     </section>
 
     <section id="complete" class="setup" hidden>

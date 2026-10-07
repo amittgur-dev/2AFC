@@ -1,63 +1,94 @@
 import {assets} from './stimuli.js';
 import {config} from './config.js';
-import {CARD, STAGE, LABEL, pixelsPerMm, dimensions, fits, requiredPixels, changedScreen} from './geometry.js';
-import {buildSequence, allAssetIds} from './design.js';
-import {loadSession, saveSession, clearSession, randomId, trialsToCsv, submitSession, download} from './storage.js';
+import {CARD, STAGE, LABEL, pixelsPerMm, dimensions, fits, requiredPixels, changedScreen, zoomSuspected} from './geometry.js';
+import {buildDesign, allAssetIds} from './design.js';
+import {loadSession, saveSession, clearSession, storageAvailable, randomId, trialsToCsv, submitSession, download} from './storage.js';
 
 const $ = id => document.getElementById(id);
 const KEY = config.storage.localKey;
 const SECTIONS = ['information', 'calibration', 'verification', 'instructions', 'experiment', 'complete'];
 const now = () => new Date().toISOString();
 const perf = () => (globalThis.performance?.now ? performance.now() : Date.now());
+const IMAGE_TIMEOUT_MS = 8000;   // a decode that never settles is treated as a failed load
+const IMAGE_RETRY_MS = 1500;     // pause before re-presenting after a failed load
 
 let mode = 'information';
 let session = null;      // persisted record (see docs/EXPERIMENT_DATA.md)
 let scale = 0;           // CSS pixels per millimetre from the card match
-let fingerprint = null;  // reported screen properties at calibration
-let current = null;      // the presentation on screen: {index, attempts, interruptions, onsetPerf, onsetIso, ready}
+let fingerprint = null;  // reported screen/window properties at calibration
+let current = null;      // the presentation on screen: {index, attempts, interruptions, onsetPerf, onsetIso, ready, token}
 let resumeAfterCalibration = false;
 let decodedAssets = null; // Promise resolving when every SVG is decoded
 let itiTimer = 0;
+let submitting = false;
 
 // ---------- environment & session records ----------
-const snapshot = () => ({dpr: devicePixelRatio, screenWidth: screen.width, screenHeight: screen.height, visualScale: window.visualViewport?.scale ?? 1});
+const snapshot = () => ({
+  dpr: devicePixelRatio, screenWidth: screen.width, screenHeight: screen.height, visualScale: window.visualViewport?.scale ?? 1,
+  innerWidth, outerWidth, fullscreen: !!document.fullscreenElement,
+});
 function environment() {
+  const mq = q => (globalThis.matchMedia ? matchMedia(q).matches : null);
   return {
     timestamp: now(), device_pixel_ratio: devicePixelRatio,
     screen_width: screen.width, screen_height: screen.height, screen_avail_width: screen.availWidth, screen_avail_height: screen.availHeight,
-    inner_width: innerWidth, inner_height: innerHeight, visual_viewport_scale: window.visualViewport?.scale ?? 1,
-    fullscreen: !!document.fullscreenElement, user_agent: navigator.userAgent, language: navigator.language, color_depth: screen.colorDepth,
+    inner_width: innerWidth, inner_height: innerHeight, outer_width: outerWidth, outer_height: outerHeight,
+    visual_viewport_scale: window.visualViewport?.scale ?? 1, fullscreen: !!document.fullscreenElement,
+    user_agent: navigator.userAgent, language: navigator.language, color_depth: screen.colorDepth,
+    max_touch_points: navigator.maxTouchPoints ?? null, pointer_coarse: mq('(pointer: coarse)'), hover_none: mq('(hover: none)'),
   };
 }
-function persist() { if (session) saveSession(KEY, session); }
+function persist() { if (session) session.storage_available = saveSession(KEY, session); }
 function logEvent(type, data = {}) {
   if (!session) return;
   session.events.push({type, at: now(), t: Math.round(perf()), presentation_index: current?.index ?? null, ...data});
   persist();
 }
-function newSession() {
+function urlIdentity() {
   const url = new URL(location.href);
   const participant_id = config.participant.idParams.map(k => url.searchParams.get(k)).find(Boolean) ?? null;
   const url_parameters = {};
   for (const k of config.participant.passthroughParams) if (url.searchParams.has(k)) url_parameters[k] = url.searchParams.get(k);
+  return {participant_id, url_parameters};
+}
+function newSession() {
   const seed = (globalThis.crypto?.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32)) >>> 0;
+  const built = buildDesign(config.design, seed);
   return {
-    schema_version: 1, session_id: randomId(), participant_id, url_parameters,
+    schema_version: 1, session_id: randomId(), ...urlIdentity(),
     protocol_version: config.protocolVersion, stimulus_set_version: config.stimulusSetVersion, layout_version: config.layoutVersion,
     consent_version: config.study.consentVersion,
-    design: {...config.design, seed}, sequence: buildSequence(config.design, seed),
+    design: {...config.design, seed, interleaved: built.interleaved}, sequence: built.sequence,
     stage_mm: STAGE, label_mm: LABEL, card_mm: CARD,
     started_at: now(), consented_at: null, ended_at: null, completion_status: 'in_progress',
+    storage_available: storageAvailable(),
     calibration: null, calibration_history: [], environment_at_start: environment(),
     trials: [], events: [], submissions: [],
   };
 }
+// A stored session may be continued only if it was produced by this exact
+// configuration and belongs to the participant named in the URL.
+function resumable(existing) {
+  if (!existing || existing.schema_version !== 1) return false;
+  if (existing.protocol_version !== config.protocolVersion || existing.stimulus_set_version !== config.stimulusSetVersion || existing.layout_version !== config.layoutVersion) return false;
+  const stored = {...existing.design}; delete stored.seed; delete stored.interleaved;
+  if (JSON.stringify(stored) !== JSON.stringify(config.design)) return false;
+  const {participant_id} = urlIdentity();
+  if (participant_id && existing.participant_id !== participant_id) return false;
+  return true;
+}
+const design = () => session?.design ?? config.design;
 
 // ---------- screens ----------
 function show(next) {
   mode = next;
   for (const id of SECTIONS) $(id).hidden = id !== next;
   checkFit();
+}
+// The notice element of the screen the participant is looking at.
+function notice(text) {
+  const target = {calibration: 'calibration-notice', instructions: 'instructions-notice', experiment: 'fit-message'}[mode];
+  if (target) $(target).textContent = text;
 }
 function updateCard(value) {
   const max = Math.min(850, innerWidth - 40);
@@ -106,33 +137,48 @@ function checkFit() {
 async function fullscreen() {
   try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); }
   catch {
-    const text = 'Full screen is unavailable here. Use your browser’s full-screen command (often F11) or open this page in its own tab.';
-    $('calibration-notice').textContent = text;
-    if (mode === 'experiment') $('fit-message').textContent = describeFit() + ' ' + text;
+    const mac = /Mac|iPad|iPhone/.test(navigator.platform || '') || /Macintosh/.test(navigator.userAgent);
+    const text = 'Full screen is unavailable here. Use your browser’s full-screen command' + (mac ? '' : ' (often F11)') + ' or open this page in its own tab.';
+    notice(mode === 'experiment' ? describeFit() + ' ' + text : text);
   }
 }
+// Calibration is invalidated by a zoom or screen change. Chrome, Edge and
+// Firefox change devicePixelRatio on page zoom; Safari does not, so a change
+// of the viewport width at an unchanged window width is also treated as zoom.
 function environmentChanged() {
-  if (fingerprint && changedScreen(fingerprint, snapshot())) {
-    calibrate('The screen or zoom changed. Please match the card again.', 'screen-change');
-    return;
+  if (fingerprint) {
+    const after = snapshot();
+    if (changedScreen(fingerprint, after) || zoomSuspected(fingerprint, after)) {
+      if (['verification', 'instructions', 'experiment'].includes(mode)) calibrate('The screen or zoom changed. Please match the card again.', 'screen-change');
+      else fingerprint = null;
+      return;
+    }
+    fingerprint = {...fingerprint, innerWidth: after.innerWidth, outerWidth: after.outerWidth, fullscreen: after.fullscreen};
   }
   if (mode === 'calibration') updateCard($('card-size').value);
   checkFit();
 }
 
-// ---------- preloading ----------
+// ---------- images ----------
+// Resolves true when the image has loaded and decoded, false on error or timeout.
+function loadImage(img) {
+  return new Promise(resolve => {
+    let settled = false;
+    const done = ok => { if (!settled) { settled = true; clearTimeout(timer); resolve(ok); } };
+    const timer = setTimeout(() => done(false), IMAGE_TIMEOUT_MS);
+    const decode = () => (img.decode ? img.decode() : Promise.resolve()).then(() => done(true), () => done(false));
+    img.addEventListener('error', () => done(false), {once: true});
+    if (img.complete && img.naturalWidth !== 0) decode();
+    else img.addEventListener('load', decode, {once: true});
+  });
+}
 function preload() {
   if (decodedAssets) return decodedAssets;
   $('preload-status').textContent = 'Loading objects…';
   $('start').disabled = true;
-  decodedAssets = Promise.all(allAssetIds().map(id => new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => (img.decode ? img.decode() : Promise.resolve()).then(resolve, resolve);
-    img.onerror = () => resolve('error:' + id);
-    img.src = assets[id].src;
-  }))).then(results => {
-    const failed = results.filter(r => typeof r === 'string');
-    if (failed.length) { $('preload-status').textContent = 'Some objects could not be loaded. Check your connection and reload the page.'; logEvent('preload-failed', {failed}); return false; }
+  decodedAssets = Promise.all(allAssetIds().map(id => { const img = new Image(); img.src = assets[id].src; return loadImage(img).then(ok => ok ? null : id); })).then(results => {
+    const failed = results.filter(Boolean);
+    if (failed.length) { $('preload-status').textContent = 'Some objects could not be loaded. Check your connection and reload the page.'; logEvent('preload-failed', {failed}); decodedAssets = null; return false; }
     $('preload-status').textContent = '';
     $('start').disabled = false;
     return true;
@@ -157,17 +203,23 @@ function object(assetId, label) {
   img.src = asset.src; img.alt = ''; img.draggable = false;
   el.append(text, img);
   if (label === 'A') el.setAttribute('aria-label', 'Reference A');
-  else { el.type = 'button'; el.setAttribute('aria-label', 'Choose ' + label); el.addEventListener('click', () => choose(label === 'B' ? 'left' : 'right', 'pointer')); }
+  else {
+    el.type = 'button'; el.tabIndex = -1; // keyboard responses go through the arrow keys only
+    el.setAttribute('aria-label', 'Choose ' + label);
+    el.addEventListener('click', e => choose(label === 'B' ? 'left' : 'right', e.detail === 0 ? 'keyboard' : 'pointer'));
+  }
   return el;
 }
 function interrupt(type) {
   if (!current) return;
   current.interruptions.push({type, at: now(), after_onset_ms: current.ready ? Math.round(perf() - current.onsetPerf) : null});
   current.ready = false;
+  $('stage').classList.add('blank');
   logEvent('interruption', {interruption: type});
 }
-// Draw the presentation at session.trials.length. Response timing starts only
-// after every image is decoded and two frames have been painted.
+// Draw the presentation at session.trials.length. Response timing starts in
+// the animation frame that first paints the objects, after every image has
+// loaded and decoded.
 async function present() {
   clearTimeout(itiTimer);
   const index = session.trials.length;
@@ -183,23 +235,34 @@ async function present() {
   const nodes = [object(p.reference_asset_id, 'A'), object(p.left_asset_id, 'B'), object(p.right_asset_id, 'C')];
   stage.append(...nodes);
   $('progress').textContent = `${index + 1} / ${session.sequence.length}`;
+  $('trial-notice').textContent = '';
   show('experiment');
-  await Promise.all(nodes.map(n => { const img = n.querySelector('img'); return img.decode ? img.decode().catch(() => {}) : Promise.resolve(); }));
+  if (!$('fit-overlay').hidden) { interrupt('insufficient-space'); return; }
+  const loaded = await Promise.all(nodes.map(n => loadImage(n.querySelector('img'))));
+  if (current?.token !== token || mode !== 'experiment' || !$('fit-overlay').hidden) return;
+  if (loaded.some(ok => !ok)) {
+    interrupt('image-error');
+    $('trial-notice').textContent = 'Loading objects… If this message stays, check your connection.';
+    itiTimer = setTimeout(present, IMAGE_RETRY_MS);
+    return;
+  }
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   if (current?.token !== token || mode !== 'experiment' || !$('fit-overlay').hidden) return;
   stage.classList.remove('blank');
-  current.onsetPerf = perf(); current.onsetIso = now(); current.ready = true;
+  requestAnimationFrame(() => {
+    if (current?.token !== token) return;
+    current.onsetPerf = perf(); current.onsetIso = now(); current.ready = true;
+  });
 }
 function represent() { if (current) present(); }
 function choose(side, method) {
   if (mode !== 'experiment' || !current?.ready || !$('fit-overlay').hidden) return;
   const responsePerf = perf();
   const p = session.sequence[current.index];
-  const chosen_condition = side === 'left' ? p.left_condition : p.right_condition;
   const mm = id => assets[id];
   session.trials.push({
     ...p,
-    chosen_side: side, chosen_label: side === 'left' ? 'B' : 'C', chosen_condition,
+    chosen_side: side, chosen_label: side === 'left' ? 'B' : 'C', chosen_condition: side === 'left' ? p.left_condition : p.right_condition,
     chosen_asset_id: side === 'left' ? p.left_asset_id : p.right_asset_id,
     response_method: method,
     reaction_time_ms: Math.round((responsePerf - current.onsetPerf) * 10) / 10,
@@ -211,48 +274,67 @@ function choose(side, method) {
     right_width_mm: mm(p.right_asset_id).widthMm, right_height_mm: mm(p.right_asset_id).heightMm,
   });
   current = null;
+  if (session.trials.length >= session.sequence.length) markComplete();
   persist();
   $('stage').classList.add('blank');
-  itiTimer = setTimeout(present, config.design.interTrialIntervalMs);
+  itiTimer = setTimeout(present, design().interTrialIntervalMs);
 }
-function start() {
+async function start() {
   if (!fingerprint || changedScreen(fingerprint, snapshot())) return calibrate('The screen or zoom changed. Please match the card again.', 'screen-change');
+  if (!(await preload())) { show('instructions'); return; }
+  if (fingerprint === null) return; // the screen changed while loading
   resumeAfterCalibration = false;
   if (!session.first_trial_at) { session.first_trial_at = now(); persist(); }
   present();
 }
 
 // ---------- completion & submission ----------
+function markComplete() {
+  if (session.completion_status === 'complete') return;
+  session.completion_status = 'complete'; session.ended_at = now(); session.environment_at_end = environment();
+}
 async function finish() {
   current = null;
-  if (session.completion_status !== 'complete') { session.completion_status = 'complete'; session.ended_at = now(); session.environment_at_end = environment(); persist(); }
+  markComplete(); persist();
   show('complete');
-  await submit('complete');
+  if (session.submissions.some(s => s.ok)) showSaved(); else await submit('complete');
+}
+function showSaved(alreadyDone = false) {
+  const code = config.completion.code || session.session_id;
+  $('submit-status').textContent = alreadyDone ? 'You have already completed this study. Thank you.'
+    : config.storage.mode === 'local' ? 'Your responses are complete. Please download the file below and send it to the researcher.' : 'Your responses have been saved.';
+  $('completion-code').hidden = false; $('completion-code').textContent = 'Completion code: ' + code;
+  if (config.completion.redirectUrl) { $('redirect-link').hidden = false; $('redirect-link').href = config.completion.redirectUrl; }
+  $('complete-note').textContent = 'You can close this page.';
+  $('retry-submit').hidden = true;
+  $('download-json').hidden = $('download-csv').hidden = !config.storage.allowDownload;
 }
 async function submit(status) {
-  const code = config.completion.code || session.session_id;
-  $('retry-submit').hidden = true; $('download-json').hidden = true; $('download-csv').hidden = true; $('redirect-link').hidden = true; $('completion-code').hidden = true;
+  if (submitting) return;
+  submitting = true;
+  $('retry-submit').disabled = true;
+  $('download-json').hidden = true; $('download-csv').hidden = true; $('redirect-link').hidden = true; $('completion-code').hidden = true;
   $('submit-status').textContent = config.storage.mode === 'local' ? '' : 'Saving your responses…';
   const result = await submitSession(session, config, {status});
-  session.submissions.push({...result, status_sent: status, at: now()});
+  session.submissions.push({...result, status_sent: status, attempt: session.submissions.length + 1, at: now()});
   persist();
-  if (result.ok) {
-    $('submit-status').textContent = config.storage.mode === 'local' ? 'Your responses are complete. Please download the file below and send it to the researcher.' : 'Your responses have been saved.';
-    $('completion-code').hidden = false; $('completion-code').textContent = 'Completion code: ' + code;
-    if (config.completion.redirectUrl) { $('redirect-link').hidden = false; $('redirect-link').href = config.completion.redirectUrl; }
-    $('complete-note').textContent = 'You can close this page.';
-  } else {
-    $('submit-status').textContent = 'Your responses could not be sent (' + result.status + '). Please try again, or download the file and send it to the researcher' + (config.study.contactEmail ? ' at ' + config.study.contactEmail : '') + '.';
-    $('retry-submit').hidden = false;
-    $('complete-note').textContent = 'Your responses remain stored in this browser until they have been sent.';
-  }
-  if (config.storage.allowDownload || !result.ok) { $('download-json').hidden = false; $('download-csv').hidden = false; }
+  submitting = false;
+  $('retry-submit').disabled = false;
+  if (result.ok) { showSaved(); return; }
+  $('submit-status').textContent = 'Your responses could not be sent (' + result.status + '). Please try again, or download the file and send it to the researcher' + (config.study.contactEmail ? ' at ' + config.study.contactEmail : '') + '.';
+  $('retry-submit').hidden = false;
+  $('download-json').hidden = false; $('download-csv').hidden = false;
+  $('complete-note').textContent = session.storage_available ? 'Your responses remain stored in this browser until they have been sent.' : 'This browser cannot store the responses, so please download the file before closing the page.';
 }
+// Interim record on leaving mid-study (only after at least one response; a
+// completed record is sent as 'complete' if the final send has not happened).
 function leaving() {
   if (!session || !config.storage.submitPartialOnLeave) return;
-  if (session.completion_status !== 'in_progress' || session.trials.length === 0) return;
-  session.submissions.push({status_sent: 'abandoned', status: 'beacon-attempted', at: now()}); persist();
-  submitSession(session, config, {status: 'abandoned', beacon: true});
+  if (session.trials.length === 0 || session.submissions.some(s => s.ok)) return;
+  const status = session.completion_status === 'complete' ? 'complete' : 'abandoned';
+  const result = submitSession(session, config, {status, beacon: true});
+  session.submissions.push({...(result && typeof result.then !== 'function' ? result : {status: 'beacon-attempted'}), status_sent: status, attempt: session.submissions.length + 1, at: now()});
+  persist();
 }
 
 // ---------- wiring ----------
@@ -260,17 +342,12 @@ function init() {
   const url = new URL(location.href);
   if (url.searchParams.get('reset') === '1') clearSession(KEY);
   const existing = loadSession(KEY);
-  if (existing && existing.protocol_version === config.protocolVersion && existing.schema_version === 1) {
+  if (resumable(existing)) {
     session = existing;
+    session.storage_available = storageAvailable();
     if (session.completion_status === 'complete') {
       show('complete');
-      const sent = session.submissions.some(s => s.ok);
-      if (sent) {
-        $('submit-status').textContent = 'You have already completed this study. Thank you.';
-        $('completion-code').hidden = false; $('completion-code').textContent = 'Completion code: ' + (config.completion.code || session.session_id);
-        if (config.completion.redirectUrl) { $('redirect-link').hidden = false; $('redirect-link').href = config.completion.redirectUrl; }
-        if (config.storage.allowDownload) { $('download-json').hidden = false; $('download-csv').hidden = false; }
-      } else submit('complete');
+      if (session.submissions.some(s => s.ok)) showSaved(true); else submit('complete');
       return;
     }
     $('resume-notice').hidden = false;
@@ -285,6 +362,7 @@ function init() {
   $('duration').textContent = String(config.study.durationMinutes);
   $('trial-count').textContent = String(session.sequence.length);
   $('pid-note').textContent = session.participant_id ? ' Your responses are stored under the participant identifier in your study link.' : '';
+  $('storage-note').textContent = session.storage_available ? '' : 'This browser does not allow the page to store progress, so please do not reload or close it until you have finished.';
   $('consent-row').hidden = !config.study.requireConsentCheckbox;
   $('begin').disabled = config.study.requireConsentCheckbox && !$('consent').checked;
   const contact = [config.study.researcher, config.study.institution].filter(Boolean).join(', ');
@@ -312,12 +390,16 @@ document.querySelectorAll('.fullscreen').forEach(b => b.onclick = fullscreen);
 window.addEventListener('resize', environmentChanged);
 window.visualViewport?.addEventListener('resize', environmentChanged);
 document.addEventListener('fullscreenchange', environmentChanged);
-document.addEventListener('visibilitychange', () => { if (document.hidden) { if (mode === 'experiment') interrupt('hidden'); } else environmentChanged(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (mode === 'experiment') interrupt('hidden'); return; }
+  environmentChanged();
+  if (mode === 'experiment' && current && !current.ready && $('fit-overlay').hidden) represent();
+});
 window.addEventListener('focus', environmentChanged);
 window.addEventListener('pagehide', leaving);
 document.addEventListener('keydown', e => {
   if (mode !== 'experiment' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-  const {left, right} = config.design.keys;
+  const {left, right} = design().keys;
   if (left.includes(e.key)) { e.preventDefault(); choose('left', 'keyboard'); }
   else if (right.includes(e.key)) { e.preventDefault(); choose('right', 'keyboard'); }
 });
@@ -325,7 +407,14 @@ document.addEventListener('keydown', e => {
 // calibrate the screen or answer a question.
 globalThis.lineSimilarityState = () => ({
   mode, calibrated: !!fingerprint, pixelsPerMm: scale || null,
-  session_id: session?.session_id, completed: session?.trials.length ?? 0, total: session?.sequence.length ?? 0,
+  session_id: session?.session_id, participant_id: session?.participant_id, completed: session?.trials.length ?? 0, total: session?.sequence.length ?? 0,
   presentation: current ? session.sequence[current.index] : null, ready: !!current?.ready, attempts: current?.attempts ?? 0,
+  interruptions: current?.interruptions.map(i => i.type) ?? [], storage_available: session?.storage_available ?? null,
 });
-init();
+try { init(); }
+catch (e) {
+  $('resume-notice').hidden = false;
+  $('resume-notice').textContent = 'This study is not configured correctly: ' + (e?.message ?? e) + '. Please tell the researcher.';
+  $('begin').disabled = true;
+  show('information');
+}

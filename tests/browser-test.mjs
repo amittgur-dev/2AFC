@@ -20,7 +20,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST') { let body = ''; req.on('data', c => body += c); req.on('end', () => { posts.push({url: req.url, body}); res.writeHead(200); res.end('ok'); }); return; }
   const file = path.join(APP, req.url.split('?')[0] === '/' ? 'index.html' : req.url.split('?')[0]);
   if (!fs.existsSync(file)) { res.writeHead(404); return res.end(); }
-  res.writeHead(200, {'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream'});
+  res.writeHead(200, {'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store'});
   fs.createReadStream(file).pipe(res);
 });
 await new Promise(r => server.listen(0, r));
@@ -67,6 +67,13 @@ assert.deepEqual(objects.map(o => o.label), ['A', 'B', 'C']);
 const stage = await page.$eval('#stage', e => e.getBoundingClientRect());
 assert.ok(Math.abs(stage.width - 220 * ppmm) < .05 && Math.abs(stage.height - 120 * ppmm) < .05);
 if (shots) await page.screenshot({path: path.join(shots, 'trial-1.png')});
+// Hiding the tab interrupts the trial; showing it again re-presents it and responses work.
+await page.evaluate(() => { Object.defineProperty(document, 'hidden', {get: () => true, configurable: true}); Object.defineProperty(document, 'visibilityState', {get: () => 'hidden', configurable: true}); document.dispatchEvent(new Event('visibilitychange')); });
+s = await state(); assert.equal(s.ready, false); assert.deepEqual(s.interruptions, ['hidden']);
+assert.ok(await page.$eval('#stage', e => e.classList.contains('blank')), 'stimulus hidden while interrupted');
+await page.evaluate(() => { Object.defineProperty(document, 'hidden', {get: () => false, configurable: true}); Object.defineProperty(document, 'visibilityState', {get: () => 'visible', configurable: true}); document.dispatchEvent(new Event('visibilitychange')); });
+await page.waitForFunction(() => lineSimilarityState().ready);
+assert.equal((await state()).attempts, 2);
 // A response before the next screen is ready must be ignored; a double press counts once.
 await page.waitForTimeout(300);
 await page.keyboard.press('ArrowLeft');
@@ -85,6 +92,8 @@ assert.equal(saved.participant_id, 'TEST-001'); assert.deepEqual(saved.url_param
 assert.equal(saved.trials.length, 3);
 assert.deepEqual(saved.trials.map(t => t.chosen_side), ['left', 'right', 'right']);
 assert.deepEqual(saved.trials.map(t => t.response_method), ['keyboard', 'keyboard', 'pointer']);
+assert.equal(saved.trials[0].attempts, 2); assert.deepEqual(saved.trials[0].interruptions.map(i => i.type), ['hidden']);
+assert.equal(saved.storage_available, true);
 for (const t of saved.trials) {
   assert.ok(t.reaction_time_ms > 0 && t.reaction_time_ms < 5000, 'reaction time recorded: ' + t.reaction_time_ms);
   assert.equal(t.chosen_asset_id, t.chosen_side === 'left' ? t.left_asset_id : t.right_asset_id);
@@ -131,8 +140,20 @@ await page.click('#confirm-card'); await page.click('#to-instructions');
 await page.waitForFunction(() => lineSimilarityState().mode === 'experiment' && lineSimilarityState().ready);
 assert.equal((await state()).completed, 3); assert.equal((await state()).attempts, 3);
 
+// A stimulus that fails to load keeps the screen blank, is recorded, and the trial proceeds once it loads.
+await page.waitForFunction(() => lineSimilarityState().ready && lineSimilarityState().completed === 3);
+await page.route('**/assets/*.svg', route => route.abort());
+await page.keyboard.press('ArrowLeft');
+await page.waitForFunction(() => lineSimilarityState().completed === 4 && lineSimilarityState().interruptions.includes('image-error'));
+assert.equal((await state()).ready, false);
+assert.ok((await page.textContent('#trial-notice')).includes('Loading'));
+assert.ok(await page.$eval('#stage', e => e.classList.contains('blank')));
+await page.unroute('**/assets/*.svg');
+await page.waitForFunction(() => lineSimilarityState().ready && lineSimilarityState().completed === 4);
+assert.ok((await state()).attempts >= 2);
+assert.equal(await page.textContent('#trial-notice'), '');
 // Answer the remaining questions, screenshotting a few.
-for (let i = 3; i < 19; i++) {
+for (let i = 4; i < 19; i++) {
   await page.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i);
   if (shots && (i === 5 || i === 10 || i === 15)) await page.screenshot({path: path.join(shots, `trial-${i + 1}.png`)});
   await page.keyboard.press(i % 2 ? 'ArrowRight' : 'ArrowLeft');
@@ -144,7 +165,9 @@ assert.equal(saved.completion_status, 'complete'); assert.equal(saved.trials.len
 assert.deepEqual(saved.trials.map(t => t.trial_id).sort(), saved.sequence.map(p => p.trial_id).sort());
 assert.deepEqual(saved.trials[3].interruptions.map(i => i.type), ['insufficient-space', 'screen-change']);
 assert.equal(saved.trials[3].attempts, 3);
+assert.ok(saved.trials[4].interruptions.some(i => i.type === 'image-error'));
 assert.equal(saved.calibration_history.length, 3);
+assert.ok(saved.ended_at && saved.environment_at_end && saved.environment_at_end.max_touch_points !== undefined);
 assert.ok(saved.events.some(e => e.type === 'resumed') && saved.events.some(e => e.type === 'consented'));
 // Two Netlify-style posts: the partial record sent when the page was left
 // mid-session, then the complete record.
@@ -157,14 +180,37 @@ assert.equal(form.get('form-name'), 'line-similarity-responses');
 assert.equal(form.get('completion_status'), 'complete'); assert.equal(form.get('trials_completed'), '19');
 const payload = JSON.parse(form.get('payload'));
 assert.equal(payload.session_id, saved.session_id); assert.equal(payload.trials.length, 19);
+assert.ok(posts[0].body.length < 60000, 'partial beacon stayed under the 64 KiB cap: ' + posts[0].body.length);
+assert.deepEqual(saved.submissions.map(s => s.status_sent), ['abandoned', 'complete']);
+assert.ok(saved.submissions[0].status.startsWith('beacon'));
 assert.ok((await page.textContent('#completion-code')).includes(saved.session_id));
 assert.ok(await page.isVisible('#download-csv'));
 if (shots) await page.screenshot({path: path.join(shots, 'complete.png')});
+// A zoom change on the completion page neither recalibrates nor resubmits.
+await page.evaluate(() => { Object.defineProperty(window, 'devicePixelRatio', {get: () => 1.5, configurable: true}); window.dispatchEvent(new Event('resize')); });
+assert.equal((await state()).mode, 'complete');
+await page.waitForTimeout(200);
+assert.equal(posts.length, 2);
 // Revisiting a completed session does not restart it.
 await page.goto(base);
 await page.waitForFunction(() => lineSimilarityState().mode === 'complete');
 assert.ok((await page.textContent('#submit-status')).includes('already completed'));
 assert.equal(posts.length, 2);
+// A different participant id in the URL starts a fresh session instead of showing the first participant's code.
+await page.goto(base + '?pid=TEST-002');
+assert.equal((await state()).mode, 'information');
+assert.equal((await state()).participant_id, 'TEST-002'); assert.equal((await state()).completed, 0);
+assert.ok(await page.isHidden('#resume-notice'));
+// Safari-style zoom (viewport width changes, window width does not) forces recalibration.
+await page.click('#begin');
+await page.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
+await page.click('#confirm-card');
+const outer = await page.evaluate(() => outerWidth);
+if (outer > 0) {
+  await page.evaluate(() => { Object.defineProperty(window, 'innerWidth', {get: () => 1180, configurable: true}); window.dispatchEvent(new Event('resize')); });
+  assert.equal((await state()).mode, 'calibration');
+  assert.ok((await page.textContent('#calibration-notice')).includes('zoom changed'));
+} else console.log('note: outerWidth is 0 in this headless browser; Safari zoom check skipped');
 
 // Failed submission path: a server that rejects the post leaves a retry and download.
 const page2 = await context.newPage();
@@ -186,6 +232,6 @@ const saved2 = await page2.evaluate(k => JSON.parse(localStorage.getItem(k)), 'l
 assert.ok(saved2.trials.every(t => t.chosen_side === 'left' && t.response_method === 'keyboard'));
 assert.ok(saved2.submissions.some(s => s.ok === false));
 
-assert.deepEqual(errors, [], 'no page errors');
+assert.deepEqual(errors.filter(e => !/Failed to load resource/.test(e)), [], 'no page errors beyond the deliberately aborted image loads');
 await browser.close(); server.close();
-console.log('Passed real-browser flow: consent, calibration at 5.11 px/mm, 1 mm line, calibrated object sizes, keyboard and mouse responses, double-response guard, onset-based timing, reload recovery with identical order, fit block and re-presentation, completion post, repeat-visit guard, failed-submission fallback and CSV download.');
+console.log('Passed real-browser flow: calibration at 5.11 px/mm, 1 mm line, calibrated object sizes, tab-hidden re-presentation, keyboard and mouse responses, double-response guard, onset-based timing, reload recovery with identical order, fit block, zoom invalidation, failed image load, completion post under the beacon cap, completion-page stability, repeat-visit guard, participant switch, Safari-style zoom, failed-submission fallback and CSV download.');

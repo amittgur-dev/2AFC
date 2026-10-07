@@ -14,6 +14,11 @@ export function saveSession(key, session) {
 export function clearSession(key) {
   try { localStorage.removeItem(key); } catch {}
 }
+// Whether this browser lets the page persist anything (false in some private
+// modes or when site data is blocked).
+export function storageAvailable() {
+  try { const k = '__line-similarity-probe__'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch { return false; }
+}
 
 export function randomId(length = 16) {
   const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
@@ -30,9 +35,12 @@ const TRIAL_COLUMNS = [
   'stimulus_onset_iso', 'response_iso', 'attempts', 'interruptions', 'pixels_per_mm',
   'reference_width_mm', 'reference_height_mm', 'left_width_mm', 'left_height_mm', 'right_width_mm', 'right_height_mm',
 ];
+// Text that starts with = + - @ tab or CR is prefixed with an apostrophe so a
+// spreadsheet does not evaluate it as a formula (URL-supplied ids reach the CSV).
 const csvCell = v => {
   if (v === null || v === undefined) return '';
-  const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+  let s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+  if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 };
 export function trialsToCsv(session) {
@@ -44,7 +52,18 @@ export function trialsToCsv(session) {
   return [TRIAL_COLUMNS.join(','), ...rows.map(r => TRIAL_COLUMNS.map(c => csvCell(r[c])).join(','))].join('\n') + '\n';
 }
 
-function formBody(session, config, status) {
+// Browsers cap keepalive fetches and sendBeacon payloads at 64 KiB in total.
+export const BEACON_LIMIT_BYTES = 60000;
+// A smaller record for the beacon path: the trials and identifiers, without
+// the per-trial copies of the presentation fields and without the sequence
+// (which buildDesign(design, seed) reproduces) or the event log.
+export function compactRecord(session, status) {
+  const {sequence, events, ...rest} = session;
+  const seqKeys = new Set(Object.keys(sequence[0] ?? {}));
+  const trials = session.trials.map(t => Object.fromEntries(Object.entries(t).filter(([k]) => k === 'presentation_index' || k === 'trial_id' || !seqKeys.has(k))));
+  return {...rest, trials, completion_status: status, compact: true, event_count: events.length};
+}
+function formBody(session, config, status, record = {...session, completion_status: status}) {
   const params = new URLSearchParams();
   params.set('form-name', config.storage.formName);
   params.set('session_id', session.session_id);
@@ -57,36 +76,37 @@ function formBody(session, config, status) {
   params.set('started_at', session.started_at ?? '');
   params.set('ended_at', session.ended_at ?? '');
   params.set('pixels_per_mm', String(session.calibration?.pixels_per_mm ?? ''));
-  params.set('payload', JSON.stringify({...session, completion_status: status}));
+  params.set('payload', JSON.stringify(record));
   return params.toString();
 }
 
 // Sends the session. Resolves to {ok, status, detail}. Never throws.
+// With beacon: true (used on pagehide) the request must be small: the full
+// record is tried first, then the compact one; above the limit nothing is
+// sent and the record stays in localStorage for the next visit.
 export async function submitSession(session, config, {status = 'complete', beacon = false} = {}) {
   const mode = config.storage.mode;
   if (mode === 'local') return {ok: true, status: 'local', detail: 'Local-only mode; nothing sent.'};
+  const target = mode === 'netlify-forms' ? location.pathname : mode === 'endpoint' ? config.storage.endpoint : null;
+  if (mode === 'endpoint' && !target) return {ok: false, status: 'unconfigured', detail: 'storage.endpoint is empty'};
+  if (!target) return {ok: false, status: 'unknown-mode', detail: mode};
+  const encode = record => mode === 'netlify-forms'
+    ? {body: formBody(session, config, status, record), type: 'application/x-www-form-urlencoded'}
+    : {body: JSON.stringify(record), type: 'application/json'};
   try {
-    if (mode === 'netlify-forms') {
-      const body = formBody(session, config, status);
-      const url = location.pathname;
-      if (beacon && navigator.sendBeacon) {
-        const sent = navigator.sendBeacon(url, new Blob([body], {type: 'application/x-www-form-urlencoded'}));
-        return {ok: sent, status: sent ? 'beacon' : 'beacon-failed'};
+    if (beacon) {
+      if (!navigator.sendBeacon) return {ok: false, status: 'beacon-unsupported'};
+      for (const [record, label] of [[{...session, completion_status: status}, 'beacon'], [compactRecord(session, status), 'beacon-compact']]) {
+        const {body, type} = encode(record);
+        if (new Blob([body]).size > BEACON_LIMIT_BYTES) continue;
+        const sent = navigator.sendBeacon(target, new Blob([body], {type}));
+        return {ok: sent, status: sent ? label : label + '-failed', bytes: body.length};
       }
-      const res = await fetch(url, {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body, keepalive: true});
-      return {ok: res.ok, status: String(res.status), detail: res.ok ? '' : await res.text().catch(() => '')};
+      return {ok: false, status: 'beacon-too-large'};
     }
-    if (mode === 'endpoint') {
-      if (!config.storage.endpoint) return {ok: false, status: 'unconfigured', detail: 'storage.endpoint is empty'};
-      const body = JSON.stringify({...session, completion_status: status});
-      if (beacon && navigator.sendBeacon) {
-        const sent = navigator.sendBeacon(config.storage.endpoint, new Blob([body], {type: 'application/json'}));
-        return {ok: sent, status: sent ? 'beacon' : 'beacon-failed'};
-      }
-      const res = await fetch(config.storage.endpoint, {method: 'POST', headers: {'Content-Type': 'application/json'}, body, keepalive: true});
-      return {ok: res.ok, status: String(res.status), detail: res.ok ? '' : await res.text().catch(() => '')};
-    }
-    return {ok: false, status: 'unknown-mode', detail: mode};
+    const {body, type} = encode({...session, completion_status: status});
+    const res = await fetch(target, {method: 'POST', headers: {'Content-Type': type}, body});
+    return {ok: res.ok, status: String(res.status), detail: res.ok ? '' : await res.text().catch(() => ''), bytes: body.length};
   } catch (e) {
     return {ok: false, status: 'network-error', detail: String(e?.message ?? e)};
   }

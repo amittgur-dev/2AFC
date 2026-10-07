@@ -24,14 +24,17 @@ The repository is a static site with no build. `netlify.toml` sets the
 publish directory to `site`, adds a no-index header and disables caching so a
 config change is picked up on the next load.
 
-Either connect the repository: Netlify → **Add new site → Import an existing
-project → GitHub → this repository**; accept the detected settings (no build
-command, publish directory `site`) and deploy. Every push to the default
-branch redeploys.
+Either connect the repository: Netlify → **Add new project → Import an
+existing project → GitHub → this repository**; accept the detected settings
+(no build command, publish directory `site`) and deploy. Every push to the
+default branch redeploys. (Older Netlify docs and screenshots say "site"
+where the dashboard now says "project".)
 
 Or, for a quick pilot without Git: drag the `site` folder onto
 <https://app.netlify.com/drop>. Forms still work after enabling form
-detection (below).
+detection (below), but a drag-and-drop project has no "Trigger deploy"
+button: re-upload the `site` folder on its Deploys page after enabling
+detection.
 
 Then follow **Data storage with Netlify Forms** below once; the form only
 registers on a deploy made after detection is enabled.
@@ -44,7 +47,7 @@ npm test             # Node checks: geometry, bounds, sequence construction, exp
 PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs npm run test:browser
                      # real Chromium flow test; set SCREENSHOTS=dir to save screenshots
 npm run check:data   # data/ matches site/stimuli.js and the SVGs
-npm run build:sheet  # rebuilds data/stimuli-notation.xlsx and the CSV copies
+npm run build:sheet  # rebuilds data/stimuli-notation.xlsx and the CSV copies (needs openpyxl: pip install -r requirements-optional.txt)
 ```
 
 The browser test needs Playwright with Chromium (`npm i -D playwright &&
@@ -67,18 +70,24 @@ resumes or sees their completion code).
    If the window is too small for the stage at this calibration, a notice says
    how many pixels are needed.
 5. **Trials** — one response each, by click/tap on B or C or the ← / →
-   (also b / c) keys. Timing starts when the three images are decoded and
-   painted. A 500 ms blank follows each response. No back navigation. If the
-   window becomes too small, responses are blocked until space returns and the
-   trial restarts; a zoom or screen change forces recalibration. Objects are
-   never scaled to fit.
+   (also b / c) keys. Timing starts in the frame that first paints the three
+   decoded images. A 500 ms blank follows each response. No back navigation.
+   If the window becomes too small, the tab is hidden, or an image fails to
+   load, the screen goes blank, responses are blocked, and the trial is drawn
+   again with timing restarted once the problem clears; a zoom or screen
+   change forces recalibration (Safari's zoom is detected from the viewport
+   width since it does not change the device pixel ratio). Objects are never
+   scaled to fit.
 6. **Completion** — the record is sent; the participant sees a completion
    code (the session id unless `completion.code` is set) and optional
    download buttons and return link. If sending fails, they can retry or
    download the JSON/CSV to email.
 
 Each response is saved to localStorage immediately. A reload resumes at the
-next unanswered screen after recalibration, with the same assigned order.
+next unanswered screen after recalibration, with the same assigned order,
+provided the stored session was made by the same protocol, stimulus set and
+design and belongs to the participant id in the URL; otherwise a fresh
+session starts. Browsers that block storage get a warning not to reload.
 
 ## Protocol decisions (working defaults — confirm before recruiting)
 
@@ -97,13 +106,13 @@ mixed together is reflected in the first three rows.
 | Response input | Click/tap or keyboard; method recorded. | `design.keys`. |
 | Breaks | None (19 screens, a few minutes). | — |
 | Consent / instructions | Minimal pilot text, no checkbox. | `study.requireConsentCheckbox`, text fields in `study`, and the HTML in `index.html`. |
-| Participant ID | From `?pid=`, `?PROLIFIC_PID=` or `?participant=`; otherwise a random session id. `STUDY_ID`, `SESSION_ID`, `source` pass through. | `participant.idParams`, `participant.passthroughParams`. |
+| Participant ID | From `?pid=`, `?PROLIFIC_PID=` or `?participant=`; otherwise a random session id. `STUDY_ID`, `SESSION_ID`, `source` pass through. A stored session is resumed only for the same participant id. | `participant.idParams`, `participant.passthroughParams`. |
 | Completion / return | Session id shown as the completion code; no redirect. | `completion.code`, `completion.redirectUrl`. |
-| Dropout handling | An interim record flagged `abandoned` is sent when a participant leaves mid-study; partial data also stays in their browser so they can resume. | `storage.submitPartialOnLeave: false`. |
+| Dropout handling | An interim record flagged `abandoned` is sent when a participant leaves after at least one response (each reload mid-study sends one; dedupe by session id). Dropouts before the first response leave no server-side trace. Partial data also stays in the browser so they can resume. | `storage.submitPartialOnLeave: false`. |
 | Data destination | Netlify Forms on this site (below). | `storage.mode: 'endpoint'` with a JSON POST URL (e.g. a Netlify Function, Google Apps Script or your own server), or `'local'` (download only). |
 | Fullscreen | Offered, not required. | — |
 | Font | System Optima where installed, otherwise Segoe UI / Arial; labels are only A, B, C. | — |
-| Screen size | Blocked when the stage does not fit; most laptops fit (about 1157 × 704 CSS px at 5.1 px/mm). Phones and small tablets cannot run it. | — |
+| Screen size | Blocked when the stage does not fit; most laptops fit (about 1157 × 704 CSS px at 5.1 px/mm). Phones and small tablets cannot run it. Large iPads in landscape can; they are not blocked but are identifiable in the data (`max_touch_points`). | — |
 
 Not implemented and not decided here: recruitment platform, viewing distance
 (uncontrolled; the protocol must specify it separately if needed), and the
@@ -130,9 +139,10 @@ Setup, once:
    Netlify API. Parse the `payload` column.
 
 Limits: the free Forms tier accepts 100 submissions per month across the
-site. Each completed participant uses one submission, plus one for each
-abandoned interim record. For a larger run switch `storage.mode` to
-`'endpoint'` and provide a receiver.
+project. Each completed participant uses one submission, plus one for each
+abandoned interim record (each reload mid-study sends one). For a larger run
+switch `storage.mode` to `'endpoint'` and provide a receiver. See the
+deduplication procedure in `docs/EXPERIMENT_DATA.md`.
 
 ## Stimulus notation spreadsheet
 
@@ -156,8 +166,9 @@ cross-browser validation has been performed.
 - Open the deployed page on each target device type. Physically match a card,
   then check the 1 mm control line and the 50 mm span with a ruler.
 - Inspect every stimulus (19 screens; use `?reset=1` to repeat).
-- Exercise browser zoom, full screen, window resizing, tab switching and
-  monitor switching; confirm recalibration prompts and the fit block.
+- Exercise browser zoom (including Safari), full screen, window resizing,
+  tab switching and monitor switching; confirm recalibration prompts, the
+  fit block, and that a trial interrupted by a tab switch is drawn again.
 - Test keyboard and mouse/trackpad responses and that no double response is
   possible.
 - Complete a session and confirm the submission arrives in Netlify Forms and

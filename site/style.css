@@ -54,7 +54,8 @@ summary{cursor:pointer;text-decoration:underline;text-underline-offset:4px}
 /* Generous invisible hit area around the comparison objects. */
 .object:after{content:"";position:absolute;inset:-25px -12px}
 .reference:after{display:none}
-.trial-footer{height:28px;max-width:980px;margin:auto;display:flex;justify-content:center;align-items:center;font-size:12px}
+.trial-footer{height:28px;max-width:980px;margin:auto;display:flex;justify-content:center;align-items:center;gap:24px;font-size:12px}
+#trial-notice:empty{display:none}
 .overlay{position:fixed;inset:0;background:#fff;display:grid;place-items:center;padding:30px;z-index:10}
 .overlay>div{max-width:500px}
 .overlay h2{font-size:27px}

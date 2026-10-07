@@ -26,3 +26,11 @@ export function requiredPixels(scale) {
 export function changedScreen(before, after) {
   return ['dpr', 'screenWidth', 'screenHeight', 'visualScale'].some(k => Math.abs(before[k] - after[k]) > .001);
 }
+// Safari keeps devicePixelRatio constant under page zoom. There, zoom changes
+// the viewport width (innerWidth) while the window width (outerWidth) and the
+// full-screen state stay the same; a plain window resize changes both.
+export function zoomSuspected(before, after) {
+  if (!Number.isFinite(before.outerWidth) || !Number.isFinite(after.outerWidth) || !before.outerWidth) return false;
+  if (before.fullscreen !== after.fullscreen) return false;
+  return Math.abs(after.outerWidth - before.outerWidth) < 1 && Math.abs(after.innerWidth - before.innerWidth) > 1;
+}

@@ -2,6 +2,10 @@
 // Values marked DECISION are protocol choices made as working defaults; review
 // them against README.md before recruiting.
 export const config = {
+  // Bump protocolVersion whenever the design or participant-facing procedure
+  // changes. A session stored in a participant's browser is continued only if
+  // protocolVersion, stimulusSetVersion, layoutVersion and the whole `design`
+  // block match; otherwise a fresh session starts.
   protocolVersion: '2026-10-06-v1',
   stimulusSetVersion: '2026-10-05-compact-control-v1',
   layoutVersion: '2026-10-05-compact-control-v1',
@@ -34,9 +38,13 @@ export const config = {
     // DECISION: left/right assignment of the two comparison conditions.
     // 'random'  - a recorded coin flip per presentation (19 presentations)
     // 'fixed'   - the canonical order from data/trials.json (19 presentations)
-    // 'both'    - every pair in both orders (38 presentations)
+    // 'both'    - every pair in both orders (38 presentations). The interim
+    //             record sent on leaving is then too large for the browser's
+    //             64 KiB beacon limit and a compact version is sent instead.
     sideAssignment: 'random',
-    // DECISION: how many times the whole set is presented.
+    // DECISION: how many times the whole set is presented. Each pass is
+    // interleaved separately; the family constraint is also enforced across
+    // the boundary between passes.
     repetitions: 1,
     // Blank stage between a response and the next presentation.
     interTrialIntervalMs: 500,
@@ -61,7 +69,10 @@ export const config = {
     mode: 'netlify-forms',
     endpoint: '',
     formName: 'line-similarity-responses',
-    // Send an interim record if the participant leaves before finishing.
+    // Send an interim record (flagged 'abandoned') if the participant leaves
+    // after answering at least one screen but before the final record was
+    // sent. Nothing is sent for dropouts before the first response. Each
+    // reload mid-study sends one; records share the session_id.
     submitPartialOnLeave: true,
     // Offer a JSON/CSV download of the session on the completion page.
     allowDownload: true,
