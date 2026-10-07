@@ -1,9 +1,10 @@
-import {assets} from './stimuli.js';
-import {config} from './config.js';
+// Shared experiment runner. An experiment folder calls run() with its own
+// config, assets and trials (see site/main.js).
 import {CARD, STAGE, LABEL, pixelsPerMm, dimensions, fits, requiredPixels, changedScreen, zoomSuspected} from './geometry.js';
 import {buildDesign, allAssetIds} from './design.js';
 import {loadSession, saveSession, clearSession, storageAvailable, randomId, trialsToCsv, submitSession, beaconSession, download} from './storage.js';
 
+export function run({config, assets, trials}) {
 const $ = id => document.getElementById(id);
 const KEY = config.storage.localKey;
 const SECTIONS = ['information', 'calibration', 'instructions', 'experiment', 'complete'];
@@ -55,7 +56,7 @@ function urlIdentity() {
 }
 function newSession() {
   const seed = (globalThis.crypto?.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32)) >>> 0;
-  const built = buildDesign(config.design, seed);
+  const built = buildDesign(config.design, seed, trials);
   return {
     schema_version: 1, experiment_id: config.experiment.id, experiment_name: config.experiment.name, session_id: randomId(), ...urlIdentity(),
     protocol_version: config.protocolVersion, stimulus_set_version: config.stimulusSetVersion, layout_version: config.layoutVersion,
@@ -184,7 +185,7 @@ function preload() {
   if (decodedAssets) return decodedAssets;
   notice('Loading objects…');
   $('start').disabled = true;
-  decodedAssets = Promise.all(allAssetIds().map(id => { const img = new Image(); img.src = assets[id].src; return loadImage(img).then(ok => ok ? null : id); })).then(results => {
+  decodedAssets = Promise.all(allAssetIds(assets).map(id => { const img = new Image(); img.src = assets[id].src; return loadImage(img).then(ok => ok ? null : id); })).then(results => {
     const failed = results.filter(Boolean);
     $('start').disabled = false;
     if (failed.length) { notice('Some objects could not be loaded. Check your connection, then press ' + (mode === 'instructions' ? 'Start' : 'The edges match') + ' to try again.'); logEvent('preload-failed', {failed}); decodedAssets = null; return false; }
@@ -437,4 +438,5 @@ catch (e) {
   $('resume-notice').textContent = 'This study is not configured correctly: ' + (e?.message ?? e) + '. Please tell the researcher.';
   $('begin').disabled = true;
   show('information');
+}
 }

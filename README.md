@@ -8,7 +8,7 @@ participant matches a bank card to an on-screen outline.
 
 | Where | What |
 |---|---|
-| `site/` | The deployable app: plain HTML/CSS/JS modules and 32 SVG stimuli. No build step, no dependencies. Netlify publishes this folder as the site root. |
+| `site/` | The deployable site. `site/shared/` is the runner (app, design, storage, geometry, styles); the root files and `site/assets/` are experiment 1. No build step, no dependencies. Netlify publishes this folder. |
 | `site/config.js` | Every study setting a researcher changes: protocol version, design (order, counterbalancing, repetitions), participant-ID parameters, storage destination, completion code/redirect, study text fields. |
 | `docs/`, `data/`, `tools/`, `tests/` | Researcher materials: data dictionary, stimulus specification, data files and the stimulus spreadsheet, data-check/export tools, Node and real-browser tests. |
 
@@ -64,13 +64,21 @@ resumes or sees their completion code).
 
 ## Two experiments, one app
 
-`site/config.js` names the experiment (`experiment.id`), and every session
-and submission carries that id. The second 2AFC experiment reuses this app
-unchanged in design: deploy it as a second Netlify project from a copy of
-`site/` (or a second branch) with its own `stimuli.js` and `assets/`, its own
-`experiment.id` and `storage.localKey`, and its own `data/` files. Everything
-else (calibration, interleaving, counterbalancing, timing, storage) stays
-identical, so the two data sets are directly comparable.
+The runner (calibration, interleaving, counterbalancing, timing, storage) is
+shared code in `site/shared/`. Each experiment is a folder with four small
+files and its artwork: `index.html`, `main.js`, `config.js` (names the
+experiment via `experiment.id`; every session and submission carries it),
+`stimuli.js` (asset sizes and the questions) and `assets/`. Experiment 1 sits
+at the site root; a second experiment is served from its own folder on the
+same Netlify project, for example `/exp2/`. To scaffold one:
+
+```sh
+node tools/new_experiment.mjs exp2 exp2-<short-id> "<Experiment name>"
+```
+
+then drop the SVGs into `site/exp2/assets/`, fill `site/exp2/stimuli.js` in
+the same shape as experiment 1's, and review `site/exp2/config.js`. Because
+the runner is identical, the two data sets are directly comparable.
 
 ## Participant flow
 
@@ -206,7 +214,9 @@ cross-browser validation has been performed.
 
 ## Files
 
-- `site/` — the app. `app.js` flow, `design.js` sequence construction, `storage.js` persistence/submission/CSV, `geometry.js` physical layout, `stimuli.js` asset dimensions and the 19 questions, `config.js` settings.
+- `site/shared/` — the runner: `app.js` flow, `design.js` sequence construction, `storage.js` persistence/submission/CSV, `geometry.js` physical layout, `style.css`.
+- `site/` root — experiment 1: `index.html`, `main.js`, `config.js` settings, `stimuli.js` asset dimensions and the 19 questions, `assets/`.
+- `tools/new_experiment.mjs` — scaffolds another experiment folder.
 - `docs/STIMULUS_SPECIFICATION.md` — transformations and dimensions (authoritative).
 - `docs/EXPERIMENT_DATA.md` — data dictionary of the records produced.
 - `docs/PROVENANCE.md` — revision history of the artwork.

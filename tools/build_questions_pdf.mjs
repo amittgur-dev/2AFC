@@ -6,7 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const {assets, trials} = await import(path.join(ROOT, 'site/stimuli.js'));
-const {STAGE, LABEL} = await import(path.join(ROOT, 'site/geometry.js'));
+const {STAGE, LABEL} = await import(path.join(ROOT, 'site/shared/geometry.js'));
 const rows = fs.readFileSync(path.join(ROOT, 'data/stimuli-notation.csv'), 'utf8').trim().split('\n').slice(1).map(l => l.split(','));
 const notation = Object.fromEntries(rows.map(c => [c[0], c[5]]));
 const measure = Object.fromEntries(rows.map(c => [c[0], c]));

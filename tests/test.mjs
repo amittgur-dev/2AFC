@@ -8,10 +8,13 @@ import {fileURLToPath} from 'node:url';
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../site');
 const {assets, trials} = await import(path.join(APP, 'stimuli.js'));
-const {CARD, STAGE, LABEL, pixelsPerMm, dimensions, fits, requiredPixels, changedScreen, zoomSuspected} = await import(path.join(APP, 'geometry.js'));
-const {buildSequence, buildDesign, validateDesign, interleave, hasConsecutiveSameFamily, rng, shuffle} = await import(path.join(APP, 'design.js'));
+const {CARD, STAGE, LABEL, pixelsPerMm, dimensions, fits, requiredPixels, changedScreen, zoomSuspected} = await import(path.join(APP, 'shared/geometry.js'));
+const design = await import(path.join(APP, 'shared/design.js'));
+const {validateDesign, interleave, hasConsecutiveSameFamily, rng, shuffle} = design;
+const buildDesign = (d, seed, t = trials) => design.buildDesign(d, seed, t);
+const buildSequence = (d, seed, t = trials) => design.buildSequence(d, seed, t);
 const {config} = await import(path.join(APP, 'config.js'));
-const {trialsToCsv, compactRecord, minimalRecord, BEACON_LIMIT_BYTES} = await import(path.join(APP, 'storage.js'));
+const {trialsToCsv, compactRecord, minimalRecord, BEACON_LIMIT_BYTES} = await import(path.join(APP, 'shared/storage.js'));
 
 // Stimuli and physical layout
 assert.equal(trials.length, 19);
@@ -157,9 +160,10 @@ assert.equal(buildDesign({...config.design, randomizeTrialOrder: false}, 5).inte
 
 // Deployed HTML and Netlify form registration
 const html = fs.readFileSync(path.join(APP, 'index.html'), 'utf8');
-for (const source of ['style.css', 'app.js']) assert.ok(html.includes(source) && fs.existsSync(path.join(APP, source)));
+for (const source of ['shared/style.css', 'main.js']) assert.ok(html.includes(source) && fs.existsSync(path.join(APP, source)));
+assert.throws(() => design.buildDesign(config.design, 1, []), /trials/);
 assert.ok(html.includes(`name="${config.storage.formName}"`) && html.includes('data-netlify="true"'));
-const storageSource = fs.readFileSync(path.join(APP, 'storage.js'), 'utf8');
+const storageSource = fs.readFileSync(path.join(APP, 'shared/storage.js'), 'utf8');
 for (const field of [...storageSource.matchAll(/params\.set\('([a-z_-]+)'/g)].map(m => m[1])) assert.ok(html.includes(`name="${field}"`), 'form field registered: ' + field);
 assert.ok(!html.includes('id="previous"') && !html.includes('id="next"'), 'no preview navigation');
 assert.ok(!html.includes('id="verification"') && !/no photo|right or wrong|about .* minutes/i.test(html), 'pilot text trimmed');

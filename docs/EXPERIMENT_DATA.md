@@ -1,7 +1,7 @@
 # Data dictionary — what the experiment records
 
 No participant data is included in this repository. This describes the record
-produced by `site/app.js` (schema_version 1).
+produced by `site/shared/app.js` (schema_version 1).
 
 One **session record** is produced per participant. It is saved to the
 browser's localStorage after every response (for reload/crash recovery) and
@@ -78,7 +78,7 @@ the record waits in the browser for a later visit.
 
 `storage.trialsToCsv` flattens one row per trial with the session identifiers
 and versions repeated on each row. Column order is `TRIAL_COLUMNS` in
-`site/storage.js`. The `interruptions` cell is JSON. String cells that begin
+`site/shared/storage.js`. The `interruptions` cell is JSON. String cells that begin
 with `=`, `+`, `-`, `@`, tab or CR (in practice only a URL-supplied
 `participant_id`) are written with a leading apostrophe so spreadsheets do not
 evaluate them as formulas; the JSON record holds the unmodified value.

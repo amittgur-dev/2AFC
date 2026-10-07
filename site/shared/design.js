@@ -1,6 +1,5 @@
 // Trial sequence construction: order, repetitions and left/right assignment.
 // Pure functions so the design can be tested without a browser.
-import {assets, trials} from './stimuli.js';
 
 // Small seeded PRNG (mulberry32) so an assigned order can be reproduced from
 // the recorded seed.
@@ -96,8 +95,9 @@ export function interleave(items, random, previous = null, maxTries = 200) {
 // where `interleaved` reports whether the no-consecutive-family constraint was
 // met over the segments that were shuffled (true/false), or null when the
 // constraint was not requested.
-export function buildDesign(design, seed) {
+export function buildDesign(design, seed, trials) {
   validateDesign(design);
+  if (!Array.isArray(trials) || !trials.length) throw new Error('buildDesign needs the experiment\'s trials');
   const random = rng(seed);
   const control = trials.filter(t => t.family === 0);
   const others = trials.filter(t => t.family !== 0);
@@ -120,11 +120,11 @@ export function buildDesign(design, seed) {
   return {sequence: sequence.map((p, i) => ({presentation_index: i, ...p})), interleaved};
 }
 // Convenience: the ordered presentations only.
-export function buildSequence(design, seed) { return buildDesign(design, seed).sequence; }
+export function buildSequence(design, seed, trials) { return buildDesign(design, seed, trials).sequence; }
 
-export function assetsFor(p) {
+export function assetsFor(p, assets) {
   return [p.reference_asset_id, p.left_asset_id, p.right_asset_id].map(id => assets[id]);
 }
-export function allAssetIds() {
+export function allAssetIds(assets) {
   return Object.keys(assets);
 }
