@@ -20,6 +20,13 @@ assert.deepEqual([assets['0-A'].widthMm, assets['0-A'].heightMm], [40, 1]);
 assert.deepEqual([assets['0-L'].widthMm, assets['0-L'].heightMm], [80, 1]);
 assert.deepEqual([assets['0-P'].widthMm, assets['0-P'].heightMm], [80, 2]);
 assert.equal(assets['8-A'].heightMm, 38.25);
+// Every thin line is 1 mm thick and 40 mm long, like the control.
+for (const f of [1, 2, 3, 4, 5]) { assert.equal(assets[`${f}-L`].widthMm - assets[`${f}-A`].widthMm, 40, 'family ' + f + ' extension adds 40 mm'); }
+assert.deepEqual([assets['3-A'].widthMm, assets['3-A'].heightMm, assets['3-L'].heightMm, assets['3-P'].heightMm], [44, 1, 1, 2]);
+assert.deepEqual([assets['1-A'].widthMm, assets['1-A'].heightMm], [50, 5]);
+assert.deepEqual([assets['6-A'].widthMm, assets['6-A'].heightMm], [48, 6]);
+const measurements = fs.readFileSync(path.join(APP, '../data/measurements.csv'), 'utf8').trim().split('\n').slice(1).map(l => l.split(','));
+for (const m of measurements) if (['1', '2', '3', '4', '5'].includes(m[1])) { assert.equal(+m[7], m[3] === 'A' || m[3] === 'E' ? 40 : 80, m[0] + ' body length'); assert.equal(+m[8], m[3] === 'P' ? 2 : 1, m[0] + ' body thickness'); }
 for (const [id, a] of Object.entries(assets)) {
   assert.ok(fs.existsSync(path.join(APP, a.src)), id + ' asset exists');
   assert.ok(fs.readFileSync(path.join(APP, a.src), 'utf8').includes('<svg'));

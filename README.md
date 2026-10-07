@@ -13,8 +13,10 @@ participant matches a bank card to an on-screen outline.
 | `docs/`, `data/`, `tools/`, `tests/` | Researcher materials: data dictionary, stimulus specification, data files and the stimulus spreadsheet, data-check/export tools, Node and real-browser tests. |
 
 The app was built from the ChatGPT handoff of 2026-10-05 (`data/handoff-manifest.json`
-lists that package's checksums). The accepted artwork, the calibrated
-dimensions and the 220 × 120 mm triangle layout are unchanged. The
+lists that package's checksums). The accepted artwork and the 220 × 120 mm
+triangle layout are unchanged. On 2026-10-07 the line families (1–6) were
+rescaled to full master size so that every thin line is 1 mm × 40 mm like the
+control; see the note at the top of `docs/STIMULUS_SPECIFICATION.md`. The
 historical `legacy-workspace/` of that package (5 MB of PDF build scripts and
 QA renders) is not in this repository; keep the original zip if you need it.
 
@@ -77,7 +79,7 @@ identical, so the two data sets are directly comparable.
    a consent checkbox.)
 2. **Calibration** — match a card to the outline; pixels per mm = matched
    width / 85.60. The separate 1 mm ruler check was removed at the
-   researcher's request; the first trial's control line is 1 mm thick.
+   researcher's request; every thin line in the study is 1 mm thick.
 3. **Instructions** — one sentence; all SVGs are preloaded and decoded here.
    If the window is too small for the stage at this calibration, a notice says
    how many pixels are needed.

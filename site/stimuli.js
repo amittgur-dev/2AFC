@@ -1,118 +1,118 @@
 export const assets = {
   "1-A": {
     "src": "assets/1-A.svg",
-    "widthMm": 45.0,
-    "heightMm": 4.5
+    "widthMm": 50.0,
+    "heightMm": 5.0
   },
   "1-E": {
     "src": "assets/1-E.svg",
-    "widthMm": 54.0,
-    "heightMm": 9.0
+    "widthMm": 60.0,
+    "heightMm": 10.0
   },
   "1-L": {
     "src": "assets/1-L.svg",
-    "widthMm": 81.0,
-    "heightMm": 4.5
+    "widthMm": 90.0,
+    "heightMm": 5.0
   },
   "1-P": {
     "src": "assets/1-P.svg",
-    "widthMm": 90.0,
-    "heightMm": 9.0
+    "widthMm": 100.0,
+    "heightMm": 10.0
   },
   "2-A": {
     "src": "assets/2-A.svg",
-    "widthMm": 45.0,
-    "heightMm": 4.5
+    "widthMm": 50.0,
+    "heightMm": 5.0
   },
   "2-E": {
     "src": "assets/2-E.svg",
-    "widthMm": 54.0,
-    "heightMm": 9.0
+    "widthMm": 60.0,
+    "heightMm": 10.0
   },
   "2-L": {
     "src": "assets/2-L.svg",
-    "widthMm": 81.0,
-    "heightMm": 4.5
+    "widthMm": 90.0,
+    "heightMm": 5.0
   },
   "2-P": {
     "src": "assets/2-P.svg",
-    "widthMm": 90.0,
-    "heightMm": 9.0
+    "widthMm": 100.0,
+    "heightMm": 10.0
   },
   "3-A": {
     "src": "assets/3-A.svg",
-    "widthMm": 39.6,
-    "heightMm": 0.9
+    "widthMm": 44.0,
+    "heightMm": 1.0
   },
   "3-E": {
     "src": "assets/3-E.svg",
-    "widthMm": 43.2,
-    "heightMm": 0.9
+    "widthMm": 48.0,
+    "heightMm": 1.0
   },
   "3-L": {
     "src": "assets/3-L.svg",
-    "widthMm": 75.6,
-    "heightMm": 0.9
+    "widthMm": 84.0,
+    "heightMm": 1.0
   },
   "3-P": {
     "src": "assets/3-P.svg",
-    "widthMm": 79.2,
-    "heightMm": 1.8
+    "widthMm": 88.0,
+    "heightMm": 2.0
   },
   "4-A": {
     "src": "assets/4-A.svg",
-    "widthMm": 37.8,
-    "heightMm": 3.6
+    "widthMm": 42.0,
+    "heightMm": 4.0
   },
   "4-E": {
     "src": "assets/4-E.svg",
-    "widthMm": 37.8,
-    "heightMm": 7.2
+    "widthMm": 42.0,
+    "heightMm": 8.0
   },
   "4-L": {
     "src": "assets/4-L.svg",
-    "widthMm": 73.8,
-    "heightMm": 3.6
+    "widthMm": 82.0,
+    "heightMm": 4.0
   },
   "4-P": {
     "src": "assets/4-P.svg",
-    "widthMm": 75.6,
-    "heightMm": 7.2
+    "widthMm": 84.0,
+    "heightMm": 8.0
   },
   "5-A": {
     "src": "assets/5-A.svg",
-    "widthMm": 40.5,
-    "heightMm": 4.5
+    "widthMm": 45.0,
+    "heightMm": 5.0
   },
   "5-E": {
     "src": "assets/5-E.svg",
-    "widthMm": 45.0,
-    "heightMm": 9.0
+    "widthMm": 50.0,
+    "heightMm": 10.0
   },
   "5-L": {
     "src": "assets/5-L.svg",
-    "widthMm": 76.5,
-    "heightMm": 4.5
+    "widthMm": 85.0,
+    "heightMm": 5.0
   },
   "5-P": {
     "src": "assets/5-P.svg",
-    "widthMm": 81.0,
-    "heightMm": 9.0
+    "widthMm": 90.0,
+    "heightMm": 10.0
   },
   "6-A": {
     "src": "assets/6-A.svg",
-    "widthMm": 43.2,
-    "heightMm": 5.4
+    "widthMm": 48.0,
+    "heightMm": 6.0
   },
   "6-L": {
     "src": "assets/6-L.svg",
-    "widthMm": 79.2,
-    "heightMm": 5.4
+    "widthMm": 88.0,
+    "heightMm": 6.0
   },
   "6-P": {
     "src": "assets/6-P.svg",
-    "widthMm": 86.4,
-    "heightMm": 10.8
+    "widthMm": 96.0,
+    "heightMm": 12.0
   },
   "7-A": {
     "src": "assets/7-A.svg",
