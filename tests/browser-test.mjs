@@ -259,7 +259,7 @@ configVariant = 'netlify';
 const page2 = await context.newPage();
 page2.on('pageerror', e => errors.push(String(e)));
 await page2.route('**/*', route => route.request().method() === 'POST' ? route.fulfill({status: 500, body: 'no'}) : route.continue());
-await page2.goto(base + '?reset=1');
+await page2.goto(base + '?reset=1&pid=TEST-FAIL');
 await page2.click('#begin');
 await page2.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page2.click('#confirm-card');
