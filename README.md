@@ -164,6 +164,33 @@ Not implemented and not decided here: recruitment platform, viewing distance
 (uncontrolled; the protocol must specify it separately if needed), and the
 analysis of interrupted trials (see the data dictionary).
 
+## Participant codes: known to you, anonymous in the data
+
+For a run with colleagues, give each person a code and a personal link. Only
+the code reaches the experiment and the database (`participant_id`); the list
+that ties codes to names stays on your computer.
+
+```sh
+python3 tools/make_participant_links.py names.txt --base https://YOUR-SITE.netlify.app --out participants-private.xlsx
+```
+
+`names.txt` has one name (or email) per line. The output lists, per person, a
+six-character code and two links, one per experiment, both carrying the same
+code so the two data sets can be joined on `participant_id`. The file is
+private: `participants-private*` is git-ignored, and you share only each
+person's links. Re-run with `--existing participants-private.csv` to add
+people while keeping earlier codes, or `--codes-only 10` for codes without
+names.
+
+If someone opens the bare site URL instead of their link, the first page asks
+for their code before continuing (`participant.requireCode`); it is stored
+upper-cased, and the record notes whether the code came from the link or was
+typed (`participant_id_source`). What else is stored about a person: screen
+and window sizes, device pixel ratio, browser user agent and language, and
+touch capability. None of that is a name, but a user agent plus screen size
+can be distinctive in a small group, so keep the mapping file and the
+database access equally private.
+
 ## Data storage with Supabase
 
 The intended destination. `supabase/README.md` has the three setup steps:

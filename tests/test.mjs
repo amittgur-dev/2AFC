@@ -209,6 +209,10 @@ for (const [label, cfg, t] of [['lines with edges', config, trials], ['similarit
   assert.ok(orders.size === 50 && sides.size === 50, label + ': different participants get different orders and sides');
 }
 assert.deepEqual([config.experiment.id, config.experiment.name, rotConfig.experiment.id, rotConfig.experiment.name], ['exp1-lines-with-edges', 'Lines with edges', 'exp2-similarity-with-rotation', 'Similarity with rotation']);
+assert.ok(config.participant.requireCode && rotConfig.participant.requireCode, 'both experiments ask for a participant code when the link has none');
+for (const good of ['K7P3QM', 'ab-12', 'p_1']) assert.ok(new RegExp(config.participant.codePattern).test(good), good);
+for (const bad of ['', 'x', 'a b', 'x'.repeat(33), '=1']) assert.ok(!new RegExp(config.participant.codePattern).test(bad), 'rejects ' + JSON.stringify(bad));
+assert.ok(rotHtml.includes('id="participant-code"') && fs.readFileSync(path.join(APP, 'index.html'), 'utf8').includes('id="participant-code"'));
 
 // Supabase rows match the migration's columns exactly, for both experiments.
 const sql = fs.readFileSync(path.join(APP, '../supabase/migrations/0001_experiment_tables.sql'), 'utf8');

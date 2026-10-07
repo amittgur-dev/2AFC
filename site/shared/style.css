@@ -22,6 +22,8 @@ kbd{font:inherit;border:1px solid #000;padding:0 6px;border-radius:3px}
 .hint{font-size:13px;line-height:1.5}
 .consent{display:flex;gap:12px;align-items:flex-start;margin:26px 0 0;font-size:16px;line-height:1.5;cursor:pointer}
 .consent input{width:20px;height:20px;margin:3px 0 0;accent-color:#000;flex:none}
+.code-row{display:flex;gap:14px;align-items:center;margin:26px 0 0;font-size:16px}
+.code-row input{font:inherit;padding:8px 10px;border:1px solid #000;border-radius:0;width:12em;letter-spacing:1px;text-transform:uppercase}
 .card-area{min-height:250px;display:flex;align-items:center;justify-content:center;padding:24px 0;overflow:visible}
 #card{flex:none;border:1px solid #000;border-radius:12px;display:grid;place-items:center;width:324px;height:204.32px;background:#fff}
 #card span{font-size:13px}

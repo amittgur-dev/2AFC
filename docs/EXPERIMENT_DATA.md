@@ -29,7 +29,8 @@ the record waits in the browser for a later visit.
 | `schema_version` | 1 |
 | `experiment_id`, `experiment_name` | Which of the two 2AFC experiments produced the record (`config.experiment`). |
 | `session_id` | Random 16-character code generated on first load. Shown as the completion code unless `completion.code` is set. |
-| `participant_id` | First matching URL parameter from `participant.idParams` (`pid`, `PROLIFIC_PID`, `participant`), else null. |
+| `participant_id` | First matching URL parameter from `participant.idParams` (`pid`, `PROLIFIC_PID`, `participant`); otherwise the code typed on the first page when `participant.requireCode` is on (trimmed, upper-cased), else null. |
+| `participant_id_source` | `url` or `typed`. Inside `record` only (not a table column). |
 | `url_parameters` | Verbatim copies of `participant.passthroughParams` present in the URL (e.g. `STUDY_ID`, `SESSION_ID`). |
 | `protocol_version`, `stimulus_set_version`, `layout_version`, `consent_version` | From `config.js`. |
 | `design` | The `config.design` block plus the random `seed` and `interleaved` (true/false: whether the no-consecutive-family constraint was met over the shuffled segments; null when it was not requested; a deliberate leading control block under `controlPosition: 'first'` does not count against it). `buildDesign(design, seed)` reproduces `sequence`. The app reads the inter-trial interval and response keys from this block, so the record describes what was run even if `config.js` changed later. |

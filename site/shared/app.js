@@ -385,7 +385,8 @@ function init() {
   $('pid-note').textContent = session.participant_id ? ' Your responses are stored under the participant identifier in your study link.' : '';
   $('storage-note').textContent = session.storage_available ? '' : 'This browser does not allow the page to store progress, so please do not reload or close it until you have finished.';
   $('consent-row').hidden = !config.study.requireConsentCheckbox;
-  $('begin').disabled = config.study.requireConsentCheckbox && !$('consent').checked;
+  $('code-row').hidden = !(config.participant.requireCode && !session.participant_id);
+  updateBegin();
   const contact = [config.study.researcher, config.study.institution].filter(Boolean).join(', ');
   $('contact-line').textContent = [contact && 'This study is run by ' + contact + '.', config.study.ethicsReference && 'Ethics reference: ' + config.study.ethicsReference + '.', config.study.contactEmail && 'Questions: ' + config.study.contactEmail + '.'].filter(Boolean).join(' ');
   $('version-line').textContent = 'Protocol ' + config.protocolVersion + ' · stimulus set ' + config.stimulusSetVersion;
@@ -393,8 +394,23 @@ function init() {
   show('information');
 }
 
-$('consent').addEventListener('change', e => { $('begin').disabled = !e.target.checked; });
-$('begin').onclick = () => { if (!session.consented_at) session.consented_at = now(); logEvent('consented'); calibrate(); };
+// The code typed on the first page (when the link carried none) becomes the
+// participant id; it is normalised to upper case.
+const codeValid = () => new RegExp(config.participant.codePattern ?? '^.{1,}$').test($('participant-code').value.trim());
+function updateBegin() {
+  const needsConsent = config.study.requireConsentCheckbox && !$('consent').checked;
+  const needsCode = !$('code-row').hidden && !codeValid();
+  $('begin').disabled = needsConsent || needsCode;
+}
+$('consent').addEventListener('change', updateBegin);
+$('participant-code').addEventListener('input', updateBegin);
+$('participant-code').addEventListener('keydown', e => { if (e.key === 'Enter' && !$('begin').disabled) $('begin').click(); });
+$('begin').onclick = () => {
+  if (!$('code-row').hidden) { session.participant_id = $('participant-code').value.trim().toUpperCase(); session.participant_id_source = 'typed'; }
+  else if (session.participant_id && !session.participant_id_source) session.participant_id_source = 'url';
+  if (!session.consented_at) session.consented_at = now();
+  logEvent('consented'); calibrate();
+};
 $('card-size').addEventListener('input', e => updateCard(e.target.value));
 $('smaller').onclick = () => updateCard(Number($('card-size').value) - 1);
 $('larger').onclick = () => updateCard(Number($('card-size').value) + 1);

@@ -65,6 +65,13 @@ export const config = {
     // URL parameters searched, in order, for a participant identifier.
     // e.g. ?pid=123 or Prolific's ?PROLIFIC_PID={{%PROLIFIC_PID%}}
     idParams: ['pid', 'PROLIFIC_PID', 'participant'],
+    // DECISION: when the link carries no identifier, ask for a participant
+    // code on the first page (the code from tools/make_participant_links.py).
+    // Keeps every record attributable to a pseudonymous code; the code-to-name
+    // list stays with the researcher. Set false to allow anonymous runs.
+    requireCode: true,
+    // Accepted code pattern (letters, digits, - and _; 2 to 32 characters).
+    codePattern: '^[A-Za-z0-9_-]{2,32}$',
     // Additional URL parameters copied verbatim into the session record.
     passthroughParams: ['STUDY_ID', 'SESSION_ID', 'source'],
   },

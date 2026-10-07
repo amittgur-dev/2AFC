@@ -64,6 +64,7 @@ const shots = process.env.SCREENSHOTS; if (shots) fs.mkdirSync(shots, {recursive
 await page.goto(base + '?pid=TEST-001&STUDY_ID=S1&reset=1');
 assert.equal((await state()).mode, 'information');
 assert.ok(await page.isHidden('#consent-row'), 'pilot has no consent checkbox');
+assert.ok(await page.isHidden('#code-row'), 'a link with a participant id asks for no code');
 await page.click('#begin');
 assert.equal((await state()).mode, 'calibration');
 // Calibrate at 5.11 px/mm by setting the card width directly.
@@ -283,7 +284,15 @@ const before = posts.length + sbPosts.length;
 await page3.goto(base + '?reset=1');
 assert.equal(await page3.textContent('#study-title'), 'Similarity judgment');
 assert.ok((await page3.textContent('#information')).includes('reference object (A)'));
+// No participant id in the link: a code is required before continuing.
+assert.ok(await page3.isVisible('#code-row'));
+assert.ok(await page3.isDisabled('#begin'));
+await page3.fill('#participant-code', 'x');
+assert.ok(await page3.isDisabled('#begin'), 'one character is not a valid code');
+await page3.fill('#participant-code', ' k7p3qm ');
+assert.ok(!(await page3.isDisabled('#begin')));
 await page3.click('#begin');
+assert.equal((await page3.evaluate(() => lineSimilarityState())).participant_id, 'K7P3QM', 'typed code is trimmed and upper-cased');
 await page3.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page3.click('#confirm-card');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'instructions');
@@ -294,6 +303,7 @@ assert.equal((await page3.evaluate(() => document.getElementById('complete').inn
 assert.ok(await page3.isHidden('#completion-code') && await page3.isHidden('#download-csv'));
 const pilotSaved = await page3.evaluate(k => JSON.parse(localStorage.getItem(k)), 'line-similarity:session:v1');
 assert.equal(pilotSaved.experiment_id, 'exp1-lines-with-edges'); assert.equal(pilotSaved.trials.length, 19);
+assert.equal(pilotSaved.participant_id, 'K7P3QM'); assert.equal(pilotSaved.participant_id_source, 'typed');
 await page3.goto(base);
 assert.equal(posts.length + sbPosts.length, before, 'pilot sends nothing');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');
@@ -302,7 +312,8 @@ assert.notEqual((await page3.evaluate(() => lineSimilarityState())).session_id, 
 // Experiment 2 runs from its own folder on the same site: 48 questions, 41.33 mm images.
 const page4 = await pilot.newPage();
 page4.on('pageerror', e => errors.push(String(e)));
-await page4.goto(base + 'rotation/?reset=1');
+await page4.goto(base + 'rotation/?reset=1&pid=K7P3QM');
+assert.ok(await page4.isHidden('#code-row'));
 await page4.click('#begin');
 await page4.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page4.click('#confirm-card');
@@ -317,6 +328,7 @@ if (shots) await page4.screenshot({path: path.join(shots, 'rotation-trial-1.png'
 for (let i = 0; i < 3; i++) { await page4.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page4.keyboard.press('ArrowLeft'); }
 const rotSaved = await page4.evaluate(() => JSON.parse(localStorage.getItem('line-similarity:rotation:session:v1')));
 assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.experiment_name, 'Similarity with rotation'); assert.equal(rotSaved.trials.length, 3);
+assert.equal(rotSaved.participant_id, 'K7P3QM'); assert.equal(rotSaved.participant_id_source, 'url');
 assert.ok(rotSaved.design.randomizeTrialOrder && rotSaved.design.sideAssignment === 'random' && rotSaved.design.controlPosition === 'random');
 
 assert.deepEqual(errors.filter(e => !/Failed to load resource/.test(e)), [], 'no page errors beyond the deliberately aborted image loads');
