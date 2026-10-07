@@ -29,7 +29,7 @@ the record waits in the browser for a later visit.
 | `schema_version` | 1 |
 | `experiment_id`, `experiment_name` | Which of the two 2AFC experiments produced the record (`config.experiment`). |
 | `session_id` | Random 16-character code generated on first load. Shown as the completion code unless `completion.code` is set. |
-| `participant_id` | First matching URL parameter from `participant.idParams` (`pid`, `PROLIFIC_PID`, `participant`); otherwise the code the participant typed on the first page when `participant.requireCode` is on (an 8-digit number they make up and reuse in the other study; trimmed), else null. |
+| `participant_id` | First matching URL parameter from `participant.idParams` (`pid`, `PROLIFIC_PID`, `participant`); otherwise the code the participant typed on the first page when `participant.requireCode` is on (an 8-digit number they make up; trimmed), else null. |
 | `participant_id_source` | `url` or `typed`. Inside `record` only (not a table column). |
 | `url_parameters` | Verbatim copies of `participant.passthroughParams` present in the URL (e.g. `STUDY_ID`, `SESSION_ID`). |
 | `protocol_version`, `stimulus_set_version`, `layout_version`, `consent_version` | From `config.js`. |

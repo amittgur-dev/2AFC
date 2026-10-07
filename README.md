@@ -165,7 +165,7 @@ mixed together is reflected in the first three rows.
 | Breaks | None (19 screens, a few minutes). | — |
 | Consent / instructions | Minimal pilot text, no checkbox, no duration or "no right or wrong" sentence. | `study.requireConsentCheckbox`, text fields in `study`, and the HTML in `index.html`. |
 | Session memory | Off for the pilot: every visit is a new session. | `participant.rememberSession: true` for real data collection. |
-| Participant ID | From `?pid=`, `?PROLIFIC_PID=` or `?participant=`; otherwise a random session id. `STUDY_ID`, `SESSION_ID`, `source` pass through. A stored session is resumed only for the same participant id. | `participant.idParams`, `participant.passthroughParams`. |
+| Participant ID | From `?pid=`, `?PROLIFIC_PID=` or `?participant=`; otherwise an 8-digit number the participant makes up on the first page. `STUDY_ID`, `SESSION_ID`, `source` pass through. A stored session is resumed only for the same participant id. | `participant.idParams`, `participant.requireCode`, `participant.codePattern`, `participant.passthroughParams`. |
 | Completion / return | "Finished. Thank you." only; no code, no redirect. | `completion.showCode`, `completion.code`, `completion.redirectUrl`. |
 | Dropout handling | An interim record flagged `abandoned` is sent when a participant leaves after at least one response (each reload mid-study sends one; dedupe by session id). Dropouts before the first response leave no server-side trace. Partial data also stays in the browser so they can resume. | `storage.submitPartialOnLeave: false`. |
 | Data destination | Supabase tables per experiment (`storage.mode: 'supabase'`; see `supabase/README.md`). Until the project URL and anon key are filled in the mode is `'local'` and nothing is sent. | `'netlify-forms'` (set up below), `'endpoint'` with a JSON POST URL, or `'local'`; `storage.allowDownload: true` for a download button. |
@@ -200,8 +200,8 @@ names.
 
 Alternatively, and this is how the pilot is set up, send everyone the bare
 study links and let each person make up their own code: the first page asks
-for an 8-digit number and tells them to use the same number in both studies
-(`participant.requireCode`, `participant.codePattern`). Then no list ties
+for an 8-digit number (`participant.requireCode`, `participant.codePattern`);
+tell people to use the same number in both studies when you send the links. Then no list ties
 codes to people unless they tell you their number; the price is that the join
 between the two studies depends on them typing the same number twice. The
 record notes whether the code came from the link or was typed
