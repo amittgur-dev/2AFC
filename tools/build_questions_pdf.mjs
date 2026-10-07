@@ -1,17 +1,19 @@
 // Renders every 2AFC question at physical size to a PDF (A4 landscape),
 // grouped by reference in canonical order.
 // Run: PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node tools/build_questions_pdf.mjs [experiment] [out.pdf]
-//   experiment: '' (experiment 1, default) or a folder under site/ such as 'rotation'
+//   experiment: '1' (Lines with edges, default) or '2' (Similarity with rotation): the folder under site/
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const exp = process.argv[2] ?? '';
+const exp = process.argv[2] ?? '1';
+const DATA = {'1': 'data', '2': 'data/rotation'}[exp];
+if (!DATA) throw new Error('experiment must be 1 or 2');
 const SITE = path.join(ROOT, 'site', exp);
 const {assets, trials} = await import(path.join(SITE, 'stimuli.js'));
 const {STAGE, LABEL} = await import(path.join(ROOT, 'site/shared/geometry.js'));
 let notation, dims;
-if (exp === '') {
+if (exp === '1') {
   const rows = fs.readFileSync(path.join(ROOT, 'data/stimuli-notation.csv'), 'utf8').trim().split('\n').slice(1).map(l => l.split(','));
   notation = Object.fromEntries(rows.map(c => [c[0], c[5]]));
   const measure = Object.fromEntries(rows.map(c => [c[0], c]));
@@ -22,12 +24,12 @@ if (exp === '') {
   notation = Object.fromEntries(Object.entries(assets).map(([id, a]) => [id, a.description ?? id]));
   dims = id => assets[id].dimensions ?? `${assets[id].widthMm} × ${assets[id].heightMm} mm`;
 }
-const out = process.argv[3] ?? path.join(ROOT, 'data', exp, 'questions-by-reference.pdf');
+const out = process.argv[3] ?? path.join(ROOT, DATA, 'questions-by-reference.pdf');
 const svg = id => 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(SITE, assets[id].src)).toString('base64');
 const obj = (id, label) => { const a = assets[id]; const [x, y] = STAGE.positions[label]; return `<div class="o" style="left:${x - a.widthMm / 2}mm;top:${y - a.heightMm / 2}mm;width:${a.widthMm}mm;height:${a.heightMm}mm"><span style="top:-${LABEL.offsetAboveMm}mm;font-size:${LABEL.fontSizeMm}mm">${label}</span><img src="${svg(id)}"></div>`; };
 // Caption under a comparison object (other experiments): what it is, minimal.
 const caption = (id, label) => { const a = assets[id]; const [x, y] = STAGE.positions[label]; return `<div class="c" style="left:${x}mm;top:${y + a.heightMm / 2 + 3}mm">${notation[id]}</div>`; };
-const pages = trials.map((t, i) => { const A = `${t.family}-A`, B = `${t.family}-${t.left}`, C = `${t.family}-${t.right}`; return exp === '' ? `<section>
+const pages = trials.map((t, i) => { const A = `${t.family}-A`, B = `${t.family}-${t.left}`, C = `${t.family}-${t.right}`; return exp === '1' ? `<section>
 <header><div class="q">Question ${i + 1} of ${trials.length} &middot; trial ${t.id}</div><div class="t">${t.name} (${t.group})</div><div class="n"><b>Object A</b> = ${notation[A]} &nbsp;&middot;&nbsp; <b>Object B</b> = ${notation[B]} &nbsp;&middot;&nbsp; <b>Object C</b> = ${notation[C]}</div></header>
 <h1>Which is more similar to A?</h1>
 <div class="stage">${obj(A, 'A')}${obj(B, 'B')}${obj(C, 'C')}</div>

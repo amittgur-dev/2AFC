@@ -4,7 +4,7 @@ Usage: python3 tools/check_data.py   (from the repository root)"""
 from pathlib import Path
 import csv,json,math
 root=Path(__file__).resolve().parents[1]
-source=(root/'site/stimuli.js').read_text()
+source=(root/'site/1/stimuli.js').read_text()
 assert json.loads(source.split('export const assets = ')[1].split(';\nexport const trials')[0])==json.loads((root/'data/assets.json').read_text())
 assert json.loads(source.split('export const trials = ')[1].strip().removesuffix(';'))==json.loads((root/'data/trials.json').read_text())
 assets=json.loads((root/'data/assets.json').read_text())

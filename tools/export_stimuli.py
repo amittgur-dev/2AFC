@@ -1,7 +1,7 @@
 """Regenerate the supplied SVGs without running historical PDF builders.
 
 Usage: python3 tools/export_stimuli.py [OUTPUT_DIRECTORY]
-Default output: rebuilt-assets/ (leaves site/assets untouched).
+Default output: rebuilt-assets/ (leaves site/1/assets untouched).
 Requires PyMuPDF; pip install -r requirements-optional.txt
 """
 from pathlib import Path

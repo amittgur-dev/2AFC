@@ -16,7 +16,7 @@ with it.
 
    It is safe to run again.
 2. Copy the project URL and the anon key from **Project Settings → API**
-   into `site/config.js` and `site/rotation/config.js`
+   into `site/1/config.js` and `site/2/config.js`
    (`storage.supabase.url`, `storage.supabase.anonKey`) and set
    `storage.mode: 'supabase'` in both. Push; Netlify redeploys.
 3. Run through each experiment once and check **Table Editor** for the rows.

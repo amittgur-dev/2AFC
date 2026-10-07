@@ -8,8 +8,8 @@ participant matches a bank card to an on-screen outline.
 
 | Where | What |
 |---|---|
-| `site/` | The deployable site. `site/shared/` is the runner (app, design, storage, geometry, styles); the root files and `site/assets/` are experiment 1. No build step, no dependencies. Netlify publishes this folder. |
-| `site/config.js` | Every study setting a researcher changes: protocol version, design (order, counterbalancing, repetitions), participant-ID parameters, storage destination, completion code/redirect, study text fields. |
+| `site/` | The source of both studies. `site/shared/` is the runner (app, design, storage, geometry, styles); `site/1/` is Lines with edges and `site/2/` is Similarity with rotation. Each study is deployed as its own Netlify project with its own address; `tools/build_site.mjs` assembles one study plus the runner into `dist/`. No dependencies. |
+| `site/1/config.js`, `site/2/config.js` | Every study setting a researcher changes: protocol version, design (order, counterbalancing, repetitions), participant-ID parameters, storage destination, completion code/redirect, study text fields. |
 | `docs/`, `data/`, `tools/`, `tests/` | Researcher materials: data dictionary, stimulus specification, data files and the stimulus spreadsheet, data-check/export tools, Node and real-browser tests. |
 
 The app was built from the ChatGPT handoff of 2026-10-05 (`data/handoff-manifest.json`
@@ -20,35 +20,41 @@ control; see the note at the top of `docs/STIMULUS_SPECIFICATION.md`. The
 historical `legacy-workspace/` of that package (5 MB of PDF build scripts and
 QA renders) is not in this repository; keep the original zip if you need it.
 
-## Deploy on Netlify
+## Deploy on Netlify: one project per study
 
-The repository is a static site with no build. `netlify.toml` sets the
-publish directory to `site`, adds a no-index header and disables caching so a
-config change is picked up on the next load.
+The two studies are separate links built from the same repository. Each
+Netlify project runs `node tools/build_site.mjs` (from `netlify.toml`), which
+copies one study folder plus `site/shared/` into `dist/` and publishes that,
+so each study sits at the root of its own address, for example
+`https://<project-1>.netlify.app/` and `https://<project-2>.netlify.app/`,
+with nothing nested under the other. Which study a project builds comes from
+the environment variable `STUDY` (`1` by default, `2` for the rotation study).
+Every push to the default branch redeploys both projects.
 
-Either connect the repository: Netlify → **Add new project → Import an
-existing project → GitHub → this repository**; accept the detected settings
-(no build command, publish directory `site`) and deploy. Every push to the
-default branch redeploys. (Older Netlify docs and screenshots say "site"
-where the dashboard now says "project".)
+- **Study 1 (Lines with edges):** the existing project needs no change
+  beyond a neutral name, since `STUDY` defaults to 1.
+- **Study 2 (Similarity with rotation):** Netlify → **Add new project →
+  Import an existing project → GitHub → this repository**. On the configure
+  page open **Add environment variables** and add `STUDY` = `2`; the build
+  command and publish directory come from `netlify.toml`. Deploy.
+- Give both projects neutral names, since the name is the domain participants
+  see: Project configuration → General → Project details → Change project
+  name. (Older Netlify docs say "site" where the dashboard now says
+  "project".)
 
-Or, for a quick pilot without Git: drag the `site` folder onto
-<https://app.netlify.com/drop>. Forms still work after enabling form
-detection (below), but a drag-and-drop project has no "Trigger deploy"
-button: re-upload the `site` folder on its Deploys page after enabling
-detection.
-
-Then follow **Data storage with Netlify Forms** below once; the form only
-registers on a deploy made after detection is enabled.
+For a quick check without Git, build locally (`npm run build` or
+`npm run build:study2`) and drag the resulting `dist` folder onto
+<https://app.netlify.com/drop>.
 
 ## Run and test
 
 ```sh
-npm run serve        # http://localhost:8000  (any static server works; file:// does not)
+npm run serve        # http://localhost:8000/1/ and /2/ from the source tree (any static server works; file:// does not)
+npm run build        # assemble study 1 into dist/ as Netlify deploys it (npm run build:study2 for study 2)
 npm test             # Node checks: geometry, bounds, sequence construction, export
 PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs npm run test:browser
                      # real Chromium flow test; set SCREENSHOTS=dir to save screenshots
-npm run check:data   # data/ matches site/stimuli.js and the SVGs
+npm run check:data   # data/ matches site/1/stimuli.js and the SVGs
 npm run build:sheet  # rebuilds data/stimuli-notation.xlsx and the CSV copies (needs openpyxl: pip install -r requirements-optional.txt)
 npm run build:pdf    # rebuilds data/questions-by-reference.pdf, all 19 questions at physical size grouped by reference (needs Playwright)
 ```
@@ -65,22 +71,23 @@ resumes or sees their completion code).
 ## Two experiments, one app
 
 The runner (calibration, interleaving, counterbalancing, timing, storage) is
-shared code in `site/shared/`. Each experiment is a folder with four small
-files and its artwork: `index.html`, `main.js`, `config.js` (names the
+shared code in `site/shared/`. Each experiment is a numbered folder with four
+small files and its artwork: `index.html`, `main.js`, `config.js` (names the
 experiment via `experiment.id`; every session and submission carries it),
-`stimuli.js` (asset sizes and the questions) and `assets/`. Experiment 1 sits
-at the site root; a second experiment is served from its own folder on the
-same Netlify project, for example `/exp2/`. To scaffold one:
+`stimuli.js` (asset sizes and the questions) and `assets/`. Folders are
+numbered rather than named, and each study is deployed as its own Netlify
+project (see below), so a link says nothing about the study. To scaffold a
+third:
 
 ```sh
-node tools/new_experiment.mjs exp2 exp2-<short-id> "<Experiment name>"
+node tools/new_experiment.mjs 3 exp3-<short-id> "<Experiment name>"
 ```
 
-then drop the SVGs into `site/exp2/assets/`, fill `site/exp2/stimuli.js` in
-the same shape as experiment 1's, and review `site/exp2/config.js`. Because
-the runner is identical, the two data sets are directly comparable.
+then drop the SVGs into `site/3/assets/`, fill `site/3/stimuli.js` in the
+same shape as experiment 1's, and review `site/3/config.js`. Because the
+runner is identical, the data sets are directly comparable.
 
-### Experiment 2: Similarity with Rotation (`/rotation/`)
+### Experiment 2: Similarity with rotation (`site/2/`)
 
 Built from the designer's handoff of 2026-10-07 (`data/rotation/handoff-*`,
 57 SVGs). Sixteen handoff questions each have a reference and three
@@ -93,7 +100,7 @@ experiment 1, no control question. Every image is the handoff's 512 px square
 shown at 41.33 mm (the designer's calibrated size), centred on the rotation
 centre so the three objects align; the fill was normalised from #111 to pure
 black. `python3 tools/build_rotation_stimuli.py` regenerates
-`site/rotation/stimuli.js`, the assets and `data/rotation/{stimuli,comparisons}.csv`;
+`site/2/stimuli.js`, the assets and `data/rotation/{stimuli,comparisons}.csv`;
 `npm run build:pdf:rotation` makes `data/rotation/questions-by-reference.pdf`.
 
 ## Participant flow
@@ -171,12 +178,13 @@ the code reaches the experiment and the database (`participant_id`); the list
 that ties codes to names stays on your computer.
 
 ```sh
-python3 tools/make_participant_links.py names.txt --base https://YOUR-SITE.netlify.app --out participants-private.xlsx
+python3 tools/make_participant_links.py names.txt --site1 https://PROJECT-1.netlify.app --site2 https://PROJECT-2.netlify.app --out participants-private.xlsx
 ```
 
 `names.txt` has one name (or email) per line. The output lists, per person, a
-six-character code and two links, one per experiment, both carrying the same
-code so the two data sets can be joined on `participant_id`. The file is
+six-character code and two links (`<project-1>/?pid=CODE` for Lines with
+edges, `<project-2>/?pid=CODE` for Similarity with rotation), both carrying
+the same code so the two data sets can be joined on `participant_id`. The file is
 private: `participants-private*` is git-ignored, and you share only each
 person's links. Re-run with `--existing participants-private.csv` to add
 people while keeping earlier codes, or `--codes-only 10` for codes without
@@ -202,7 +210,7 @@ screen with the reaction time, and one row per session with the full record.
 
 ## Data storage with Netlify Forms (alternative)
 
-The deployed `site/index.html` contains a hidden form named
+The deployed `site/1/index.html` contains a hidden form named
 `line-similarity-responses`; the app posts to it with the fields listed in
 `docs/EXPERIMENT_DATA.md`. The complete session record is in the `payload`
 field as JSON.

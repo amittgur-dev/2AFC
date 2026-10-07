@@ -22,7 +22,7 @@ const sbPosts = []; // Supabase-style inserts: {table, query, apikey, auth, pref
 // completion code on; the failure run uses the Netlify Forms path. (Served by
 // the test server rather than Playwright routing, which would also intercept
 // and drop the leaving-page sends.)
-const configSource = fs.readFileSync(path.join(APP, 'config.js'), 'utf8');
+const configSource = fs.readFileSync(path.join(APP, '1/config.js'), 'utf8');
 let configVariant = 'supabase'; // 'supabase' | 'netlify' | null (deployed pilot config)
 const configFor = variant => {
   let c = configSource.replace('allowDownload: false', 'allowDownload: true').replace('showCode: false', 'showCode: true').replace('rememberSession: false', 'rememberSession: true');
@@ -39,7 +39,7 @@ const server = http.createServer((req, res) => {
       posts.push({url: req.url, body}); res.writeHead(200); res.end('ok');
     }); return;
   }
-  if (req.url.split('?')[0] === '/config.js' && configVariant) { res.writeHead(200, {'Content-Type': 'text/javascript', 'Cache-Control': 'no-store'}); return res.end(configFor(configVariant)); }
+  if (req.url.split('?')[0] === '/1/config.js' && configVariant) { res.writeHead(200, {'Content-Type': 'text/javascript', 'Cache-Control': 'no-store'}); return res.end(configFor(configVariant)); }
   let file = path.join(APP, req.url.split('?')[0]);
   if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
   if (!fs.existsSync(file)) { res.writeHead(404); return res.end(); }
@@ -48,6 +48,7 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(r => server.listen(0, r));
 const base = `http://127.0.0.1:${server.address().port}/`;
+const exp1 = base + '1/'; // study 1 lives at /1/, study 2 at /2/
 const browser = await chromium.launch();
 const context = await browser.newContext({viewport: {width: 1300, height: 820}});
 // Headless Chromium reports the viewport as the screen; pin it so a window
@@ -61,7 +62,7 @@ const state = () => page.evaluate(() => lineSimilarityState());
 const target = 5.11; let ppmm = target; // the card slider snaps to 0.25 px, so the realised scale is read back after calibration
 const shots = process.env.SCREENSHOTS; if (shots) fs.mkdirSync(shots, {recursive: true});
 
-await page.goto(base + '?pid=TEST-001&STUDY_ID=S1&reset=1');
+await page.goto(exp1 + '?pid=TEST-001&STUDY_ID=S1&reset=1');
 assert.equal((await state()).mode, 'information');
 assert.ok(await page.isHidden('#consent-row'), 'pilot has no consent checkbox');
 assert.ok(await page.isHidden('#code-row'), 'a link with a participant id asks for no code');
@@ -83,7 +84,7 @@ await page.waitForFunction(() => lineSimilarityState().ready || document.getElem
 if ((await state()).mode === 'instructions') await page.click('#start');
 await page.waitForFunction(() => lineSimilarityState().mode === 'experiment');
 // Back to the instructions flow check from a clean session.
-await page.goto(base + '?pid=TEST-001&STUDY_ID=S1&reset=1');
+await page.goto(exp1 + '?pid=TEST-001&STUDY_ID=S1&reset=1');
 await page.click('#begin');
 await page.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page.click('#confirm-card');
@@ -139,7 +140,7 @@ assert.ok(saved.trials[0].reaction_time_ms >= 300, 'timing starts at stimulus on
 const sequenceBefore = saved.sequence.map(p => p.trial_id + p.side_assignment).join();
 
 // Reload mid-session: the session resumes after recalibration with the same sequence.
-await page.goto(base);
+await page.goto(exp1);
 assert.equal((await state()).mode, 'information');
 assert.ok(!(await page.isHidden('#resume-notice')));
 assert.ok((await page.textContent('#resume-notice')).includes('3 of 19'));
@@ -234,12 +235,12 @@ assert.equal((await state()).mode, 'complete');
 await page.waitForTimeout(200);
 assert.equal(sbPosts.length, 4);
 // Revisiting a completed session does not restart it.
-await page.goto(base);
+await page.goto(exp1);
 await page.waitForFunction(() => lineSimilarityState().mode === 'complete');
 assert.ok((await page.textContent('#submit-status')).includes('already completed'));
 assert.equal(sbPosts.length, 4, 'a confirmed send is not repeated on revisit');
 // A different participant id in the URL starts a fresh session instead of showing the first participant's code.
-await page.goto(base + '?pid=TEST-002');
+await page.goto(exp1 + '?pid=TEST-002');
 assert.equal((await state()).mode, 'information');
 assert.equal((await state()).participant_id, 'TEST-002'); assert.equal((await state()).completed, 0);
 assert.ok(await page.isHidden('#resume-notice'));
@@ -259,7 +260,7 @@ configVariant = 'netlify';
 const page2 = await context.newPage();
 page2.on('pageerror', e => errors.push(String(e)));
 await page2.route('**/*', route => route.request().method() === 'POST' ? route.fulfill({status: 500, body: 'no'}) : route.continue());
-await page2.goto(base + '?reset=1&pid=TEST-FAIL');
+await page2.goto(exp1 + '?reset=1&pid=TEST-FAIL');
 await page2.click('#begin');
 await page2.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page2.click('#confirm-card');
@@ -281,7 +282,7 @@ const pilot = await browser.newContext({viewport: {width: 1300, height: 820}});
 const page3 = await pilot.newPage();
 page3.on('pageerror', e => errors.push(String(e)));
 const before = posts.length + sbPosts.length;
-await page3.goto(base + '?reset=1');
+await page3.goto(exp1 + '?reset=1');
 assert.equal(await page3.textContent('#study-title'), 'Similarity judgment');
 assert.ok((await page3.textContent('#information')).includes('reference object (A)'));
 // No participant id in the link: a code is required before continuing.
@@ -304,7 +305,7 @@ assert.ok(await page3.isHidden('#completion-code') && await page3.isHidden('#dow
 const pilotSaved = await page3.evaluate(k => JSON.parse(localStorage.getItem(k)), 'line-similarity:session:v1');
 assert.equal(pilotSaved.experiment_id, 'exp1-lines-with-edges'); assert.equal(pilotSaved.trials.length, 19);
 assert.equal(pilotSaved.participant_id, 'K7P3QM'); assert.equal(pilotSaved.participant_id_source, 'typed');
-await page3.goto(base);
+await page3.goto(exp1);
 assert.equal(posts.length + sbPosts.length, before, 'pilot sends nothing');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');
 assert.notEqual((await page3.evaluate(() => lineSimilarityState())).session_id, pilotSaved.session_id);
@@ -312,7 +313,7 @@ assert.notEqual((await page3.evaluate(() => lineSimilarityState())).session_id, 
 // Experiment 2 runs from its own folder on the same site: 48 questions, 41.33 mm images.
 const page4 = await pilot.newPage();
 page4.on('pageerror', e => errors.push(String(e)));
-await page4.goto(base + 'rotation/?reset=1&pid=K7P3QM');
+await page4.goto(base + '2/?reset=1&pid=K7P3QM');
 assert.ok(await page4.isHidden('#code-row'));
 await page4.click('#begin');
 await page4.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
@@ -323,13 +324,41 @@ const s4 = await page4.evaluate(() => lineSimilarityState());
 assert.equal(s4.total, 48); assert.ok(['sub', 'whole', 'shape'].includes(s4.presentation.left_condition));
 const objs4 = await page4.$$eval('#stage .object', els => els.map(e => ({w: e.getBoundingClientRect().width, src: e.querySelector('img').currentSrc})));
 assert.equal(objs4.length, 3);
-for (const o of objs4) { assert.ok(Math.abs(o.w - 41.33 * ppmm) < .1); assert.ok(/\/rotation\/assets\/S\d{3}\.svg$/.test(o.src), o.src); }
+for (const o of objs4) { assert.ok(Math.abs(o.w - 41.33 * ppmm) < .1); assert.ok(/\/2\/assets\/S\d{3}\.svg$/.test(o.src), o.src); }
 if (shots) await page4.screenshot({path: path.join(shots, 'rotation-trial-1.png')});
 for (let i = 0; i < 3; i++) { await page4.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page4.keyboard.press('ArrowLeft'); }
 const rotSaved = await page4.evaluate(() => JSON.parse(localStorage.getItem('line-similarity:rotation:session:v1')));
 assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.experiment_name, 'Similarity with rotation'); assert.equal(rotSaved.trials.length, 3);
 assert.equal(rotSaved.participant_id, 'K7P3QM'); assert.equal(rotSaved.participant_id_source, 'url');
 assert.ok(rotSaved.design.randomizeTrialOrder && rotSaved.design.sideAssignment === 'random' && rotSaved.design.controlPosition === 'random');
+
+// The deployed form of a study: built into its own folder and served at the root.
+const {execFileSync} = await import('node:child_process');
+const os = await import('node:os');
+const built = fs.mkdtempSync(path.join(os.tmpdir(), 'study2-'));
+execFileSync('node', [path.join(APP, '../tools/build_site.mjs'), '2', built]);
+const server2 = http.createServer((req, res) => {
+  let file = path.join(built, req.url.split('?')[0]);
+  if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
+  if (!fs.existsSync(file)) { res.writeHead(404); return res.end(); }
+  res.writeHead(200, {'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store'});
+  fs.createReadStream(file).pipe(res);
+});
+await new Promise(r => server2.listen(0, r));
+const page5 = await pilot.newPage();
+page5.on('pageerror', e => errors.push(String(e)));
+await page5.goto(`http://127.0.0.1:${server2.address().port}/?pid=BUILT1`);
+assert.equal(await page5.textContent('#study-title'), 'Similarity judgment');
+await page5.click('#begin');
+await page5.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
+await page5.click('#confirm-card');
+await page5.waitForSelector('#start:not([disabled])'); await page5.click('#start');
+await page5.waitForFunction(() => lineSimilarityState().ready);
+const s5 = await page5.evaluate(() => lineSimilarityState());
+assert.equal(s5.total, 48); assert.equal(s5.participant_id, 'BUILT1');
+const srcs5 = await page5.$$eval('#stage img', els => els.map(e => new URL(e.currentSrc).pathname));
+assert.ok(srcs5.length === 3 && srcs5.every(p => /^\/assets\/S\d{3}\.svg$/.test(p)), 'a built study serves its assets at the root: ' + srcs5.join());
+server2.close(); fs.rmSync(built, {recursive: true, force: true});
 
 assert.deepEqual(errors.filter(e => !/Failed to load resource/.test(e)), [], 'no page errors beyond the deliberately aborted image loads');
 await browser.close(); server.close();

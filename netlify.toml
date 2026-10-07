@@ -1,7 +1,15 @@
-# Static site: no build step. Everything in site/ is published as-is.
+# One Netlify project per study, all from this repository. The build assembles
+# the chosen study (site/<STUDY>/ plus site/shared/) into dist/, so each
+# project serves its study at its own root and the links are independent:
+#   project for study 1: no settings needed (STUDY defaults to 1)
+#   project for study 2: environment variable STUDY = 2
+# Give each project a neutral name; it becomes the domain participants see.
 [build]
-  publish = "site"
-  command = ""
+  command = "node tools/build_site.mjs"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
 
 [[headers]]
   for = "/*"

@@ -7,13 +7,13 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../site');
-const {assets, trials} = await import(path.join(APP, 'stimuli.js'));
+const {assets, trials} = await import(path.join(APP, '1/stimuli.js'));
 const {CARD, STAGE, LABEL, pixelsPerMm, dimensions, fits, requiredPixels, changedScreen, zoomSuspected} = await import(path.join(APP, 'shared/geometry.js'));
 const design = await import(path.join(APP, 'shared/design.js'));
 const {validateDesign, interleave, hasConsecutiveSameFamily, rng, shuffle} = design;
 const buildDesign = (d, seed, t = trials) => design.buildDesign(d, seed, t);
 const buildSequence = (d, seed, t = trials) => design.buildSequence(d, seed, t);
-const {config} = await import(path.join(APP, 'config.js'));
+const {config} = await import(path.join(APP, '1/config.js'));
 const {trialsToCsv, compactRecord, minimalRecord, sessionRow, trialRows, BEACON_LIMIT_BYTES} = await import(path.join(APP, 'shared/storage.js'));
 
 // Stimuli and physical layout
@@ -31,8 +31,8 @@ assert.deepEqual([assets['6-A'].widthMm, assets['6-A'].heightMm], [48, 6]);
 const measurements = fs.readFileSync(path.join(APP, '../data/measurements.csv'), 'utf8').trim().split('\n').slice(1).map(l => l.split(','));
 for (const m of measurements) if (['1', '2', '3', '4', '5'].includes(m[1])) { assert.equal(+m[7], m[3] === 'A' || m[3] === 'E' ? 40 : 80, m[0] + ' body length'); assert.equal(+m[8], m[3] === 'P' ? 2 : 1, m[0] + ' body thickness'); }
 for (const [id, a] of Object.entries(assets)) {
-  assert.ok(fs.existsSync(path.join(APP, a.src)), id + ' asset exists');
-  assert.ok(fs.readFileSync(path.join(APP, a.src), 'utf8').includes('<svg'));
+  assert.ok(fs.existsSync(path.join(APP, '1', a.src)), id + ' asset exists');
+  assert.ok(fs.readFileSync(path.join(APP, '1', a.src), 'utf8').includes('<svg'));
 }
 for (const ppmm of [2, 3.78, 4, 5, 6]) {
   assert.ok(Math.abs(pixelsPerMm(CARD.width * ppmm) - ppmm) < 1e-12);
@@ -160,8 +160,8 @@ assert.equal(buildDesign({...config.design, randomizeTrialOrder: false}, 5).inte
 
 // Experiment 2: Similarity with Rotation. 16 questions x 3 pairs, every
 // comparison classified from the rotation parameters, same stage.
-const rot = await import(path.join(APP, 'rotation/stimuli.js'));
-const rotConfig = (await import(path.join(APP, 'rotation/config.js'))).config;
+const rot = await import(path.join(APP, '2/stimuli.js'));
+const rotConfig = (await import(path.join(APP, '2/config.js'))).config;
 assert.equal(rot.trials.length, 48);
 assert.equal(Object.keys(rot.assets).length, 64);
 assert.equal(rotConfig.experiment.id, 'exp2-similarity-with-rotation');
@@ -171,14 +171,14 @@ for (let q = 1; q <= 16; q++) {
   const a = rot.assets[`${q}-A`];
   for (const v of ['sub', 'whole', 'shape']) {
     const c = rot.assets[`${q}-${v}`];
-    assert.ok(fs.existsSync(path.join(APP, 'rotation', c.src)) && c.widthMm === 41.33 && c.heightMm === 41.33);
+    assert.ok(fs.existsSync(path.join(APP, '2', c.src)) && c.widthMm === 41.33 && c.heightMm === 41.33);
     assert.equal(c.shape, a.shape); assert.equal(c.sub, a.sub);
     const db = (c.baseRot - a.baseRot + 360) % 360, ds = (c.subRot - a.subRot + 360) % 360;
     assert.deepEqual([db, ds], {sub: [0, 45], whole: [45, 45], shape: [45, 0]}[v], `question ${q} ${v}`);
     assert.equal(c.relationToReference, v);
   }
 }
-assert.ok(!Object.values(rot.assets).some(a => fs.readFileSync(path.join(APP, 'rotation', a.src), 'utf8').includes('#111')), 'pure black artwork');
+assert.ok(!Object.values(rot.assets).some(a => fs.readFileSync(path.join(APP, '2', a.src), 'utf8').includes('#111')), 'pure black artwork');
 // Questions follow the researcher's order and naming (base of sub-shapes).
 const UP = 'upward pointing triangle', DOWN = 'downward pointing triangle';
 const expectedNames = [['Square', 'square'], ['Square', 'diamond'], ['Diamond', 'diamond'], ['Diamond', 'square'], ['Upward pointing triangle', UP], ['Upward pointing triangle', DOWN], ['Downward pointing triangle', DOWN], ['Downward pointing triangle', UP],
@@ -197,8 +197,8 @@ for (let seed = 0; seed < 100; seed++) {
   assert.equal(s.sequence.length, 48); assert.ok(s.interleaved);
   assert.deepEqual(s.sequence.map(p => p.trial_id).sort(), rot.trials.map(t => t.id).sort());
 }
-const rotHtml = fs.readFileSync(path.join(APP, 'rotation/index.html'), 'utf8');
-assert.ok(rotHtml.includes('../shared/style.css') && rotHtml.includes('main.js') && fs.existsSync(path.join(APP, 'rotation/main.js')));
+const rotHtml = fs.readFileSync(path.join(APP, '2/index.html'), 'utf8');
+assert.ok(rotHtml.includes('../shared/style.css') && rotHtml.includes('main.js') && fs.existsSync(path.join(APP, '2/main.js')));
 
 // Randomisation is on in both experiments: question order shuffled with a
 // recorded seed, the two comparison objects assigned to left/right at random.
@@ -212,7 +212,7 @@ assert.deepEqual([config.experiment.id, config.experiment.name, rotConfig.experi
 assert.ok(config.participant.requireCode && rotConfig.participant.requireCode, 'both experiments ask for a participant code when the link has none');
 for (const good of ['K7P3QM', 'ab-12', 'p_1']) assert.ok(new RegExp(config.participant.codePattern).test(good), good);
 for (const bad of ['', 'x', 'a b', 'x'.repeat(33), '=1']) assert.ok(!new RegExp(config.participant.codePattern).test(bad), 'rejects ' + JSON.stringify(bad));
-assert.ok(rotHtml.includes('id="participant-code"') && fs.readFileSync(path.join(APP, 'index.html'), 'utf8').includes('id="participant-code"'));
+assert.ok(rotHtml.includes('id="participant-code"') && fs.readFileSync(path.join(APP, '1/index.html'), 'utf8').includes('id="participant-code"'));
 
 // Supabase rows match the migration's columns exactly, for both experiments.
 const sql = fs.readFileSync(path.join(APP, '../supabase/migrations/0001_experiment_tables.sql'), 'utf8');
@@ -237,8 +237,23 @@ const appSource = fs.readFileSync(path.join(APP, 'shared/app.js'), 'utf8');
 assert.ok(appSource.includes('s.ok && !s.unconfirmed'), 'only confirmed sends suppress the completion send');
 
 // Deployed HTML and Netlify form registration
-const html = fs.readFileSync(path.join(APP, 'index.html'), 'utf8');
-for (const source of ['shared/style.css', 'main.js']) assert.ok(html.includes(source) && fs.existsSync(path.join(APP, source)));
+const html = fs.readFileSync(path.join(APP, '1/index.html'), 'utf8');
+for (const source of ['../shared/style.css', 'main.js']) assert.ok(html.includes(source) && fs.existsSync(path.join(APP, '1', source)));
+assert.ok(!fs.existsSync(path.join(APP, 'index.html')) && !fs.existsSync(path.join(APP, 'rotation')), 'studies live only in numbered folders');
+// Each study builds into its own publish folder with the shared runner beside it.
+const {execFileSync} = await import('node:child_process');
+const os = await import('node:os');
+for (const [study, nAssets] of [['1', 32], ['2', 57]]) {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'study-'));
+  execFileSync('node', [path.join(APP, '../tools/build_site.mjs'), study, outDir]);
+  for (const f of ['index.html', 'main.js', 'config.js', 'stimuli.js', 'shared/app.js', 'shared/design.js', 'shared/storage.js', 'shared/geometry.js', 'shared/style.css']) assert.ok(fs.existsSync(path.join(outDir, f)), `study ${study} build has ${f}`);
+  assert.equal(fs.readdirSync(path.join(outDir, 'assets')).length, nAssets);
+  const built = fs.readFileSync(path.join(outDir, 'index.html'), 'utf8') + fs.readFileSync(path.join(outDir, 'main.js'), 'utf8');
+  assert.ok(built.includes('./shared/style.css') && built.includes('./shared/app.js') && !built.includes('../shared/'), `study ${study} build references shared/ at its root`);
+  fs.rmSync(outDir, {recursive: true, force: true});
+}
+const toml = fs.readFileSync(path.join(APP, '../netlify.toml'), 'utf8');
+assert.ok(toml.includes('command = "node tools/build_site.mjs"') && toml.includes('publish = "dist"'), 'Netlify builds one study per project');
 assert.throws(() => design.buildDesign(config.design, 1, []), /trials/);
 assert.ok(html.includes(`name="${config.storage.formName}"`) && html.includes('data-netlify="true"'));
 const storageSource = fs.readFileSync(path.join(APP, 'shared/storage.js'), 'utf8');

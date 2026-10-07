@@ -3,3 +3,4 @@ rebuilt-assets/
 .DS_Store
 *.log
 participants-private*
+dist/

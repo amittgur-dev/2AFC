@@ -1,5 +1,5 @@
 // Shared experiment runner. An experiment folder calls run() with its own
-// config, assets and trials (see site/main.js).
+// config, assets and trials (see site/1/main.js).
 import {CARD, STAGE, LABEL, pixelsPerMm, dimensions, fits, requiredPixels, changedScreen, zoomSuspected} from './geometry.js';
 import {buildDesign, allAssetIds} from './design.js';
 import {loadSession, saveSession, clearSession, storageAvailable, randomId, trialsToCsv, submitSession, beaconSession, download} from './storage.js';

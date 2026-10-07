@@ -6,11 +6,13 @@ code ever reaches the experiment and the database; keep the output file out of
 the repository (participants-private* is git-ignored) and share only the links.
 
 Usage:
-  python3 tools/make_participant_links.py names.txt --base https://YOUR-SITE.netlify.app
-  python3 tools/make_participant_links.py names.txt --base https://... --out participants-private.xlsx
+  python3 tools/make_participant_links.py names.txt --site1 https://STUDY-1.netlify.app --site2 https://STUDY-2.netlify.app
+  python3 tools/make_participant_links.py names.txt --site1 ... --site2 ... --out participants-private.xlsx
 Options:
   --existing participants-private.csv   keep the codes already assigned in that file
   --codes-only 12                       no names: make 12 anonymous codes/links
+The two studies are separate Netlify projects (separate links) built from
+the same app; see README.md, "Deploy on Netlify".
 
 The same code is used for both experiments, so a person's two data sets can
 be joined on participant_id without knowing who they are.
@@ -24,13 +26,14 @@ def make_code(n=6):
 
 ap = argparse.ArgumentParser()
 ap.add_argument('names', nargs='?', help='text file with one name per line')
-ap.add_argument('--base', required=True, help='site root, e.g. https://line-similarity-2afc.netlify.app')
+ap.add_argument('--site1', required=True, help='address of the Lines with edges project, e.g. https://STUDY-1.netlify.app')
+ap.add_argument('--site2', required=True, help='address of the Similarity with rotation project')
 ap.add_argument('--out', default='participants-private.csv', help='.csv or .xlsx (default participants-private.csv)')
 ap.add_argument('--existing', help='previous output file; its codes are kept')
 ap.add_argument('--codes-only', type=int, default=0, help='make this many codes without names')
 a = ap.parse_args()
 
-base = a.base.rstrip('/')
+site1, site2 = a.site1.rstrip('/'), a.site2.rstrip('/')
 names = [l.strip() for l in Path(a.names).read_text().splitlines() if l.strip()] if a.names else []
 if a.codes_only: names += [''] * a.codes_only
 if not names: sys.exit('No names given (or use --codes-only N).')
@@ -46,8 +49,8 @@ for name in names:
         code = make_code()
     used.add(code)
     rows.append({'name': name, 'code': code,
-                 'link_lines_with_edges': f'{base}/?pid={code}',
-                 'link_similarity_with_rotation': f'{base}/rotation/?pid={code}'})
+                 'link_lines_with_edges': f'{site1}/?pid={code}',
+                 'link_similarity_with_rotation': f'{site2}/?pid={code}'})
 
 out = Path(a.out)
 if out.suffix.lower() == '.xlsx':
@@ -65,5 +68,5 @@ else:
     with out.open('w', newline='') as f:
         w = csv.DictWriter(f, rows[0].keys()); w.writeheader(); w.writerows(rows)
 print(f'{len(rows)} participants -> {out}  (private: keep out of the repository; share only the links)')
-for r in rows[:3]: print(f"  {r['name'] or '(no name)'}: {r['code']}  {r['link_lines_with_edges']}")
+for r in rows[:3]: print(f"  {r['name'] or '(no name)'}: {r['code']}  {r['link_lines_with_edges']}  {r['link_similarity_with_rotation']}")
 if len(rows) > 3: print('  ...')

@@ -1,8 +1,8 @@
 """Build experiment 2 ("Similarity with Rotation") from the designer's handoff.
 
 Reads data/rotation/handoff-manifest.csv and data/rotation/handoff-svg/*.svg,
-writes site/rotation/assets/S0xx.svg (fill normalised to pure black),
-site/rotation/stimuli.js, data/rotation/stimuli.csv and data/rotation/comparisons.csv.
+writes site/2/assets/S0xx.svg (fill normalised to pure black),
+site/2/stimuli.js, data/rotation/stimuli.csv and data/rotation/comparisons.csv.
 
 Each handoff question has a reference A and three comparisons that differ from
 A by a 45 degree rotation of: the sub-shapes only ('sub'), the whole object
@@ -21,7 +21,7 @@ from pathlib import Path
 import csv, json, re
 root = Path(__file__).resolve().parents[1]
 src = root / 'data/rotation'
-site = root / 'site/rotation'
+site = root / 'site/2'
 (site / 'assets').mkdir(parents=True, exist_ok=True)
 
 rows = list(csv.DictReader((src / 'handoff-manifest.csv').open()))
