@@ -345,7 +345,8 @@ assert.equal(objs4.length, 3);
 for (const o of objs4) { assert.ok(Math.abs(o.w - 41.33 * ppmm) < .1); assert.ok(/\/2\/assets\/S\d{3}\.svg$/.test(o.src), o.src); }
 if (shots) await page4.screenshot({path: path.join(shots, 'rotation-trial-1.png')});
 for (let i = 0; i < 48; i++) { await page4.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page4.keyboard.press(i % 3 ? 'ArrowLeft' : 'ArrowRight'); }
-await page4.waitForFunction(() => lineSimilarityState().mode === 'complete' && lineSimilarityState().submitted);
+await page4.waitForFunction(() => lineSimilarityState().mode === 'complete' && lineSimilarityState().submitted, null, {timeout: 60000})
+  .catch(async e => { throw new Error('study 2 completion wait failed: state=' + JSON.stringify(await page4.evaluate(() => lineSimilarityState())) + ' status="' + await page4.textContent('#submit-status') + '" sbPosts=' + JSON.stringify(sbPosts.slice(sbBefore).map(p => [p.table, p.rows.length])) + ' ' + e.message); });
 assert.equal((await page4.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you.');
 const rotSaved = await page4.evaluate(() => JSON.parse(localStorage.getItem('line-similarity:rotation:session:v1')));
 assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.experiment_name, 'Similarity with rotation'); assert.equal(rotSaved.trials.length, 48);
