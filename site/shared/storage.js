@@ -95,9 +95,96 @@ export function minimalRecord(session, status) {
     })),
   };
 }
+// ---------- Supabase (per-experiment tables, see supabase/migrations) ----------
+// One row per send for the *_sessions table.
+export function sessionRow(session, status, record = {...session, completion_status: status}) {
+  return {
+    session_id: session.session_id, attempt: session.submissions.length + 1,
+    experiment_id: session.experiment_id, experiment_name: session.experiment_name ?? null, participant_id: session.participant_id ?? null,
+    url_parameters: session.url_parameters ?? null,
+    protocol_version: session.protocol_version, stimulus_set_version: session.stimulus_set_version, layout_version: session.layout_version,
+    submitted_status: status, completion_status: session.completion_status,
+    trials_completed: session.trials.length, trials_total: session.sequence.length,
+    started_at: session.started_at ?? null, consented_at: session.consented_at ?? null, first_trial_at: session.first_trial_at ?? null, ended_at: session.ended_at ?? null,
+    pixels_per_mm: session.calibration?.pixels_per_mm ?? null, card_width_px: session.calibration?.card_width_px ?? null,
+    design: session.design ?? null, calibration: session.calibration ?? null,
+    environment_at_start: session.environment_at_start ?? null, environment_at_end: session.environment_at_end ?? null,
+    storage_available: session.storage_available ?? null,
+    record,
+  };
+}
+// One row per answered screen for the *_trials table. `essential` drops the
+// diagnostic columns so a leaving-page send stays small.
+export function trialRows(session, {essential = false} = {}) {
+  return session.trials.map(t => ({
+    session_id: session.session_id, experiment_id: session.experiment_id, participant_id: session.participant_id ?? null,
+    presentation_index: t.presentation_index, trial_id: t.trial_id, family_id: t.family_id, family_name: t.family_name ?? null, group_name: t.group ?? null, repetition_index: t.repetition_index ?? 0,
+    reference_asset_id: t.reference_asset_id, left_asset_id: t.left_asset_id, right_asset_id: t.right_asset_id,
+    left_condition: t.left_condition, right_condition: t.right_condition, side_assignment: t.side_assignment,
+    chosen_side: t.chosen_side, chosen_label: t.chosen_label, chosen_condition: t.chosen_condition, chosen_asset_id: t.chosen_asset_id,
+    response_method: t.response_method, reaction_time_ms: t.reaction_time_ms,
+    stimulus_onset_at: t.stimulus_onset_iso, response_at: t.response_iso, attempts: t.attempts,
+    interruptions: essential ? (t.interruptions?.length ? t.interruptions.map(i => i.type) : null) : (t.interruptions ?? null),
+    pixels_per_mm: t.pixels_per_mm,
+    ...(essential ? {} : {
+      viewport: t.viewport ?? null,
+      reference_width_mm: t.reference_width_mm, reference_height_mm: t.reference_height_mm,
+      left_width_mm: t.left_width_mm, left_height_mm: t.left_height_mm, right_width_mm: t.right_width_mm, right_height_mm: t.right_height_mm,
+    }),
+  }));
+}
+function supabaseConfigured(config) { const sb = config.storage.supabase; return !!(sb && sb.url && sb.anonKey && sb.sessionsTable && sb.trialsTable); }
+// POST rows to a table through PostgREST. `onConflict` names the unique
+// columns on which duplicates are ignored (insert ... on conflict do nothing).
+function supabaseInsert(config, table, rows, {onConflict, keepalive = false} = {}) {
+  const sb = config.storage.supabase;
+  const url = new URL(sb.url.replace(/\/+$/, '') + '/rest/v1/' + table);
+  if (onConflict) url.searchParams.set('on_conflict', onConflict);
+  const body = JSON.stringify(rows);
+  return {promise: fetch(url, {method: 'POST', keepalive, body, headers: {
+    apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey, 'Content-Type': 'application/json',
+    Prefer: 'return=minimal' + (onConflict ? ',resolution=ignore-duplicates' : ''),
+  }}), bytes: body.length};
+}
+async function supabaseSubmit(session, config, status) {
+  const sb = config.storage.supabase;
+  let bytes = 0;
+  const s = supabaseInsert(config, sb.sessionsTable, [sessionRow(session, status)], {onConflict: 'session_id,attempt'});
+  bytes += s.bytes;
+  const r1 = await s.promise;
+  if (!r1.ok) return {ok: false, status: 'supabase-sessions-' + r1.status, detail: await r1.text().catch(() => ''), bytes};
+  const rows = trialRows(session);
+  if (rows.length) {
+    const t = supabaseInsert(config, sb.trialsTable, rows, {onConflict: 'session_id,presentation_index'});
+    bytes += t.bytes;
+    const r2 = await t.promise;
+    if (!r2.ok) return {ok: false, status: 'supabase-trials-' + r2.status, detail: await r2.text().catch(() => ''), bytes};
+  }
+  return {ok: true, status: 'supabase', bytes};
+}
+// Leaving-page send: keepalive fetches (they carry the apikey header, which
+// sendBeacon cannot). All keepalive bodies in flight share the 64 KiB cap, so
+// the session row carries a compact record only if it fits, and the trial
+// rows carry the essential columns.
+function supabaseBeacon(session, config, status) {
+  const sb = config.storage.supabase;
+  const rows = trialRows(session, {essential: true});
+  const trialsBody = JSON.stringify(rows);
+  const size = text => new Blob([text]).size;
+  if (size(trialsBody) + 2000 > BEACON_LIMIT_BYTES) return {ok: false, status: 'keepalive-too-large'};
+  let record = null, label = 'keepalive-no-record';
+  for (const [candidate, name] of [[compactRecord(session, status), 'keepalive-compact'], [minimalRecord(session, status), 'keepalive-minimal']]) {
+    if (size(JSON.stringify(candidate)) + size(trialsBody) + 2000 <= BEACON_LIMIT_BYTES) { record = candidate; label = name; break; }
+  }
+  supabaseInsert(config, sb.sessionsTable, [sessionRow(session, status, record)], {onConflict: 'session_id,attempt', keepalive: true}).promise.catch(() => {});
+  if (rows.length) supabaseInsert(config, sb.trialsTable, rows, {onConflict: 'session_id,presentation_index', keepalive: true}).promise.catch(() => {});
+  return {ok: true, status: label, bytes: trialsBody.length};
+}
+
 function destination(config) {
   const mode = config.storage.mode;
   if (mode === 'local') return {skip: {ok: true, status: 'local', detail: 'Local-only mode; nothing sent.'}};
+  if (mode === 'supabase') return supabaseConfigured(config) ? {target: 'supabase', mode} : {skip: {ok: false, status: 'unconfigured', detail: 'storage.supabase url, anonKey or table names are empty'}};
   if (mode === 'netlify-forms') return {target: location.pathname, mode};
   if (mode === 'endpoint') return config.storage.endpoint ? {target: config.storage.endpoint, mode} : {skip: {ok: false, status: 'unconfigured', detail: 'storage.endpoint is empty'}};
   return {skip: {ok: false, status: 'unknown-mode', detail: mode}};
@@ -110,20 +197,23 @@ const encode = (session, config, status, record, mode) => mode === 'netlify-form
 // navigator.sendBeacon (64 KiB cap). Tries the full record, then the compact
 // and minimal ones; above the limit nothing is sent and the record stays in
 // localStorage for the next visit. Returns {ok, status, bytes}; never throws.
+// Every result carries unconfirmed: true because delivery cannot be observed;
+// a later confirmed send (fetch with a response) is still needed.
 export function beaconSession(session, config, status) {
   const {skip, target, mode} = destination(config);
-  if (skip) return skip;
+  if (skip) return {...skip, unconfirmed: true};
   try {
-    if (!navigator.sendBeacon) return {ok: false, status: 'beacon-unsupported'};
+    if (mode === 'supabase') return {...supabaseBeacon(session, config, status), unconfirmed: true};
+    if (!navigator.sendBeacon) return {ok: false, status: 'beacon-unsupported', unconfirmed: true};
     for (const [record, label] of [[{...session, completion_status: status}, 'beacon'], [compactRecord(session, status), 'beacon-compact'], [minimalRecord(session, status), 'beacon-minimal']]) {
       const {body, type} = encode(session, config, status, record, mode);
       if (new Blob([body]).size > BEACON_LIMIT_BYTES) continue;
       const sent = navigator.sendBeacon(target, new Blob([body], {type}));
-      return {ok: sent, status: sent ? label : label + '-failed', bytes: body.length};
+      return {ok: sent, status: sent ? label : label + '-failed', bytes: body.length, unconfirmed: true};
     }
-    return {ok: false, status: 'beacon-too-large'};
+    return {ok: false, status: 'beacon-too-large', unconfirmed: true};
   } catch (e) {
-    return {ok: false, status: 'beacon-error', detail: String(e?.message ?? e)};
+    return {ok: false, status: 'beacon-error', detail: String(e?.message ?? e), unconfirmed: true};
   }
 }
 // Sends the full session with a normal fetch (no size cap). Resolves to
@@ -133,6 +223,7 @@ export async function submitSession(session, config, {status = 'complete', beaco
   const {skip, target, mode} = destination(config);
   if (skip) return skip;
   try {
+    if (mode === 'supabase') return await supabaseSubmit(session, config, status);
     const {body, type} = encode(session, config, status, {...session, completion_status: status}, mode);
     const res = await fetch(target, {method: 'POST', headers: {'Content-Type': type}, body});
     return {ok: res.ok, status: String(res.status), detail: res.ok ? '' : await res.text().catch(() => ''), bytes: body.length};

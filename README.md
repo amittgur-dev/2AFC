@@ -155,7 +155,7 @@ mixed together is reflected in the first three rows.
 | Participant ID | From `?pid=`, `?PROLIFIC_PID=` or `?participant=`; otherwise a random session id. `STUDY_ID`, `SESSION_ID`, `source` pass through. A stored session is resumed only for the same participant id. | `participant.idParams`, `participant.passthroughParams`. |
 | Completion / return | "Finished. Thank you." only; no code, no redirect. | `completion.showCode`, `completion.code`, `completion.redirectUrl`. |
 | Dropout handling | An interim record flagged `abandoned` is sent when a participant leaves after at least one response (each reload mid-study sends one; dedupe by session id). Dropouts before the first response leave no server-side trace. Partial data also stays in the browser so they can resume. | `storage.submitPartialOnLeave: false`. |
-| Data destination | None for the pilot (`storage.mode: 'local'`, downloads off): responses stay in the browser only. | `storage.mode: 'netlify-forms'` (set up below) or `'endpoint'` with a JSON POST URL (e.g. a Netlify Function, Google Apps Script or your own server); `storage.allowDownload: true` for a download button. |
+| Data destination | Supabase tables per experiment (`storage.mode: 'supabase'`; see `supabase/README.md`). Until the project URL and anon key are filled in the mode is `'local'` and nothing is sent. | `'netlify-forms'` (set up below), `'endpoint'` with a JSON POST URL, or `'local'`; `storage.allowDownload: true` for a download button. |
 | Fullscreen | Offered, not required. | — |
 | Font | System Optima where installed, otherwise Segoe UI / Arial; labels are only A, B, C. | — |
 | Screen size | Blocked when the stage does not fit; most laptops fit (about 1157 × 704 CSS px at 5.1 px/mm). Phones and small tablets cannot run it. Large iPads in landscape can; they are not blocked but are identifiable in the data (`max_touch_points`). | — |
@@ -164,7 +164,16 @@ Not implemented and not decided here: recruitment platform, viewing distance
 (uncontrolled; the protocol must specify it separately if needed), and the
 analysis of interrupted trials (see the data dictionary).
 
-## Data storage with Netlify Forms
+## Data storage with Supabase
+
+The intended destination. `supabase/README.md` has the three setup steps:
+run `supabase/migrations/0001_experiment_tables.sql` in the SQL editor, put
+the project URL and anon key into both `config.js` files, set
+`storage.mode: 'supabase'`. Each experiment writes to its own pair of tables
+(`lines_with_edges_*`, `similarity_with_rotation_*`): one row per answered
+screen with the reaction time, and one row per session with the full record.
+
+## Data storage with Netlify Forms (alternative)
 
 The deployed `site/index.html` contains a hidden form named
 `line-similarity-responses`; the app posts to it with the fields listed in
@@ -211,9 +220,9 @@ cross-browser validation has been performed.
 
 - Open the deployed page on each target device type. Physically match a card,
   then check the control question's 1 mm line with a ruler.
-- Switch on data collection: `storage.mode: 'netlify-forms'`,
-  `participant.rememberSession: true`, and `completion.showCode` if a
-  platform needs a code.
+- Switch on data collection: `storage.mode: 'supabase'` with the project URL
+  and anon key, `participant.rememberSession: true` for real participants,
+  and `completion.showCode` if a platform needs a code.
 - Inspect every stimulus (19 screens; use `?reset=1` to repeat).
 - Exercise browser zoom (including Safari), full screen, window resizing,
   tab switching and monitor switching; confirm recalibration prompts, the

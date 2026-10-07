@@ -15,18 +15,31 @@ import {fileURLToPath} from 'node:url';
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../site');
 const {chromium} = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright');
 const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml'};
-const posts = [];
+const posts = [];   // Netlify-style form posts
+const sbPosts = []; // Supabase-style inserts: {table, query, apikey, auth, prefer, rows}
 // The pilot config sends nothing; the main run is served a config that
-// exercises the Netlify Forms path, the download buttons and the completion
-// code. (Served by the test server rather than Playwright routing, which
-// would also intercept and drop the pagehide beacon.)
+// records to a fake Supabase on this server, with the download buttons and
+// completion code on; the failure run uses the Netlify Forms path. (Served by
+// the test server rather than Playwright routing, which would also intercept
+// and drop the leaving-page sends.)
 const configSource = fs.readFileSync(path.join(APP, 'config.js'), 'utf8');
-const testConfig = configSource.replace("mode: 'local'", "mode: 'netlify-forms'").replace('allowDownload: false', 'allowDownload: true').replace('showCode: false', 'showCode: true').replace('rememberSession: false', 'rememberSession: true');
-assert.notEqual(testConfig, configSource);
-let serveTestConfig = true;
+let configVariant = 'supabase'; // 'supabase' | 'netlify' | null (deployed pilot config)
+const configFor = variant => {
+  let c = configSource.replace('allowDownload: false', 'allowDownload: true').replace('showCode: false', 'showCode: true').replace('rememberSession: false', 'rememberSession: true');
+  if (variant === 'supabase') c = c.replace("mode: 'local'", "mode: 'supabase'").replace("supabase: {url: '', anonKey: ''", `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`);
+  else c = c.replace("mode: 'local'", "mode: 'netlify-forms'");
+  assert.notEqual(c, configSource);
+  return c;
+};
 const server = http.createServer((req, res) => {
-  if (req.method === 'POST') { let body = ''; req.on('data', c => body += c); req.on('end', () => { posts.push({url: req.url, body}); res.writeHead(200); res.end('ok'); }); return; }
-  if (req.url.split('?')[0] === '/config.js' && serveTestConfig) { res.writeHead(200, {'Content-Type': 'text/javascript', 'Cache-Control': 'no-store'}); return res.end(testConfig); }
+  if (req.method === 'POST') {
+    let body = ''; req.on('data', c => body += c); req.on('end', () => {
+      const u = new URL(req.url, 'http://x');
+      if (u.pathname.startsWith('/supabase/rest/v1/')) { sbPosts.push({table: u.pathname.split('/').pop(), query: u.searchParams, apikey: req.headers.apikey, auth: req.headers.authorization, prefer: req.headers.prefer, rows: JSON.parse(body)}); res.writeHead(201); return res.end(); }
+      posts.push({url: req.url, body}); res.writeHead(200); res.end('ok');
+    }); return;
+  }
+  if (req.url.split('?')[0] === '/config.js' && configVariant) { res.writeHead(200, {'Content-Type': 'text/javascript', 'Cache-Control': 'no-store'}); return res.end(configFor(configVariant)); }
   let file = path.join(APP, req.url.split('?')[0]);
   if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
   if (!fs.existsSync(file)) { res.writeHead(404); return res.end(); }
@@ -189,21 +202,28 @@ assert.ok(saved.trials[4].interruptions.some(i => i.type === 'image-error'));
 assert.equal(saved.calibration_history.length, 3);
 assert.ok(saved.ended_at && saved.environment_at_end && saved.environment_at_end.max_touch_points !== undefined);
 assert.ok(saved.events.some(e => e.type === 'resumed') && saved.events.some(e => e.type === 'consented'));
-// Two Netlify-style posts: the partial record sent when the page was left
-// mid-session, then the complete record.
-assert.equal(posts.length, 2, 'posts: ' + JSON.stringify(posts.map(p => [p.url, new URLSearchParams(p.body).get('completion_status'), new URLSearchParams(p.body).get('trials_completed')])) + ' submissions: ' + JSON.stringify(saved.submissions));
-const partial = new URLSearchParams(posts[0].body);
-assert.equal(partial.get('completion_status'), 'abandoned'); assert.equal(partial.get('trials_completed'), '3');
-assert.equal(JSON.parse(partial.get('payload')).session_id, saved.session_id);
-const form = new URLSearchParams(posts[1].body);
-assert.equal(form.get('form-name'), 'line-similarity-responses');
-assert.equal(form.get('completion_status'), 'complete'); assert.equal(form.get('trials_completed'), '19'); assert.equal(form.get('experiment_id'), 'exp1-line-similarity');
-const payload = JSON.parse(form.get('payload'));
-assert.equal(payload.session_id, saved.session_id); assert.equal(payload.trials.length, 19);
-assert.ok(posts[0].body.length < 60000, 'partial beacon stayed under the 64 KiB cap: ' + posts[0].body.length);
+// Supabase: keepalive inserts when the page was left mid-session (an
+// 'abandoned' session row and 3 essential trial rows), then the completion
+// inserts (a 'complete' session row and all 19 full trial rows).
+const sb = table => sbPosts.filter(p => p.table === table);
+assert.equal(posts.length, 0, 'nothing went to Netlify');
+assert.equal(sbPosts.length, 4, JSON.stringify(sbPosts.map(p => [p.table, p.rows.length])) + ' submissions: ' + JSON.stringify(saved.submissions));
+for (const p of sbPosts) { assert.equal(p.apikey, 'test-anon-key'); assert.equal(p.auth, 'Bearer test-anon-key'); assert.ok(p.prefer.includes('return=minimal') && p.prefer.includes('resolution=ignore-duplicates'), p.prefer); }
+assert.ok(sb('lines_with_edges_sessions').every(p => p.query.get('on_conflict') === 'session_id,attempt'));
+assert.ok(sb('lines_with_edges_trials').every(p => p.query.get('on_conflict') === 'session_id,presentation_index'));
+const [abandonedRow, completeRow] = sb('lines_with_edges_sessions').map(p => p.rows[0]);
+assert.equal(abandonedRow.submitted_status, 'abandoned'); assert.equal(abandonedRow.trials_completed, 3); assert.equal(abandonedRow.attempt, 1); assert.ok(abandonedRow.record.compact);
+assert.equal(completeRow.submitted_status, 'complete'); assert.equal(completeRow.completion_status, 'complete'); assert.equal(completeRow.trials_completed, 19); assert.equal(completeRow.attempt, 2);
+assert.equal(completeRow.experiment_id, 'exp1-lines-with-edges'); assert.equal(completeRow.experiment_name, 'Lines with edges'); assert.equal(completeRow.participant_id, 'TEST-001');
+assert.equal(completeRow.session_id, saved.session_id); assert.equal(completeRow.pixels_per_mm, saved.calibration.pixels_per_mm); assert.equal(completeRow.record.trials.length, 19); assert.ok(completeRow.design.seed !== undefined);
+const [partialTrials, fullTrials] = sb('lines_with_edges_trials').map(p => p.rows);
+assert.equal(partialTrials.length, 3); assert.ok(!('viewport' in partialTrials[0]) && partialTrials[0].reaction_time_ms > 0 && partialTrials[0].trial_id);
+assert.equal(fullTrials.length, 19);
+assert.deepEqual(fullTrials.map(r => r.presentation_index), [...Array(19).keys()]);
+assert.ok(fullTrials.every(r => r.session_id === saved.session_id && r.experiment_id === 'exp1-lines-with-edges' && r.reaction_time_ms > 0 && r.viewport && r.chosen_condition && r.left_condition !== r.right_condition && r.stimulus_onset_at && r.response_at));
 assert.deepEqual(saved.submissions.map(s => s.status_sent), ['abandoned', 'complete']);
-assert.equal(saved.submissions[0].status, 'beacon'); assert.equal(saved.submissions[0].ok, true); assert.ok(saved.submissions[0].bytes > 1000);
-assert.equal(saved.submissions[1].status, '200');
+assert.equal(saved.submissions[0].status, 'keepalive-compact'); assert.equal(saved.submissions[0].ok, true); assert.equal(saved.submissions[0].unconfirmed, true);
+assert.equal(saved.submissions[1].status, 'supabase'); assert.equal(saved.submissions[1].ok, true); assert.ok(saved.submissions[1].bytes > 10000);
 assert.ok((await page.textContent('#completion-code')).includes(saved.session_id));
 assert.ok(await page.isVisible('#download-csv'));
 if (shots) await page.screenshot({path: path.join(shots, 'complete.png')});
@@ -211,12 +231,12 @@ if (shots) await page.screenshot({path: path.join(shots, 'complete.png')});
 await page.evaluate(() => { Object.defineProperty(window, 'devicePixelRatio', {get: () => 1.5, configurable: true}); window.dispatchEvent(new Event('resize')); });
 assert.equal((await state()).mode, 'complete');
 await page.waitForTimeout(200);
-assert.equal(posts.length, 2);
+assert.equal(sbPosts.length, 4);
 // Revisiting a completed session does not restart it.
 await page.goto(base);
 await page.waitForFunction(() => lineSimilarityState().mode === 'complete');
 assert.ok((await page.textContent('#submit-status')).includes('already completed'));
-assert.equal(posts.length, 2);
+assert.equal(sbPosts.length, 4, 'a confirmed send is not repeated on revisit');
 // A different participant id in the URL starts a fresh session instead of showing the first participant's code.
 await page.goto(base + '?pid=TEST-002');
 assert.equal((await state()).mode, 'information');
@@ -233,7 +253,8 @@ if (outer > 0) {
   assert.ok((await page.textContent('#calibration-notice')).includes('zoom changed'));
 } else console.log('note: outerWidth is 0 in this headless browser; Safari zoom check skipped');
 
-// Failed submission path: a server that rejects the post leaves a retry and download.
+// Failed submission path (Netlify Forms mode): a server that rejects the post leaves a retry and download.
+configVariant = 'netlify';
 const page2 = await context.newPage();
 page2.on('pageerror', e => errors.push(String(e)));
 await page2.route('**/*', route => route.request().method() === 'POST' ? route.fulfill({status: 500, body: 'no'}) : route.continue());
@@ -254,11 +275,11 @@ assert.ok(saved2.trials.every(t => t.chosen_side === 'left' && t.response_method
 assert.ok(saved2.submissions.some(s => s.ok === false));
 
 // The deployed pilot config: nothing is sent, and the final page says only thank you.
-serveTestConfig = false;
+configVariant = null;
 const pilot = await browser.newContext({viewport: {width: 1300, height: 820}});
 const page3 = await pilot.newPage();
 page3.on('pageerror', e => errors.push(String(e)));
-const before = posts.length;
+const before = posts.length + sbPosts.length;
 await page3.goto(base + '?reset=1');
 assert.equal(await page3.textContent('#study-title'), 'Similarity judgment');
 assert.ok((await page3.textContent('#information')).includes('reference object (A)'));
@@ -272,9 +293,9 @@ await page3.waitForFunction(() => lineSimilarityState().mode === 'complete');
 assert.equal((await page3.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you.');
 assert.ok(await page3.isHidden('#completion-code') && await page3.isHidden('#download-csv'));
 const pilotSaved = await page3.evaluate(k => JSON.parse(localStorage.getItem(k)), 'line-similarity:session:v1');
-assert.equal(pilotSaved.experiment_id, 'exp1-line-similarity'); assert.equal(pilotSaved.trials.length, 19);
+assert.equal(pilotSaved.experiment_id, 'exp1-lines-with-edges'); assert.equal(pilotSaved.trials.length, 19);
 await page3.goto(base);
-assert.equal(posts.length, before, 'pilot sends nothing');
+assert.equal(posts.length + sbPosts.length, before, 'pilot sends nothing');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');
 assert.notEqual((await page3.evaluate(() => lineSimilarityState())).session_id, pilotSaved.session_id);
 
@@ -295,8 +316,9 @@ for (const o of objs4) { assert.ok(Math.abs(o.w - 41.33 * ppmm) < .1); assert.ok
 if (shots) await page4.screenshot({path: path.join(shots, 'rotation-trial-1.png')});
 for (let i = 0; i < 3; i++) { await page4.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page4.keyboard.press('ArrowLeft'); }
 const rotSaved = await page4.evaluate(() => JSON.parse(localStorage.getItem('line-similarity:rotation:session:v1')));
-assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.trials.length, 3);
+assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.experiment_name, 'Similarity with rotation'); assert.equal(rotSaved.trials.length, 3);
+assert.ok(rotSaved.design.randomizeTrialOrder && rotSaved.design.sideAssignment === 'random' && rotSaved.design.controlPosition === 'random');
 
 assert.deepEqual(errors.filter(e => !/Failed to load resource/.test(e)), [], 'no page errors beyond the deliberately aborted image loads');
 await browser.close(); server.close();
-console.log('Passed real-browser flow: calibration at 5.11 px/mm, calibrated object sizes, tab-hidden re-presentation, keyboard and mouse responses, double-response guard, onset-based timing, reload recovery with identical order, fit block, zoom invalidation, failed image load, completion post under the beacon cap, completion-page stability, repeat-visit guard, participant switch, Safari-style zoom, failed-submission fallback and CSV download.');
+console.log('Passed real-browser flow: Supabase inserts (keepalive on leaving, completion), calibration at 5.11 px/mm, calibrated object sizes, tab-hidden re-presentation, keyboard and mouse responses, double-response guard, onset-based timing, reload recovery with identical order, fit block, zoom invalidation, failed image load, completion post under the beacon cap, completion-page stability, repeat-visit guard, participant switch, Safari-style zoom, failed-submission fallback and CSV download.');

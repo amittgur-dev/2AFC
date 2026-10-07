@@ -305,9 +305,9 @@ async function start() {
 }
 
 // ---------- completion & submission ----------
-// A beacon's delivery cannot be observed, so only a fetch response counts as a
-// confirmed send.
-const confirmedSend = () => session.submissions.some(s => s.ok && !String(s.status).startsWith('beacon'));
+// A leaving-page send's delivery cannot be observed (it is flagged
+// unconfirmed), so only a send with a response counts as confirmed.
+const confirmedSend = () => session.submissions.some(s => s.ok && !s.unconfirmed);
 function markComplete() {
   if (session.completion_status === 'complete') return;
   session.completion_status = 'complete'; session.ended_at = now(); session.environment_at_end = environment();

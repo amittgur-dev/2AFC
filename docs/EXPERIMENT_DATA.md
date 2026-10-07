@@ -43,7 +43,7 @@ the record waits in the browser for a later visit.
 | `environment_at_start`, `environment_at_end` | Device pixel ratio, screen, window (inner and outer) size, visual-viewport scale, fullscreen state, user agent, language, colour depth, `max_touch_points`, `pointer_coarse` and `hover_none`. Diagnostic only; none of these is used to compute physical size. iPads report a Macintosh user agent, so use `max_touch_points > 1` with a Macintosh user agent to identify them. |
 | `trials` | One record per answered presentation (below). |
 | `events` | Timeline of `consented`, `resumed`, `interruption`, `preload-failed`. |
-| `submissions` | Every send attempt: `status_sent` (`complete`/`abandoned`), `attempt` number, `ok`, `status` (HTTP status for fetches; `beacon`, `beacon-compact`, `beacon-minimal`, `*-failed`, `beacon-too-large`, `beacon-unsupported` for the leaving path; `network-error`), `bytes`, `at`. A beacon's delivery cannot be observed, so `ok: true` there means only that the browser accepted it, and the app still sends the full record by fetch at completion or on the next visit. |
+| `submissions` | Every send attempt: `status_sent` (`complete`/`abandoned`), `attempt` number, `ok`, `status` (HTTP status for fetches; `beacon`, `beacon-compact`, `beacon-minimal`, `*-failed`, `beacon-too-large`, `beacon-unsupported` for the leaving path; `network-error`), `bytes`, `at`, and `unconfirmed: true` for leaving-page sends (beacon or keepalive), whose delivery cannot be observed: `ok: true` there means only that the browser accepted it, and the app still sends the full record with a normal request at completion or on the next visit. |
 
 ## Presentation fields (in `sequence` and copied into each trial)
 
@@ -82,6 +82,19 @@ and versions repeated on each row. Column order is `TRIAL_COLUMNS` in
 with `=`, `+`, `-`, `@`, tab or CR (in practice only a URL-supplied
 `participant_id`) are written with a leading apostrophe so spreadsheets do not
 evaluate them as formulas; the JSON record holds the unmodified value.
+
+## Supabase tables
+
+With `storage.mode: 'supabase'` the app inserts into the experiment's tables
+(`supabase/migrations/0001_experiment_tables.sql`): one `*_sessions` row per
+send (columns are the session fields above, `submitted_status`, `attempt`,
+and the whole record in `record`), and one `*_trials` row per answered screen
+(the presentation and trial fields above with `group` stored as `group_name`,
+`stimulus_onset_iso`/`response_iso` as `stimulus_onset_at`/`response_at`).
+Trial rows are unique on `session_id` + `presentation_index`, so re-sends are
+ignored. The leaving-page send uses keepalive requests and writes the trial
+rows without the diagnostic columns (`viewport`, `*_mm`) and the session row
+with a compact or minimal `record`; the completion send writes everything.
 
 ## Netlify Forms submission fields
 

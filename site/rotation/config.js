@@ -5,7 +5,7 @@ export const config = {
   // Which of the two 2AFC experiments this deployment runs. Recorded in every
   // session and submission. The second experiment reuses this app with its own
   // stimuli.js / assets and its own experiment id (see README).
-  experiment: {id: 'exp2-similarity-with-rotation', name: 'Similarity with Rotation'},
+  experiment: {id: 'exp2-similarity-with-rotation', name: 'Similarity with rotation'},
   // Bump protocolVersion whenever the design or participant-facing procedure
   // changes. A session stored in a participant's browser is continued only if
   // protocolVersion, stimulusSetVersion, layoutVersion and the whole `design`
@@ -71,12 +71,18 @@ export const config = {
 
   storage: {
     // DECISION: where completed sessions are sent.
+    // 'supabase'      - inserts into this experiment's tables in Supabase
+    //                   (created by supabase/migrations/0001_experiment_tables.sql).
     // 'netlify-forms' - posts to the Netlify Forms endpoint of this site
     //                   (form "line-similarity-responses" in index.html).
     // 'endpoint'      - POSTs the session as JSON to `endpoint` below.
     // 'local'         - nothing is sent; participants download their file.
-    // The pilot collects nothing yet: 'local'.
+    // Set to 'supabase' once `supabase.url` and `supabase.anonKey` are filled in.
     mode: 'local',
+    // Supabase project URL (https://<ref>.supabase.co) and anon/publishable
+    // key, from the project's API settings. The anon key is public by design;
+    // row level security lets it insert only.
+    supabase: {url: '', anonKey: '', sessionsTable: 'similarity_with_rotation_sessions', trialsTable: 'similarity_with_rotation_trials'},
     endpoint: '',
     formName: 'line-similarity-responses',
     // Send an interim record (flagged 'abandoned') if the participant leaves

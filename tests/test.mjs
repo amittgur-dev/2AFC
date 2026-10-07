@@ -14,7 +14,7 @@ const {validateDesign, interleave, hasConsecutiveSameFamily, rng, shuffle} = des
 const buildDesign = (d, seed, t = trials) => design.buildDesign(d, seed, t);
 const buildSequence = (d, seed, t = trials) => design.buildSequence(d, seed, t);
 const {config} = await import(path.join(APP, 'config.js'));
-const {trialsToCsv, compactRecord, minimalRecord, BEACON_LIMIT_BYTES} = await import(path.join(APP, 'shared/storage.js'));
+const {trialsToCsv, compactRecord, minimalRecord, sessionRow, trialRows, BEACON_LIMIT_BYTES} = await import(path.join(APP, 'shared/storage.js'));
 
 // Stimuli and physical layout
 assert.equal(trials.length, 19);
@@ -200,6 +200,38 @@ for (let seed = 0; seed < 100; seed++) {
 const rotHtml = fs.readFileSync(path.join(APP, 'rotation/index.html'), 'utf8');
 assert.ok(rotHtml.includes('../shared/style.css') && rotHtml.includes('main.js') && fs.existsSync(path.join(APP, 'rotation/main.js')));
 
+// Randomisation is on in both experiments: question order shuffled with a
+// recorded seed, the two comparison objects assigned to left/right at random.
+for (const [label, cfg, t] of [['lines with edges', config, trials], ['similarity with rotation', rotConfig, rot.trials]]) {
+  assert.ok(cfg.design.randomizeTrialOrder && cfg.design.sideAssignment === 'random' && cfg.design.controlPosition === 'random', label + ' randomised');
+  const orders = new Set(), sides = new Set();
+  for (let seed = 0; seed < 50; seed++) { const s = buildSequence(cfg.design, seed, t); orders.add(s.map(p => p.trial_id).join()); sides.add(s.map(p => p.side_assignment[0]).join('')); }
+  assert.ok(orders.size === 50 && sides.size === 50, label + ': different participants get different orders and sides');
+}
+assert.deepEqual([config.experiment.id, config.experiment.name, rotConfig.experiment.id, rotConfig.experiment.name], ['exp1-lines-with-edges', 'Lines with edges', 'exp2-similarity-with-rotation', 'Similarity with rotation']);
+
+// Supabase rows match the migration's columns exactly, for both experiments.
+const sql = fs.readFileSync(path.join(APP, '../supabase/migrations/0001_experiment_tables.sql'), 'utf8');
+const columnsOf = suffix => { const block = sql.split(`p || '${suffix}')`)[0].split('create table if not exists %I (').pop(); return block.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('unique') && !l.startsWith(')')).map(l => l.split(/\s+/)[0]); };
+const sessionCols = columnsOf('_sessions'), trialCols = columnsOf('_trials');
+assert.ok(sessionCols.includes('record') && trialCols.includes('reaction_time_ms') && sessionCols.length > 20 && trialCols.length > 25);
+for (const prefix of ['lines_with_edges', 'similarity_with_rotation']) assert.ok(sql.includes(`'${prefix}'`), 'migration creates ' + prefix);
+assert.deepEqual([config.storage.supabase.sessionsTable, config.storage.supabase.trialsTable, rotConfig.storage.supabase.sessionsTable, rotConfig.storage.supabase.trialsTable],
+  ['lines_with_edges_sessions', 'lines_with_edges_trials', 'similarity_with_rotation_sessions', 'similarity_with_rotation_trials']);
+const sRow = sessionRow({...bigSession, submissions: [], completion_status: 'complete', experiment_id: 'e', experiment_name: 'E', design: {seed: 1}}, 'complete');
+const generated = new Set(['id', 'created_at']);
+assert.deepEqual(Object.keys(sRow).filter(k => !sessionCols.includes(k)), [], 'session row keys exist as columns');
+assert.deepEqual(sessionCols.filter(k => !generated.has(k) && !(k in sRow)), [], 'every session column is written');
+const tRow = trialRows({...bigSession, experiment_id: 'e'})[0];
+assert.deepEqual(Object.keys(tRow).filter(k => !trialCols.includes(k)), [], 'trial row keys exist as columns');
+assert.deepEqual(trialCols.filter(k => !generated.has(k) && !(k in tRow)), [], 'every trial column is written');
+assert.equal(tRow.reaction_time_ms, 1234.5); assert.equal(tRow.group_name, bigSession.trials[0].group); assert.equal(tRow.stimulus_onset_at, '2026-10-07T10:00:00.000Z');
+const essential = trialRows({...bigSession, experiment_id: 'e'}, {essential: true});
+assert.ok(!('viewport' in essential[0]) && essential[0].reaction_time_ms === 1234.5 && Object.keys(essential[0]).every(k => trialCols.includes(k)));
+assert.ok(JSON.stringify(essential).length + 2000 < BEACON_LIMIT_BYTES, 'essential rows for 76 screens fit the keepalive cap: ' + JSON.stringify(essential).length);
+const appSource = fs.readFileSync(path.join(APP, 'shared/app.js'), 'utf8');
+assert.ok(appSource.includes('s.ok && !s.unconfirmed'), 'only confirmed sends suppress the completion send');
+
 // Deployed HTML and Netlify form registration
 const html = fs.readFileSync(path.join(APP, 'index.html'), 'utf8');
 for (const source of ['shared/style.css', 'main.js']) assert.ok(html.includes(source) && fs.existsSync(path.join(APP, source)));
@@ -210,4 +242,4 @@ for (const field of [...storageSource.matchAll(/params\.set\('([a-z_-]+)'/g)].ma
 assert.ok(!html.includes('id="previous"') && !html.includes('id="next"'), 'no preview navigation');
 assert.ok(!html.includes('id="verification"') && !/no photo|right or wrong|about .* minutes/i.test(html), 'pilot text trimmed');
 assert.ok(config.experiment.id && config.storage.localKey, 'experiment identified');
-console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (57 files, 48 questions, relations verified), physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');
+console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (57 files, 48 questions, relations verified), randomisation in both, Supabase rows vs migration columns, physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');
