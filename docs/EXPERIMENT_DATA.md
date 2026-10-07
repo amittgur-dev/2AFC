@@ -86,8 +86,9 @@ evaluate them as formulas; the JSON record holds the unmodified value.
 
 ## Supabase tables
 
-With `storage.mode: 'supabase'` the app inserts into the experiment's tables
-(`supabase/migrations/0001_experiment_tables.sql`): one `*_sessions` row per
+With `storage.mode: 'supabase'` the app sends rows to the database function
+`record_rows` (`supabase/migrations/0001_experiment_tables.sql`), which inserts
+them into the experiment's tables: one `*_sessions` row per
 send (columns are the session fields above, `submitted_status`, `attempt`,
 and the whole record in `record`), and one `*_trials` row per answered screen
 (the presentation and trial fields above with `group` stored as `group_name`,

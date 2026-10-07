@@ -220,6 +220,9 @@ const columnsOf = suffix => { const block = sql.split(`p || '${suffix}')`)[0].sp
 const sessionCols = columnsOf('_sessions'), trialCols = columnsOf('_trials');
 assert.ok(sessionCols.includes('record') && trialCols.includes('reaction_time_ms') && sessionCols.length > 20 && trialCols.length > 25);
 for (const prefix of ['lines_with_edges', 'similarity_with_rotation']) assert.ok(sql.includes(`'${prefix}'`), 'migration creates ' + prefix);
+assert.ok(sql.includes('create or replace function public.record_rows(p_table text, p_rows jsonb)') && sql.includes('security definer') && sql.includes('on conflict do nothing'), 'inserts go through record_rows');
+assert.ok(sql.includes("revoke all on %I from anon, authenticated") && !sql.includes('create policy'), 'the anon key has no table privileges');
+{ const st = fs.readFileSync(path.join(APP, 'shared/storage.js'), 'utf8'); assert.ok(st.includes("'/rest/v1/rpc/record_rows'") && st.includes('p_table: table, p_rows: rows'), 'the app calls record_rows'); }
 assert.deepEqual([config.storage.supabase.sessionsTable, config.storage.supabase.trialsTable, rotConfig.storage.supabase.sessionsTable, rotConfig.storage.supabase.trialsTable],
   ['lines_with_edges_sessions', 'lines_with_edges_trials', 'similarity_with_rotation_sessions', 'similarity_with_rotation_trials']);
 const sRow = sessionRow({...bigSession, submissions: [], completion_status: 'complete', experiment_id: 'e', experiment_name: 'E', design: {seed: 1}}, 'complete');

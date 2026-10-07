@@ -38,7 +38,8 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST') {
     let body = ''; req.on('data', c => body += c); req.on('end', () => {
       const u = new URL(req.url, 'http://x');
-      if (u.pathname.startsWith('/supabase/rest/v1/')) { sbPosts.push({table: u.pathname.split('/').pop(), query: u.searchParams, apikey: req.headers.apikey, auth: req.headers.authorization, prefer: req.headers.prefer, rows: JSON.parse(body)}); res.writeHead(201); return res.end(); }
+      if (u.pathname === '/supabase/rest/v1/rpc/record_rows') { const b = JSON.parse(body); sbPosts.push({table: b.p_table, rows: b.p_rows, apikey: req.headers.apikey, auth: req.headers.authorization, prefer: req.headers.prefer}); res.writeHead(200, {'Content-Type': 'application/json'}); return res.end(String(b.p_rows.length)); }
+      if (u.pathname.startsWith('/supabase/')) { res.writeHead(404); return res.end('unexpected supabase path ' + u.pathname); }
       posts.push({url: req.url, body}); res.writeHead(200); res.end('ok');
     }); return;
   }
@@ -214,9 +215,7 @@ assert.ok(saved.events.some(e => e.type === 'resumed') && saved.events.some(e =>
 const sb = table => sbPosts.filter(p => p.table === table);
 assert.equal(posts.length, 0, 'nothing went to Netlify');
 assert.equal(sbPosts.length, 4, JSON.stringify(sbPosts.map(p => [p.table, p.rows.length])) + ' submissions: ' + JSON.stringify(saved.submissions));
-for (const p of sbPosts) { assert.equal(p.apikey, 'test-anon-key'); assert.equal(p.auth, 'Bearer test-anon-key'); assert.ok(p.prefer.includes('return=minimal') && p.prefer.includes('resolution=ignore-duplicates'), p.prefer); }
-assert.ok(sb('lines_with_edges_sessions').every(p => p.query.get('on_conflict') === 'session_id,attempt'));
-assert.ok(sb('lines_with_edges_trials').every(p => p.query.get('on_conflict') === 'session_id,presentation_index'));
+for (const p of sbPosts) { assert.equal(p.apikey, 'test-anon-key'); assert.equal(p.auth, 'Bearer test-anon-key'); assert.ok(Array.isArray(p.rows) && p.rows.length > 0); }
 const [abandonedRow, completeRow] = sb('lines_with_edges_sessions').map(p => p.rows[0]);
 assert.equal(abandonedRow.submitted_status, 'abandoned'); assert.equal(abandonedRow.trials_completed, 3); assert.equal(abandonedRow.attempt, 1); assert.ok(abandonedRow.record.compact);
 assert.equal(completeRow.submitted_status, 'complete'); assert.equal(completeRow.completion_status, 'complete'); assert.equal(completeRow.trials_completed, 19); assert.equal(completeRow.attempt, 2);

@@ -14,9 +14,10 @@
 --   presentation_index; re-sends are ignored). Reaction time is
 --   reaction_time_ms, measured from stimulus onset.
 --
--- Security: row level security is on; the browser (anon key) may only
--- INSERT. Nothing can be read, changed or deleted with the anon key. Read the
--- data in the dashboard or with the service role key.
+-- Security: the browser (anon key) has NO access to the tables. It can only
+-- call record_rows(table, rows), which inserts and ignores duplicates. Nothing
+-- can be read, changed or deleted with the anon key. Read the data in the
+-- dashboard or with the service role key.
 
 do $$
 declare p text;
@@ -94,16 +95,14 @@ begin
         unique (session_id, presentation_index)
       )$f$, p || '_trials');
 
-    -- The browser may only insert. (Insert ... on conflict do nothing needs no
-    -- select privilege, which is why re-sends can be ignored safely.)
+    -- No direct access for the API roles; row level security on as well.
+    -- (An earlier version of this file granted anon an insert policy; drop it.)
     execute format('alter table %I enable row level security', p || '_sessions');
     execute format('alter table %I enable row level security', p || '_trials');
     execute format('drop policy if exists anon_insert on %I', p || '_sessions');
     execute format('drop policy if exists anon_insert on %I', p || '_trials');
-    execute format('create policy anon_insert on %I for insert to anon with check (experiment_id is not null)', p || '_sessions');
-    execute format('create policy anon_insert on %I for insert to anon with check (experiment_id is not null)', p || '_trials');
-    execute format('revoke select, update, delete on %I from anon, authenticated', p || '_sessions');
-    execute format('revoke select, update, delete on %I from anon, authenticated', p || '_trials');
+    execute format('revoke all on %I from anon, authenticated', p || '_sessions');
+    execute format('revoke all on %I from anon, authenticated', p || '_trials');
     execute format('create index if not exists %I on %I (session_id)', p || '_trials_session_idx', p || '_trials');
     execute format('create index if not exists %I on %I (session_id)', p || '_sessions_session_idx', p || '_sessions');
 
@@ -112,3 +111,34 @@ begin
     execute format('revoke all on %I from anon, authenticated', p || '_latest_sessions');
   end loop;
 end $$;
+
+-- The one entry point for the browser: inserts rows into one of the four
+-- tables and ignores rows that already exist (same session + attempt, or same
+-- session + presentation). Runs with the owner's rights, so the anon key
+-- needs no table privileges. Returns the number of rows inserted.
+create or replace function public.record_rows(p_table text, p_rows jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  cols text;
+  n integer;
+begin
+  if p_table not in ('lines_with_edges_sessions', 'lines_with_edges_trials', 'similarity_with_rotation_sessions', 'similarity_with_rotation_trials') then
+    raise exception 'record_rows: unknown table %', p_table using errcode = '22023';
+  end if;
+  if p_rows is null or jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) = 0 or jsonb_array_length(p_rows) > 500 then
+    raise exception 'record_rows: p_rows must be a non-empty array of at most 500 rows' using errcode = '22023';
+  end if;
+  select string_agg(quote_ident(column_name), ', ' order by ordinal_position) into cols
+    from information_schema.columns
+    where table_schema = 'public' and table_name = p_table and column_name not in ('id', 'created_at');
+  execute format('insert into public.%I (%s) select %s from jsonb_populate_recordset(null::public.%I, $1) on conflict do nothing', p_table, cols, cols, p_table) using p_rows;
+  get diagnostics n = row_count;
+  return n;
+end
+$$;
+revoke all on function public.record_rows(text, jsonb) from public;
+grant execute on function public.record_rows(text, jsonb) to anon, authenticated;

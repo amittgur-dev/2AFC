@@ -1,9 +1,10 @@
 # Supabase storage
 
 Both experiments record to Supabase through the project's REST API, directly
-from the participant's browser with the anon (publishable) key. Row level
-security lets that key insert only; nothing can be read, changed or deleted
-with it.
+from the participant's browser with the anon (publishable) key. That key has
+no access to the tables themselves; it can only call the database function
+`record_rows(table, rows)`, which inserts and ignores duplicates. Nothing can
+be read, changed or deleted with it.
 
 ## One-time setup
 

@@ -134,28 +134,27 @@ export function trialRows(session, {essential = false} = {}) {
   }));
 }
 function supabaseConfigured(config) { const sb = config.storage.supabase; return !!(sb && sb.url && sb.anonKey && sb.sessionsTable && sb.trialsTable); }
-// POST rows to a table through PostgREST. `onConflict` names the unique
-// columns on which duplicates are ignored (insert ... on conflict do nothing).
-function supabaseInsert(config, table, rows, {onConflict, keepalive = false} = {}) {
+// Sends rows to the database function record_rows(p_table, p_rows), which
+// inserts them with the owner's rights and ignores rows that already exist.
+// The anon key has no direct table access (see supabase/migrations).
+function supabaseInsert(config, table, rows, {keepalive = false} = {}) {
   const sb = config.storage.supabase;
-  const url = new URL(sb.url.replace(/\/+$/, '') + '/rest/v1/' + table);
-  if (onConflict) url.searchParams.set('on_conflict', onConflict);
-  const body = JSON.stringify(rows);
+  const url = sb.url.replace(/\/+$/, '') + '/rest/v1/rpc/record_rows';
+  const body = JSON.stringify({p_table: table, p_rows: rows});
   return {promise: fetch(url, {method: 'POST', keepalive, body, headers: {
-    apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey, 'Content-Type': 'application/json',
-    Prefer: 'return=minimal' + (onConflict ? ',resolution=ignore-duplicates' : ''),
+    apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey, 'Content-Type': 'application/json', Prefer: 'return=minimal',
   }}), bytes: body.length};
 }
 async function supabaseSubmit(session, config, status) {
   const sb = config.storage.supabase;
   let bytes = 0;
-  const s = supabaseInsert(config, sb.sessionsTable, [sessionRow(session, status)], {onConflict: 'session_id,attempt'});
+  const s = supabaseInsert(config, sb.sessionsTable, [sessionRow(session, status)]);
   bytes += s.bytes;
   const r1 = await s.promise;
   if (!r1.ok) return {ok: false, status: 'supabase-sessions-' + r1.status, detail: await r1.text().catch(() => ''), bytes};
   const rows = trialRows(session);
   if (rows.length) {
-    const t = supabaseInsert(config, sb.trialsTable, rows, {onConflict: 'session_id,presentation_index'});
+    const t = supabaseInsert(config, sb.trialsTable, rows);
     bytes += t.bytes;
     const r2 = await t.promise;
     if (!r2.ok) return {ok: false, status: 'supabase-trials-' + r2.status, detail: await r2.text().catch(() => ''), bytes};
@@ -176,8 +175,8 @@ function supabaseBeacon(session, config, status) {
   for (const [candidate, name] of [[compactRecord(session, status), 'keepalive-compact'], [minimalRecord(session, status), 'keepalive-minimal']]) {
     if (size(JSON.stringify(candidate)) + size(trialsBody) + 2000 <= BEACON_LIMIT_BYTES) { record = candidate; label = name; break; }
   }
-  supabaseInsert(config, sb.sessionsTable, [sessionRow(session, status, record)], {onConflict: 'session_id,attempt', keepalive: true}).promise.catch(() => {});
-  if (rows.length) supabaseInsert(config, sb.trialsTable, rows, {onConflict: 'session_id,presentation_index', keepalive: true}).promise.catch(() => {});
+  supabaseInsert(config, sb.sessionsTable, [sessionRow(session, status, record)], {keepalive: true}).promise.catch(() => {});
+  if (rows.length) supabaseInsert(config, sb.trialsTable, rows, {keepalive: true}).promise.catch(() => {});
   return {ok: true, status: label, bytes: trialsBody.length};
 }
 
