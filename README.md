@@ -48,6 +48,7 @@ PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs npm run test:browser
                      # real Chromium flow test; set SCREENSHOTS=dir to save screenshots
 npm run check:data   # data/ matches site/stimuli.js and the SVGs
 npm run build:sheet  # rebuilds data/stimuli-notation.xlsx and the CSV copies (needs openpyxl: pip install -r requirements-optional.txt)
+npm run build:pdf    # rebuilds data/questions-by-reference.pdf, all 19 questions at physical size grouped by reference (needs Playwright)
 ```
 
 The browser test needs Playwright with Chromium (`npm i -D playwright &&
