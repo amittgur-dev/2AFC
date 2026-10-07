@@ -230,6 +230,7 @@ assert.deepEqual(saved.submissions.map(s => s.status_sent), ['abandoned', 'compl
 assert.equal(saved.submissions[0].status, 'keepalive-compact'); assert.equal(saved.submissions[0].ok, true); assert.equal(saved.submissions[0].unconfirmed, true);
 assert.equal(saved.submissions[1].status, 'supabase'); assert.equal(saved.submissions[1].ok, true); assert.ok(saved.submissions[1].bytes > 10000);
 assert.ok((await page.textContent('#completion-code')).includes(saved.session_id));
+assert.ok(await page.isHidden('#your-code'), 'no code reminder when the code came from the link');
 assert.ok(await page.isVisible('#download-csv'));
 if (shots) await page.screenshot({path: path.join(shots, 'complete.png')});
 // A zoom change on the completion page neither recalibrates nor resubmits.
@@ -291,23 +292,26 @@ assert.ok((await page3.textContent('#information')).includes('reference object (
 // No participant id in the link: a code is required before continuing.
 assert.ok(await page3.isVisible('#code-row'));
 assert.ok(await page3.isDisabled('#begin'));
-await page3.fill('#participant-code', 'x');
-assert.ok(await page3.isDisabled('#begin'), 'one character is not a valid code');
-await page3.fill('#participant-code', ' k7p3qm ');
+assert.ok((await page3.textContent('#code-row')).includes('make up an 8-digit number'));
+await page3.fill('#participant-code', '1234567');
+assert.ok(await page3.isDisabled('#begin'), 'seven digits is not a valid code');
+await page3.fill('#participant-code', 'K7P3QM');
+assert.ok(await page3.isDisabled('#begin'), 'letters are not a valid code');
+await page3.fill('#participant-code', ' 12345678 ');
 assert.ok(!(await page3.isDisabled('#begin')));
 await page3.click('#begin');
-assert.equal((await page3.evaluate(() => lineSimilarityState())).participant_id, 'K7P3QM', 'typed code is trimmed and upper-cased');
+assert.equal((await page3.evaluate(() => lineSimilarityState())).participant_id, '12345678', 'typed code is trimmed');
 await page3.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page3.click('#confirm-card');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'instructions');
 await page3.waitForSelector('#start:not([disabled])'); await page3.click('#start');
 for (let i = 0; i < 19; i++) { await page3.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page3.keyboard.press('ArrowRight'); }
 await page3.waitForFunction(() => lineSimilarityState().mode === 'complete');
-assert.equal((await page3.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you.');
+assert.equal((await page3.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you. Your code: 12345678. Please use the same number in the other study.');
 assert.ok(await page3.isHidden('#completion-code') && await page3.isHidden('#download-csv'));
 const pilotSaved = await page3.evaluate(k => JSON.parse(localStorage.getItem(k)), 'line-similarity:session:v1');
 assert.equal(pilotSaved.experiment_id, 'exp1-lines-with-edges'); assert.equal(pilotSaved.trials.length, 19);
-assert.equal(pilotSaved.participant_id, 'K7P3QM'); assert.equal(pilotSaved.participant_id_source, 'typed');
+assert.equal(pilotSaved.participant_id, '12345678'); assert.equal(pilotSaved.participant_id_source, 'typed');
 await page3.goto(exp1);
 assert.equal(posts.length + sbPosts.length, before, 'pilot sends nothing');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');

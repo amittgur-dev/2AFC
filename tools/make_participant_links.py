@@ -20,9 +20,10 @@ be joined on participant_id without knowing who they are.
 import argparse, csv, secrets, sys
 from pathlib import Path
 
-ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'  # no I, L, O, 0, 1
-def make_code(n=6):
-    return ''.join(secrets.choice(ALPHABET) for _ in range(n))
+# Eight digits, like the codes participants make up themselves when they open
+# a link without one.
+def make_code(n=8):
+    return ''.join(secrets.choice('0123456789') for _ in range(n))
 
 ap = argparse.ArgumentParser()
 ap.add_argument('names', nargs='?', help='text file with one name per line')

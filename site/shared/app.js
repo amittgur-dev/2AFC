@@ -325,6 +325,8 @@ function showSaved(alreadyDone = false) {
     : local ? (config.storage.allowDownload ? 'Your responses are complete. Please download the file below and send it to the researcher.' : '') : 'Your responses have been saved.';
   $('completion-code').hidden = !config.completion.showCode;
   $('completion-code').textContent = 'Completion code: ' + code;
+  $('your-code').hidden = session.participant_id_source !== 'typed';
+  $('your-code').textContent = 'Your code: ' + session.participant_id + '. Please use the same number in the other study.';
   if (config.completion.redirectUrl) { $('redirect-link').hidden = false; $('redirect-link').href = config.completion.redirectUrl; }
   $('complete-note').textContent = local && !config.storage.allowDownload ? '' : 'You can close this page.';
   $('retry-submit').hidden = true;
@@ -400,6 +402,7 @@ const codeValid = () => new RegExp(config.participant.codePattern ?? '^.{1,}$').
 function updateBegin() {
   const needsConsent = config.study.requireConsentCheckbox && !$('consent').checked;
   const needsCode = !$('code-row').hidden && !codeValid();
+  $('participant-code').setAttribute('aria-invalid', String(!$('code-row').hidden && $('participant-code').value.trim() !== '' && !codeValid()));
   $('begin').disabled = needsConsent || needsCode;
 }
 $('consent').addEventListener('change', updateBegin);

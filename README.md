@@ -198,10 +198,15 @@ person's links. Re-run with `--existing participants-private.csv` to add
 people while keeping earlier codes, or `--codes-only 10` for codes without
 names.
 
-If someone opens the bare site URL instead of their link, the first page asks
-for their code before continuing (`participant.requireCode`); it is stored
-upper-cased, and the record notes whether the code came from the link or was
-typed (`participant_id_source`). What else is stored about a person: screen
+Alternatively, and this is how the pilot is set up, send everyone the bare
+study links and let each person make up their own code: the first page asks
+for an 8-digit number and tells them to use the same number in both studies,
+and the final page shows the number back as a reminder
+(`participant.requireCode`, `participant.codePattern`). Then no list ties
+codes to people unless they tell you their number; the price is that the join
+between the two studies depends on them typing the same number twice. The
+record notes whether the code came from the link or was typed
+(`participant_id_source`). What else is stored about a person: screen
 and window sizes, device pixel ratio, browser user agent and language, and
 touch capability. None of that is a name, but a user agent plus screen size
 can be distinctive in a small group, so keep the mapping file and the
