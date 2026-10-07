@@ -25,12 +25,16 @@ if (exp === '') {
 const out = process.argv[3] ?? path.join(ROOT, 'data', exp, 'questions-by-reference.pdf');
 const svg = id => 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(SITE, assets[id].src)).toString('base64');
 const obj = (id, label) => { const a = assets[id]; const [x, y] = STAGE.positions[label]; return `<div class="o" style="left:${x - a.widthMm / 2}mm;top:${y - a.heightMm / 2}mm;width:${a.widthMm}mm;height:${a.heightMm}mm"><span style="top:-${LABEL.offsetAboveMm}mm;font-size:${LABEL.fontSizeMm}mm">${label}</span><img src="${svg(id)}"></div>`; };
-const stimulusOf = id => (assets[id].stimulus ? ` (${assets[id].stimulus})` : '');
-const pages = trials.map((t, i) => { const A = `${t.family}-A`, B = `${t.family}-${t.left}`, C = `${t.family}-${t.right}`; return `<section>
-<header><div class="q">Question ${i + 1} of ${trials.length} &middot; trial ${t.id}${t.source ? ' &middot; ' + t.source : ''}</div><div class="t">${t.name} (${t.group})</div><div class="n"><b>Object A</b> = ${notation[A]}${stimulusOf(A)} &nbsp;&middot;&nbsp; <b>Object B</b> = ${notation[B]}${stimulusOf(B)} &nbsp;&middot;&nbsp; <b>Object C</b> = ${notation[C]}${stimulusOf(C)}</div></header>
+// Caption under a comparison object (other experiments): what it is, minimal.
+const caption = (id, label) => { const a = assets[id]; const [x, y] = STAGE.positions[label]; return `<div class="c" style="left:${x}mm;top:${y + a.heightMm / 2 + 3}mm">${notation[id]}</div>`; };
+const pages = trials.map((t, i) => { const A = `${t.family}-A`, B = `${t.family}-${t.left}`, C = `${t.family}-${t.right}`; return exp === '' ? `<section>
+<header><div class="q">Question ${i + 1} of ${trials.length} &middot; trial ${t.id}</div><div class="t">${t.name} (${t.group})</div><div class="n"><b>Object A</b> = ${notation[A]} &nbsp;&middot;&nbsp; <b>Object B</b> = ${notation[B]} &nbsp;&middot;&nbsp; <b>Object C</b> = ${notation[C]}</div></header>
 <h1>Which is more similar to A?</h1>
 <div class="stage">${obj(A, 'A')}${obj(B, 'B')}${obj(C, 'C')}</div>
-<footer>When printed at 100% on A4. <b>Object A</b>: ${dims(A)}. <b>Object B</b>: ${dims(B)}. <b>Object C</b>: ${dims(C)}.</footer></section>`; }).join('');
+<footer>When printed at 100% on A4. <b>Object A</b>: ${dims(A)}. <b>Object B</b>: ${dims(B)}. <b>Object C</b>: ${dims(C)}.</footer></section>` : `<section>
+<header><div class="q">Question ${i + 1} of ${trials.length} &middot; trial ${t.id}</div><div class="t">${t.name}</div></header>
+<h1>Which is more similar to A?</h1>
+<div class="stage">${obj(A, 'A')}${obj(B, 'B')}${obj(C, 'C')}${caption(B, 'B')}${caption(C, 'C')}</div></section>`; }).join('');
 const html = `<!doctype html><html><head><meta charset="utf-8"><style>
 @page{size:A4 landscape;margin:0}*{box-sizing:border-box}body{margin:0;font-family:Optima,"Segoe UI",Arial,sans-serif;color:#000;background:#fff}
 section{width:297mm;height:210mm;page-break-after:always;position:relative;padding:12mm 0 0}
@@ -39,6 +43,7 @@ header .q{font-size:3mm;color:#444}header .t{font-size:5.5mm;margin-top:1.5mm}he
 h1{font-size:6mm;font-weight:500;text-align:center;margin:22mm 0 6mm}
 .stage{position:relative;width:${STAGE.width}mm;height:${STAGE.height}mm;margin:0 auto}
 .o{position:absolute}.o span{position:absolute;left:50%;transform:translateX(-50%);line-height:1}.o img{display:block;width:100%;height:100%}
+.c{position:absolute;transform:translateX(-50%);font-size:4mm;white-space:nowrap}
 footer{position:absolute;bottom:6mm;left:12mm;right:12mm;font-size:3.6mm;line-height:1.5}
 </style></head><body>${pages}</body></html>`;
 const {chromium} = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright');

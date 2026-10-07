@@ -22,7 +22,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 24.17 × 24.17 mm in a 41.33 mm image"
   },
   "1-sub": {
@@ -41,7 +41,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 25.27 × 25.27 mm in a 41.33 mm image"
   },
   "1-whole": {
@@ -60,7 +60,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 34.18 × 34.18 mm in a 41.33 mm image"
   },
   "1-shape": {
@@ -79,7 +79,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 33.08 × 33.08 mm in a 41.33 mm image"
   },
   "2-A": {
@@ -98,7 +98,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 45°)",
+    "description": "Reference",
     "dimensions": "figure 25.27 × 25.27 mm in a 41.33 mm image"
   },
   "2-sub": {
@@ -117,7 +117,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 90°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 24.17 × 24.17 mm in a 41.33 mm image"
   },
   "2-whole": {
@@ -136,7 +136,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 90°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 33.08 × 33.08 mm in a 41.33 mm image"
   },
   "2-shape": {
@@ -155,7 +155,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 34.18 × 34.18 mm in a 41.33 mm image"
   },
   "3-A": {
@@ -174,7 +174,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 45°, sub-shapes 45°)",
+    "description": "Reference",
     "dimensions": "figure 34.18 × 34.18 mm in a 41.33 mm image"
   },
   "3-sub": {
@@ -193,7 +193,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 45°, sub-shapes 90°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 33.08 × 33.08 mm in a 41.33 mm image"
   },
   "3-whole": {
@@ -212,7 +212,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 90°, sub-shapes 90°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 24.17 × 24.17 mm in a 41.33 mm image"
   },
   "3-shape": {
@@ -231,7 +231,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 90°, sub-shapes 45°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 25.27 × 25.27 mm in a 41.33 mm image"
   },
   "4-A": {
@@ -250,7 +250,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 45°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 33.08 × 33.08 mm in a 41.33 mm image"
   },
   "4-sub": {
@@ -269,7 +269,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 34.18 × 34.18 mm in a 41.33 mm image"
   },
   "4-whole": {
@@ -288,7 +288,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 90°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 25.27 × 25.27 mm in a 41.33 mm image"
   },
   "4-shape": {
@@ -307,7 +307,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 90°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 24.17 × 24.17 mm in a 41.33 mm image"
   },
   "5-A": {
@@ -326,7 +326,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 29.76 × 25.78 mm in a 41.33 mm image"
   },
   "5-sub": {
@@ -345,7 +345,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 29.65 × 26.12 mm in a 41.33 mm image"
   },
   "5-whole": {
@@ -364,7 +364,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 28.75 × 28.75 mm in a 41.33 mm image"
   },
   "5-shape": {
@@ -383,7 +383,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 28.87 × 28.41 mm in a 41.33 mm image"
   },
   "6-A": {
@@ -402,7 +402,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 29.76 × 25.78 mm in a 41.33 mm image"
   },
   "6-sub": {
@@ -421,7 +421,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 29.65 × 26.12 mm in a 41.33 mm image"
   },
   "6-whole": {
@@ -440,7 +440,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 28.75 × 28.75 mm in a 41.33 mm image"
   },
   "6-shape": {
@@ -459,7 +459,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 28.87 × 28.41 mm in a 41.33 mm image"
   },
   "7-A": {
@@ -478,7 +478,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 29.76 × 25.78 mm in a 41.33 mm image"
   },
   "7-sub": {
@@ -497,7 +497,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 29.65 × 26.12 mm in a 41.33 mm image"
   },
   "7-whole": {
@@ -516,7 +516,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 28.75 × 28.75 mm in a 41.33 mm image"
   },
   "7-shape": {
@@ -535,7 +535,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 28.87 × 28.41 mm in a 41.33 mm image"
   },
   "8-A": {
@@ -554,7 +554,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 29.76 × 25.78 mm in a 41.33 mm image"
   },
   "8-sub": {
@@ -573,7 +573,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 29.65 × 26.12 mm in a 41.33 mm image"
   },
   "8-whole": {
@@ -592,7 +592,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 28.75 × 28.75 mm in a 41.33 mm image"
   },
   "8-shape": {
@@ -611,7 +611,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 28.87 × 28.41 mm in a 41.33 mm image"
   },
   "9-A": {
@@ -630,7 +630,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 25.23 × 24.73 mm in a 41.33 mm image"
   },
   "9-sub": {
@@ -649,7 +649,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 25.11 × 25.11 mm in a 41.33 mm image"
   },
   "9-whole": {
@@ -668,7 +668,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 34.01 × 34.01 mm in a 41.33 mm image"
   },
   "9-shape": {
@@ -687,7 +687,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 34.14 × 33.64 mm in a 41.33 mm image"
   },
   "10-A": {
@@ -706,7 +706,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 180°)",
+    "description": "Reference",
     "dimensions": "figure 25.23 × 24.73 mm in a 41.33 mm image"
   },
   "10-sub": {
@@ -725,7 +725,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 225°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 25.11 × 25.11 mm in a 41.33 mm image"
   },
   "10-whole": {
@@ -744,7 +744,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 225°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 34.01 × 34.01 mm in a 41.33 mm image"
   },
   "10-shape": {
@@ -763,7 +763,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 180°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 34.14 × 33.64 mm in a 41.33 mm image"
   },
   "11-A": {
@@ -782,7 +782,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 29.14 × 25.61 mm in a 41.33 mm image"
   },
   "11-sub": {
@@ -801,7 +801,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 30.29 × 26.76 mm in a 41.33 mm image"
   },
   "11-whole": {
@@ -820,7 +820,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 29.39 × 29.39 mm in a 41.33 mm image"
   },
   "11-shape": {
@@ -839,7 +839,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 28.24 × 28.24 mm in a 41.33 mm image"
   },
   "12-A": {
@@ -858,7 +858,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 29.14 × 25.61 mm in a 41.33 mm image"
   },
   "12-sub": {
@@ -877,7 +877,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 30.29 × 26.76 mm in a 41.33 mm image"
   },
   "12-whole": {
@@ -896,7 +896,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 29.39 × 29.39 mm in a 41.33 mm image"
   },
   "12-shape": {
@@ -915,7 +915,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 28.24 × 28.24 mm in a 41.33 mm image"
   },
   "13-A": {
@@ -934,7 +934,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 34.14 × 33.64 mm in a 41.33 mm image"
   },
   "13-sub": {
@@ -953,7 +953,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 34.01 × 34.01 mm in a 41.33 mm image"
   },
   "13-whole": {
@@ -972,7 +972,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 25.11 × 25.11 mm in a 41.33 mm image"
   },
   "13-shape": {
@@ -991,7 +991,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 25.23 × 24.73 mm in a 41.33 mm image"
   },
   "14-A": {
@@ -1010,7 +1010,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 180°)",
+    "description": "Reference",
     "dimensions": "figure 34.14 × 33.64 mm in a 41.33 mm image"
   },
   "14-sub": {
@@ -1029,7 +1029,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 225°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 34.01 × 34.01 mm in a 41.33 mm image"
   },
   "14-whole": {
@@ -1048,7 +1048,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 225°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 25.11 × 25.11 mm in a 41.33 mm image"
   },
   "14-shape": {
@@ -1067,7 +1067,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 180°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 25.23 × 24.73 mm in a 41.33 mm image"
   },
   "15-A": {
@@ -1086,7 +1086,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 30.29 × 26.76 mm in a 41.33 mm image"
   },
   "15-sub": {
@@ -1105,7 +1105,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 29.14 × 25.61 mm in a 41.33 mm image"
   },
   "15-whole": {
@@ -1124,7 +1124,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 28.24 × 28.24 mm in a 41.33 mm image"
   },
   "15-shape": {
@@ -1143,7 +1143,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 29.39 × 29.39 mm in a 41.33 mm image"
   },
   "16-A": {
@@ -1162,7 +1162,7 @@ export const assets = {
     "relationToReference": "A",
     "baseRotationDelta": 0,
     "subRotationDelta": 0,
-    "description": "reference (base 0°, sub-shapes 0°)",
+    "description": "Reference",
     "dimensions": "figure 30.29 × 26.76 mm in a 41.33 mm image"
   },
   "16-sub": {
@@ -1181,7 +1181,7 @@ export const assets = {
     "relationToReference": "sub",
     "baseRotationDelta": 0,
     "subRotationDelta": 45,
-    "description": "sub-shapes rotated 45° (base 0°, sub-shapes 45°)",
+    "description": "Sub-shapes rotated 45°",
     "dimensions": "figure 29.14 × 25.61 mm in a 41.33 mm image"
   },
   "16-whole": {
@@ -1200,7 +1200,7 @@ export const assets = {
     "relationToReference": "whole",
     "baseRotationDelta": 45,
     "subRotationDelta": 45,
-    "description": "whole object rotated 45° (base 45°, sub-shapes 45°)",
+    "description": "Whole rotated 45°",
     "dimensions": "figure 28.24 × 28.24 mm in a 41.33 mm image"
   },
   "16-shape": {
@@ -1219,7 +1219,7 @@ export const assets = {
     "relationToReference": "shape",
     "baseRotationDelta": 45,
     "subRotationDelta": 0,
-    "description": "base shape rotated 45° (base 45°, sub-shapes 0°)",
+    "description": "Global shape rotated 45°",
     "dimensions": "figure 29.39 × 29.39 mm in a 41.33 mm image"
   }
 };

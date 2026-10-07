@@ -75,7 +75,9 @@ for s in stim:
     assert svg.count('fill="#111"') > 0 and '<text' not in svg
     (site / 'assets' / f'{s}.svg').write_text(svg.replace('fill="#111"', 'fill="#000"'))
 
-VARIANT_LABEL = {'A': 'reference', 'sub': 'sub-shapes rotated 45°', 'whole': 'whole object rotated 45°', 'shape': 'base shape rotated 45°'}
+# Every comparison differs from the reference by one 45 degree rotation; the
+# handoff's absolute angles (e.g. 180 -> 225) are kept as data only.
+VARIANT_LABEL = {'A': 'Reference', 'sub': 'Sub-shapes rotated 45°', 'whole': 'Whole rotated 45°', 'shape': 'Global shape rotated 45°'}
 # Handoff question -> researcher's number, by the reference's effective shapes.
 kinds = {q: (effective(stim[v['A']]['shape'], int(stim[v['A']]['baseRot'])), effective(stim[v['A']]['sub'], int(stim[v['A']]['subRot']))) for q, v in questions.items()}
 assert sorted(kinds.values()) == sorted(ORDER), kinds
@@ -106,7 +108,7 @@ for q in sorted(questions, key=number.get):
             'baseRot': int(s['baseRot']), 'subRot': int(s['subRot']), 'frame': s['frame'],
             'figureWidthMm': float(s['figure_width_mm_on_screen']), 'figureHeightMm': float(s['figure_height_mm_on_screen']),
             'relationToReference': v, 'baseRotationDelta': db, 'subRotationDelta': ds,
-            'description': f"{VARIANT_LABEL[v]} (base {s['baseRot']}°, sub-shapes {s['subRot']}°)",
+            'description': VARIANT_LABEL[v],
             'dimensions': f"figure {float(s['figure_width_mm_on_screen']):g} × {float(s['figure_height_mm_on_screen']):g} mm in a {IMAGE_MM} mm image",
         }
         stim_rows.append({'question': q, 'name': name, 'handoff_question': hq, 'variant': v, 'relation_to_reference': VARIANT_LABEL[v], 'base_rotation_delta': db, 'sub_rotation_delta': ds,
