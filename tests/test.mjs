@@ -179,6 +179,13 @@ for (let q = 1; q <= 16; q++) {
   }
 }
 assert.ok(!Object.values(rot.assets).some(a => fs.readFileSync(path.join(APP, 'rotation', a.src), 'utf8').includes('#111')), 'pure black artwork');
+// Questions follow the researcher's order and naming (base of sub-shapes).
+const UP = 'upward pointing triangle', DOWN = 'downward pointing triangle';
+const expectedNames = [['Square', 'square'], ['Square', 'diamond'], ['Diamond', 'diamond'], ['Diamond', 'square'], ['Upward pointing triangle', UP], ['Upward pointing triangle', DOWN], ['Downward pointing triangle', DOWN], ['Downward pointing triangle', UP],
+  ['Square', UP], ['Square', DOWN], ['Upward pointing triangle', 'square'], ['Downward pointing triangle', 'square'], ['Diamond', UP], ['Diamond', DOWN], ['Upward pointing triangle', 'diamond'], ['Downward pointing triangle', 'diamond']].map(([b, s]) => `${b} of ${s}s`);
+assert.deepEqual(rot.trials.filter(t => t.id.endsWith('.1')).map(t => t.name), expectedNames);
+assert.deepEqual(rot.trials.filter(t => t.id.endsWith('.1')).map(t => t.source), ['handoff Q1', 'handoff Q2', 'handoff Q4', 'handoff Q3', 'handoff Q10', 'handoff Q9', 'handoff Q11', 'handoff Q12', 'handoff Q5', 'handoff Q7', 'handoff Q13', 'handoff Q14', 'handoff Q6', 'handoff Q8', 'handoff Q15', 'handoff Q16']);
+assert.ok(!rot.trials.some(t => /triangle-|'s/.test(t.name)), 'no shorthand triangle names');
 for (const t of rot.trials) for (const reversed of [false, true]) {
   const left = reversed ? t.right : t.left, right = reversed ? t.left : t.right;
   const boxes = [[`${t.family}-A`, 'A'], [`${t.family}-${left}`, 'B'], [`${t.family}-${right}`, 'C']].map(([id, label]) => { const a = rot.assets[id]; const [x, y] = STAGE.positions[label]; return {x0: x - a.widthMm / 2, x1: x + a.widthMm / 2, y0: y - a.heightMm / 2, y1: y + a.heightMm / 2}; });

@@ -10,6 +10,11 @@ A by a 45 degree rotation of: the sub-shapes only ('sub'), the whole object
 baseRot/subRot parameters, not from the B/C/D letters. Every question yields
 three 2AFC questions: sub vs whole, sub vs shape, whole vs shape.
 
+Questions are numbered and named in the researcher's order (ORDER below) by
+the reference's effective shapes: a square base at 45 degrees is a diamond, a
+triangle sub-shape at 180 degrees is downward pointing. The handoff question
+number is kept as `source` on every trial and in the CSV files.
+
 Usage: python3 tools/build_rotation_stimuli.py   (from the repository root)
 """
 from pathlib import Path
@@ -34,6 +39,29 @@ for r in rows:
         questions.setdefault(int(q[1:]), {})[role] = r['stimulus']
 assert len(questions) == 16 and all(set(v) == {'A', 'B', 'C', 'D'} for v in questions.values()), questions
 
+# Effective (as seen) name of a shape token at a rotation, for the references.
+def effective(shape, rot):
+    rot %= 360
+    if shape == 'square': return {0: 'square', 45: 'diamond', 90: 'square'}[rot]
+    if shape == 'diamond': return {0: 'diamond', 45: 'square'}[rot]
+    if shape == 'triangle': return {0: 'upward pointing triangle', 180: 'downward pointing triangle'}[rot]
+    if shape == 'up-triangle': return {0: 'upward pointing triangle', 180: 'downward pointing triangle'}[rot]
+    if shape == 'down-triangle': return {0: 'downward pointing triangle', 180: 'upward pointing triangle'}[rot]
+    raise ValueError((shape, rot))
+
+UP, DOWN = 'upward pointing triangle', 'downward pointing triangle'
+# Researcher's order of the 16 questions as (base, sub-shape) effective names.
+ORDER = [
+    ('square', 'square'), ('square', 'diamond'), ('diamond', 'diamond'), ('diamond', 'square'),
+    (UP, UP), (UP, DOWN), (DOWN, DOWN), (DOWN, UP),
+    ('square', UP), ('square', DOWN), (UP, 'square'), (DOWN, 'square'),
+    ('diamond', UP), ('diamond', DOWN), (UP, 'diamond'), (DOWN, 'diamond'),
+]
+GROUP = {('square', 'square'): 'squares and diamonds', ('square', 'diamond'): 'squares and diamonds', ('diamond', 'diamond'): 'squares and diamonds', ('diamond', 'square'): 'squares and diamonds',
+         (UP, UP): 'triangles', (UP, DOWN): 'triangles', (DOWN, DOWN): 'triangles', (DOWN, UP): 'triangles',
+         ('square', UP): 'squares and triangles', ('square', DOWN): 'squares and triangles', (UP, 'square'): 'squares and triangles', (DOWN, 'square'): 'squares and triangles',
+         ('diamond', UP): 'diamonds and triangles', ('diamond', DOWN): 'diamonds and triangles', (UP, 'diamond'): 'diamonds and triangles', (DOWN, 'diamond'): 'diamonds and triangles'}
+
 def relation(a, c):
     db = (int(c['baseRot']) - int(a['baseRot'])) % 360
     ds = (int(c['subRot']) - int(a['subRot'])) % 360
@@ -48,14 +76,24 @@ for s in stim:
     (site / 'assets' / f'{s}.svg').write_text(svg.replace('fill="#111"', 'fill="#000"'))
 
 VARIANT_LABEL = {'A': 'reference', 'sub': 'sub-shapes rotated 45°', 'whole': 'whole object rotated 45°', 'shape': 'base shape rotated 45°'}
+# Handoff question -> researcher's number, by the reference's effective shapes.
+kinds = {q: (effective(stim[v['A']]['shape'], int(stim[v['A']]['baseRot'])), effective(stim[v['A']]['sub'], int(stim[v['A']]['subRot']))) for q, v in questions.items()}
+assert sorted(kinds.values()) == sorted(ORDER), kinds
+number = {q: ORDER.index(k) + 1 for q, k in kinds.items()}
+assert sorted(number.values()) == list(range(1, 17))
+
 assets, trials, stim_rows, comp_rows = {}, [], [], []
-for q in sorted(questions):
+for q in sorted(questions, key=number.get):
     a = stim[questions[q]['A']]
-    name = f"{a['shape']} of {a['sub']}s"
-    group = f"{a['shape']}-{a['sub']}"
+    base, sub = kinds[q]
+    name = f"{base[0].upper()}{base[1:]} of {sub}s"
+    group = GROUP[(base, sub)]
+    source = f'handoff Q{q}'
+    hq = q
+    q = number[hq]
     variants = {'A': a}
     for role in 'BCD':
-        c = stim[questions[q][role]]
+        c = stim[questions[hq][role]]
         rel, db, ds = relation(a, c)
         assert rel not in variants, (q, rel)
         variants[rel] = c
@@ -71,13 +109,13 @@ for q in sorted(questions):
             'description': f"{VARIANT_LABEL[v]} (base {s['baseRot']}°, sub-shapes {s['subRot']}°)",
             'dimensions': f"figure {float(s['figure_width_mm_on_screen']):g} × {float(s['figure_height_mm_on_screen']):g} mm in a {IMAGE_MM} mm image",
         }
-        stim_rows.append({'question': q, 'variant': v, 'relation_to_reference': VARIANT_LABEL[v], 'base_rotation_delta': db, 'sub_rotation_delta': ds,
+        stim_rows.append({'question': q, 'name': name, 'handoff_question': hq, 'variant': v, 'relation_to_reference': VARIANT_LABEL[v], 'base_rotation_delta': db, 'sub_rotation_delta': ds,
                           'stimulus': s['stimulus'], 'shape': s['shape'], 'sub_shape': s['sub'], 'density': s['density'], 'base_rotation': s['baseRot'], 'sub_rotation': s['subRot'],
                           'frame': s['frame'], 'figure_width_mm': s['figure_width_mm_on_screen'], 'figure_height_mm': s['figure_height_mm_on_screen'], 'image_mm': IMAGE_MM,
-                          'handoff_role': 'A' if v == 'A' else [r for r in 'BCD' if questions[q][r] == s['stimulus']][0], 'svg': f"{s['stimulus']}.svg"})
+                          'handoff_role': 'A' if v == 'A' else [r for r in 'BCD' if questions[hq][r] == s['stimulus']][0], 'svg': f"{s['stimulus']}.svg"})
     for i, (l, r) in enumerate([('sub', 'whole'), ('sub', 'shape'), ('whole', 'shape')], 1):
-        trials.append({'id': f'{q}.{i}', 'family': q, 'name': name, 'group': group, 'left': l, 'right': r})
-        comp_rows.append({'trial_id': f'{q}.{i}', 'question': q, 'name': name, 'group': group, 'reference': variants['A']['stimulus'],
+        trials.append({'id': f'{q}.{i}', 'family': q, 'name': name, 'group': group, 'source': source, 'left': l, 'right': r})
+        comp_rows.append({'trial_id': f'{q}.{i}', 'question': q, 'handoff_question': hq, 'name': name, 'group': group, 'reference': variants['A']['stimulus'],
                           'comparison_1': l, 'comparison_1_stimulus': variants[l]['stimulus'], 'comparison_2': r, 'comparison_2_stimulus': variants[r]['stimulus'],
                           'comparison': f'{VARIANT_LABEL[l]}  vs  {VARIANT_LABEL[r]}'})
 
@@ -95,3 +133,4 @@ with (src / 'stimuli.csv').open('w', newline='') as f:
 with (src / 'comparisons.csv').open('w', newline='') as f:
     w = csv.DictWriter(f, comp_rows[0].keys()); w.writeheader(); w.writerows(comp_rows)
 print(f'{len(questions)} questions -> {len(trials)} 2AFC questions, {len(assets)} asset entries over {len(stim)} files, image size {IMAGE_MM} mm')
+for t in trials[::3]: print(f"  {t['family']:>2}. {t['name']}  ({t['source']})")

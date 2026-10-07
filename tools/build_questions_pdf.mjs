@@ -27,7 +27,7 @@ const svg = id => 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(SITE,
 const obj = (id, label) => { const a = assets[id]; const [x, y] = STAGE.positions[label]; return `<div class="o" style="left:${x - a.widthMm / 2}mm;top:${y - a.heightMm / 2}mm;width:${a.widthMm}mm;height:${a.heightMm}mm"><span style="top:-${LABEL.offsetAboveMm}mm;font-size:${LABEL.fontSizeMm}mm">${label}</span><img src="${svg(id)}"></div>`; };
 const stimulusOf = id => (assets[id].stimulus ? ` (${assets[id].stimulus})` : '');
 const pages = trials.map((t, i) => { const A = `${t.family}-A`, B = `${t.family}-${t.left}`, C = `${t.family}-${t.right}`; return `<section>
-<header><div class="q">Question ${i + 1} of ${trials.length} &middot; trial ${t.id}</div><div class="t">${t.name} (${t.group})</div><div class="n"><b>Object A</b> = ${notation[A]}${stimulusOf(A)} &nbsp;&middot;&nbsp; <b>Object B</b> = ${notation[B]}${stimulusOf(B)} &nbsp;&middot;&nbsp; <b>Object C</b> = ${notation[C]}${stimulusOf(C)}</div></header>
+<header><div class="q">Question ${i + 1} of ${trials.length} &middot; trial ${t.id}${t.source ? ' &middot; ' + t.source : ''}</div><div class="t">${t.name} (${t.group})</div><div class="n"><b>Object A</b> = ${notation[A]}${stimulusOf(A)} &nbsp;&middot;&nbsp; <b>Object B</b> = ${notation[B]}${stimulusOf(B)} &nbsp;&middot;&nbsp; <b>Object C</b> = ${notation[C]}${stimulusOf(C)}</div></header>
 <h1>Which is more similar to A?</h1>
 <div class="stage">${obj(A, 'A')}${obj(B, 'B')}${obj(C, 'C')}</div>
 <footer>When printed at 100% on A4. <b>Object A</b>: ${dims(A)}. <b>Object B</b>: ${dims(B)}. <b>Object C</b>: ${dims(C)}.</footer></section>`; }).join('');

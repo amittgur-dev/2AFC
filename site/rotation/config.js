@@ -11,7 +11,7 @@ export const config = {
   // protocolVersion, stimulusSetVersion, layoutVersion and the whole `design`
   // block match; otherwise a fresh session starts.
   protocolVersion: '2026-10-06-v1',
-  stimulusSetVersion: 'exp2-similarity-with-rotation-v1',
+  stimulusSetVersion: 'exp2-similarity-with-rotation-v2',
   layoutVersion: '2026-10-07-unit-lines-v2',
 
   study: {
