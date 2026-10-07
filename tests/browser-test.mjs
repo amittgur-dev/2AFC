@@ -23,6 +23,9 @@ const sbPosts = []; // Supabase-style inserts: {table, query, apikey, auth, pref
 // the test server rather than Playwright routing, which would also intercept
 // and drop the leaving-page sends.)
 const configSource = fs.readFileSync(path.join(APP, '1/config.js'), 'utf8');
+const configSource2 = fs.readFileSync(path.join(APP, '2/config.js'), 'utf8');
+let configVariant2 = null; // study 2: null (deployed pilot config) or 'supabase'
+const configFor2 = () => { const c = configSource2.replace("mode: 'local'", "mode: 'supabase'").replace("supabase: {url: '', anonKey: ''", `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`); assert.notEqual(c, configSource2); return c; };
 let configVariant = 'supabase'; // 'supabase' | 'netlify' | null (deployed pilot config)
 const configFor = variant => {
   let c = configSource.replace('allowDownload: false', 'allowDownload: true').replace('showCode: false', 'showCode: true').replace('rememberSession: false', 'rememberSession: true');
@@ -40,6 +43,7 @@ const server = http.createServer((req, res) => {
     }); return;
   }
   if (req.url.split('?')[0] === '/1/config.js' && configVariant) { res.writeHead(200, {'Content-Type': 'text/javascript', 'Cache-Control': 'no-store'}); return res.end(configFor(configVariant)); }
+  if (req.url.split('?')[0] === '/2/config.js' && configVariant2) { res.writeHead(200, {'Content-Type': 'text/javascript', 'Cache-Control': 'no-store'}); return res.end(configFor2()); }
   let file = path.join(APP, req.url.split('?')[0]);
   if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
   if (!fs.existsSync(file)) { res.writeHead(404); return res.end(); }
@@ -310,7 +314,9 @@ assert.equal(posts.length + sbPosts.length, before, 'pilot sends nothing');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');
 assert.notEqual((await page3.evaluate(() => lineSimilarityState())).session_id, pilotSaved.session_id);
 
-// Experiment 2 runs from its own folder on the same site: 48 questions, 41.33 mm images.
+// Experiment 2: 48 questions, 41.33 mm images, and registration into its own tables.
+configVariant2 = 'supabase';
+const sbBefore = sbPosts.length;
 const page4 = await pilot.newPage();
 page4.on('pageerror', e => errors.push(String(e)));
 await page4.goto(base + '2/?reset=1&pid=K7P3QM');
@@ -326,9 +332,19 @@ const objs4 = await page4.$$eval('#stage .object', els => els.map(e => ({w: e.ge
 assert.equal(objs4.length, 3);
 for (const o of objs4) { assert.ok(Math.abs(o.w - 41.33 * ppmm) < .1); assert.ok(/\/2\/assets\/S\d{3}\.svg$/.test(o.src), o.src); }
 if (shots) await page4.screenshot({path: path.join(shots, 'rotation-trial-1.png')});
-for (let i = 0; i < 3; i++) { await page4.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page4.keyboard.press('ArrowLeft'); }
+for (let i = 0; i < 48; i++) { await page4.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page4.keyboard.press(i % 3 ? 'ArrowLeft' : 'ArrowRight'); }
+await page4.waitForFunction(() => lineSimilarityState().mode === 'complete');
+await page4.waitForFunction(() => /saved|could not/.test(document.getElementById('submit-status').textContent));
 const rotSaved = await page4.evaluate(() => JSON.parse(localStorage.getItem('line-similarity:rotation:session:v1')));
-assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.experiment_name, 'Similarity with rotation'); assert.equal(rotSaved.trials.length, 3);
+assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.experiment_name, 'Similarity with rotation'); assert.equal(rotSaved.trials.length, 48);
+assert.equal(rotSaved.submissions.at(-1).status, 'supabase'); assert.equal(rotSaved.submissions.at(-1).ok, true);
+const rotPosts = sbPosts.slice(sbBefore);
+assert.deepEqual(rotPosts.map(p => p.table), ['similarity_with_rotation_sessions', 'similarity_with_rotation_trials'], 'study 2 writes to its own tables');
+assert.equal(rotPosts[0].rows[0].submitted_status, 'complete'); assert.equal(rotPosts[0].rows[0].trials_completed, 48); assert.equal(rotPosts[0].rows[0].experiment_name, 'Similarity with rotation'); assert.equal(rotPosts[0].rows[0].participant_id, 'K7P3QM');
+assert.equal(rotPosts[1].rows.length, 48);
+assert.ok(rotPosts[1].rows.every(r => ['sub', 'whole', 'shape'].includes(r.chosen_condition) && r.family_name && r.reaction_time_ms > 0 && r.participant_id === 'K7P3QM' && r.experiment_id === 'exp2-similarity-with-rotation'));
+assert.equal(new Set(rotPosts[1].rows.map(r => r.trial_id)).size, 48, 'every one of the 48 questions answered once');
+configVariant2 = null;
 assert.equal(rotSaved.participant_id, 'K7P3QM'); assert.equal(rotSaved.participant_id_source, 'url');
 assert.ok(rotSaved.design.randomizeTrialOrder && rotSaved.design.sideAssignment === 'random' && rotSaved.design.controlPosition === 'random');
 
@@ -359,7 +375,30 @@ assert.equal(s5.total, 48); assert.equal(s5.participant_id, 'BUILT1');
 const srcs5 = await page5.$$eval('#stage img', els => els.map(e => new URL(e.currentSrc).pathname));
 assert.ok(srcs5.length === 3 && srcs5.every(p => /^\/assets\/S\d{3}\.svg$/.test(p)), 'a built study serves its assets at the root: ' + srcs5.join());
 server2.close(); fs.rmSync(built, {recursive: true, force: true});
+const built1 = fs.mkdtempSync(path.join(os.tmpdir(), 'study1-'));
+execFileSync('node', [path.join(APP, '../tools/build_site.mjs'), '1', built1]);
+const server1 = http.createServer((req, res) => {
+  let file = path.join(built1, req.url.split('?')[0]);
+  if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
+  if (!fs.existsSync(file)) { res.writeHead(404); return res.end(); }
+  res.writeHead(200, {'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store'});
+  fs.createReadStream(file).pipe(res);
+});
+await new Promise(r => server1.listen(0, r));
+const page6 = await pilot.newPage();
+page6.on('pageerror', e => errors.push(String(e)));
+await page6.goto(`http://127.0.0.1:${server1.address().port}/?pid=BUILT2`);
+await page6.click('#begin');
+await page6.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
+await page6.click('#confirm-card');
+await page6.waitForSelector('#start:not([disabled])'); await page6.click('#start');
+await page6.waitForFunction(() => lineSimilarityState().ready);
+const s6 = await page6.evaluate(() => lineSimilarityState());
+assert.equal(s6.total, 19); assert.equal(s6.participant_id, 'BUILT2');
+const srcs6 = await page6.$$eval('#stage img', els => els.map(e => new URL(e.currentSrc).pathname));
+assert.ok(srcs6.length === 3 && srcs6.every(p => /^\/assets\/\d-[A-Z]\.svg$/.test(p)), 'built study 1 serves its assets at the root: ' + srcs6.join());
+server1.close(); fs.rmSync(built1, {recursive: true, force: true});
 
 assert.deepEqual(errors.filter(e => !/Failed to load resource/.test(e)), [], 'no page errors beyond the deliberately aborted image loads');
 await browser.close(); server.close();
-console.log('Passed real-browser flow: Supabase inserts (keepalive on leaving, completion), calibration at 5.11 px/mm, calibrated object sizes, tab-hidden re-presentation, keyboard and mouse responses, double-response guard, onset-based timing, reload recovery with identical order, fit block, zoom invalidation, failed image load, completion post under the beacon cap, completion-page stability, repeat-visit guard, participant switch, Safari-style zoom, failed-submission fallback and CSV download.');
+console.log('Passed real-browser flow: Supabase inserts for both studies (keepalive on leaving, completion), both studies as built for deployment, calibration at 5.11 px/mm, calibrated object sizes, tab-hidden re-presentation, keyboard and mouse responses, double-response guard, onset-based timing, reload recovery with identical order, fit block, zoom invalidation, failed image load, completion post under the beacon cap, completion-page stability, repeat-visit guard, participant switch, Safari-style zoom, failed-submission fallback and CSV download.');
