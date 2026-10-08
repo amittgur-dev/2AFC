@@ -30,9 +30,6 @@ export const config = {
     // (demographics) before calibration.
     consentPage: true,
     consentText: [
-      'You will see a series of screens, each featuring a reference object (A) and two comparison objects (B and C). Your task is to decide which of the comparison objects is most similar to the reference.',
-      'To choose B, press the LEFT arrow; to choose C, press the RIGHT arrow. Alternatively, you can use the mouse to click on the comparison object.',
-      'There are no right or wrong answers — just follow your visual impression.',
       'The study takes about 1 to 3 minutes.',
       'By ticking the box below, you give the researchers your consent to record your study data. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
       'There are no known risks. If you have questions about the study, please contact Amit.Gur@UAntwerp.be.',
