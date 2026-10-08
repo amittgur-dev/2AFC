@@ -113,19 +113,21 @@ black. `python3 tools/build_rotation_stimuli.py` regenerates
 
 1. **Information** — "Similarity judgment", one sentence, the participant
    code when the link carries none, Continue.
-2. **Consent** (study 1; `study.consentPage`) — the consent text from
-   `study.consentText` and an "I agree" checkbox. Asked once per session.
+2. **Instructions and consent** (study 1; `study.consentPage`) — the
+   researcher's text from `study.consentText` (task, keys or mouse, no right
+   or wrong answers, duration, data use, contact) and an "I agree" checkbox.
+   Asked once per session.
 3. **Age and gender** (study 1; `study.demographics`) — age (18 to 120) and
    gender (male, female, non-binary), both required. Stored with the session
    and in the `age`/`gender` columns of the sessions table.
 4. **Calibration** — match a card to the outline; pixels per mm = matched
    width / 85.60. The separate 1 mm ruler check was removed at the
    researcher's request; every thin line in the study is 1 mm thick.
-5. **Instructions** — study 1 shows the researcher's text in large type
-   (reference on top, two comparisons below, no right or wrong responses,
-   first visual impression, keys or mouse); study 2 a one-line version. All
-   SVGs are preloaded and decoded here. If the window is too small for the
-   stage at this calibration, a notice says how many pixels are needed.
+5. **Instructions** — a short reminder in large type (B or C more similar
+   to A; keys or mouse; number of screens) in study 1, a one-line version in
+   study 2. All SVGs are preloaded and decoded here. If the window is too
+   small for the stage at this calibration, a notice says how many pixels
+   are needed.
 6. **Trials** — one response each, by click/tap on B or C or the ← / →
    (also b / c) keys. Timing starts in the frame that first paints the three
    decoded images. A 500 ms blank follows each response. No back navigation.

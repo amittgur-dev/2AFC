@@ -275,7 +275,8 @@ assert.ok(!html.includes('id="verification"') && !/no photo|about .* minutes/i.t
 assert.ok(config.study.consentPage && config.study.demographics && Array.isArray(config.study.consentText) && config.study.consentText.length >= 3, 'study 1 consent and demographics on');
 assert.ok(!rotConfig.study.consentPage && !rotConfig.study.demographics, 'study 2 unchanged');
 for (const h of [html, rotHtml]) assert.ok(h.includes('id="consent-page"') && h.includes('id="demographics"') && h.includes('name="gender" value="non-binary"') && h.includes('id="age"'), 'both pages carry the consent and demographics sections');
-assert.ok(html.includes('You will see a reference object on top of the screen and two comparison objects below it.') && html.includes('what counts is your first visual impression') && html.includes('with the mouse') && html.includes('instructions-large'), 'study 1 instructions text');
+assert.ok(html.includes('looks more similar to <strong>A</strong>') && html.includes('with the mouse') && html.includes('instructions-large'), 'study 1 instructions reminder');
+assert.ok(config.study.consentText.join(' ').includes('To choose B, press the LEFT arrow') && config.study.contactEmail === 'Amit.Gur@UAntwerp.be', 'study 1 consent text');
 assert.ok(config.study.minAge === 18 && config.study.consentVersion !== rotConfig.study.consentVersion || true);
 assert.ok(config.experiment.id && config.storage.localKey, 'experiment identified');
 console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (57 files, 48 questions, relations verified), randomisation in both, Supabase rows vs migration columns, physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');

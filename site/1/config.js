@@ -19,9 +19,9 @@ export const config = {
     // Shown on the information/consent page. Fill these in before recruiting.
     institution: '',
     researcher: '',
-    contactEmail: '',
+    contactEmail: 'Amit.Gur@UAntwerp.be',
     ethicsReference: '',
-    durationMinutes: 5,
+    durationMinutes: 3,
     // DECISION: the pilot uses a plain Continue button. Set true to require an
     // "I agree to take part" checkbox before continuing.
     requireConsentCheckbox: false,
@@ -30,10 +30,12 @@ export const config = {
     // (demographics) before calibration.
     consentPage: true,
     consentText: [
-      'You are invited to take part in a study on visual perception. You will see a series of screens, each showing a reference object and two comparison objects, and on each screen you choose which comparison object looks more similar to the reference. The study takes about DURATION minutes.',
-      'Taking part is voluntary. You can stop at any time by closing the page, without giving a reason and without any disadvantage.',
-      'The study records your choices and how long each takes, your age and gender, your screen calibration and technical details of your display and browser. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
-      'There are no known risks. If you have questions about the study, CONTACT',
+      'You will see a series of screens, each featuring a reference object (A) and two comparison objects (B and C). Your task is to decide which of the comparison objects is most similar to the reference.',
+      'To choose B, press the LEFT arrow; to choose C, press the RIGHT arrow. Alternatively, you can use the mouse to click on the comparison object.',
+      'There are no right or wrong answers — just follow your visual impression.',
+      'The study takes about 1 to 3 minutes.',
+      'By ticking the box below, you give the researchers your consent to record your study data. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
+      'There are no known risks. If you have questions about the study, please contact Amit.Gur@UAntwerp.be.',
     ],
     demographics: true,
     minAge: 18,

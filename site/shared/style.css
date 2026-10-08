@@ -23,7 +23,7 @@ kbd{font:inherit;border:1px solid #000;padding:0 6px;border-radius:3px}
 .consent{display:flex;gap:12px;align-items:flex-start;margin:26px 0 0;font-size:16px;line-height:1.5;cursor:pointer}
 .consent input{width:20px;height:20px;margin:3px 0 0;accent-color:#000;flex:none}
 .code-row{display:flex;gap:14px;align-items:center;margin:26px 0 0;font-size:16px}
-#consent-text p{font-size:16px;line-height:1.6}
+#consent-text p{font-size:19px;line-height:1.8;margin:18px 0}
 .field{display:flex;gap:16px;align-items:center;margin:22px 0;font-size:17px;border:0;padding:0}
 .field input[type=number]{font:inherit;padding:8px 10px;border:1px solid #000;border-radius:0;width:6em}
 .field legend{padding:0;margin-right:8px}
