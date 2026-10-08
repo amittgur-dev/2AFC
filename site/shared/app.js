@@ -7,7 +7,7 @@ import {loadSession, saveSession, clearSession, storageAvailable, randomId, tria
 export function run({config, assets, trials}) {
 const $ = id => document.getElementById(id);
 const KEY = config.storage.localKey;
-const SECTIONS = ['information', 'calibration', 'instructions', 'experiment', 'complete'];
+const SECTIONS = ['information', 'consent-page', 'demographics', 'calibration', 'instructions', 'experiment', 'complete'];
 const now = () => new Date().toISOString();
 const perf = () => (globalThis.performance?.now ? performance.now() : Date.now());
 const DECODE_TIMEOUT_MS = 8000;  // a decode that never settles after the image has loaded is treated as a failure
@@ -183,13 +183,17 @@ function loadImage(img) {
 // the message is shown on the visible screen and the participant can retry.
 function preload() {
   if (decodedAssets) return decodedAssets;
-  notice('Loading objects…');
+  // The status goes to the notice of the page that started the load, and only
+  // that element is cleared afterwards, so a message shown meanwhile on
+  // another page (e.g. "zoom changed" on calibration) survives.
+  const target = {calibration: 'calibration-notice', instructions: 'instructions-notice'}[mode] ?? 'instructions-notice';
+  $(target).textContent = 'Loading objects…';
   $('start').disabled = true;
   decodedAssets = Promise.all(allAssetIds(assets).map(id => { const img = new Image(); img.src = assets[id].src; return loadImage(img).then(ok => ok ? null : id); })).then(results => {
     const failed = results.filter(Boolean);
     $('start').disabled = false;
-    if (failed.length) { notice('Some objects could not be loaded. Check your connection, then press ' + (mode === 'instructions' ? 'Start' : 'The edges match') + ' to try again.'); logEvent('preload-failed', {failed}); decodedAssets = null; return false; }
-    notice('');
+    if (failed.length) { $(target).textContent = 'Some objects could not be loaded. Check your connection, then press ' + (target === 'instructions-notice' ? 'Start' : 'The edges match') + ' to try again.'; logEvent('preload-failed', {failed}); decodedAssets = null; return false; }
+    if ($(target).textContent === 'Loading objects…') $(target).textContent = '';
     return true;
   });
   return decodedAssets;
@@ -409,12 +413,44 @@ function updateBegin() {
 $('consent').addEventListener('change', updateBegin);
 $('participant-code').addEventListener('input', updateBegin);
 $('participant-code').addEventListener('keydown', e => { if (e.key === 'Enter' && !$('begin').disabled) $('begin').click(); });
+// Pages between the first page and calibration: consent form (once) and
+// demographics (once), each only when the study asks for it.
+function consentReady() { return !config.study.consentPage || !!session.consented_at; }
+function demographicsReady() { return !config.study.demographics || !!(session.demographics && session.demographics.age && session.demographics.gender); }
+function nextIntroStep() {
+  if (!consentReady()) { renderConsent(); show('consent-page'); return; }
+  if (!demographicsReady()) { updateDemographics(); show('demographics'); return; }
+  calibrate();
+}
+function renderConsent() {
+  const contact = [config.study.researcher, config.study.institution].filter(Boolean).join(', ');
+  const who = contact ? 'please contact ' + contact + (config.study.contactEmail ? ' at ' + config.study.contactEmail : '') + '.' : config.study.contactEmail ? 'please contact ' + config.study.contactEmail + '.' : 'please contact the researcher who sent you this link.';
+  $('consent-text').replaceChildren(...(config.study.consentText ?? []).map(text => {
+    const p = document.createElement('p');
+    p.textContent = text.replace('DURATION', String(config.study.durationMinutes)).replace('CONTACT', who);
+    return p;
+  }));
+  $('consent-agree').checked = false; $('consent-continue').disabled = true;
+}
+function demographicsValues() {
+  const age = Number($('age').value);
+  const gender = document.querySelector('input[name=gender]:checked')?.value ?? null;
+  const ageOk = Number.isInteger(age) && age >= (config.study.minAge ?? 1) && age <= (config.study.maxAge ?? 120);
+  return {age, gender, valid: ageOk && !!gender};
+}
+function updateDemographics() { $('demographics-continue').disabled = !demographicsValues().valid; }
 $('begin').onclick = () => {
   if (!$('code-row').hidden) { session.participant_id = $('participant-code').value.trim().toUpperCase(); session.participant_id_source = 'typed'; }
   else if (session.participant_id && !session.participant_id_source) session.participant_id_source = 'url';
-  if (!session.consented_at) session.consented_at = now();
-  logEvent('consented'); calibrate();
+  if (!config.study.consentPage && !session.consented_at) { session.consented_at = now(); logEvent('consented'); }
+  persist();
+  nextIntroStep();
 };
+$('consent-agree').addEventListener('change', e => { $('consent-continue').disabled = !e.target.checked; });
+$('consent-continue').onclick = () => { if (!$('consent-agree').checked) return; session.consented_at = now(); logEvent('consented'); nextIntroStep(); };
+$('age').addEventListener('input', updateDemographics);
+document.querySelectorAll('input[name=gender]').forEach(r => r.addEventListener('change', updateDemographics));
+$('demographics-continue').onclick = () => { const d = demographicsValues(); if (!d.valid) return; session.demographics = {age: d.age, gender: d.gender, at: now()}; logEvent('demographics'); persist(); nextIntroStep(); };
 $('card-size').addEventListener('input', e => updateCard(e.target.value));
 $('smaller').onclick = () => updateCard(Number($('card-size').value) - 1);
 $('larger').onclick = () => updateCard(Number($('card-size').value) + 1);
@@ -452,6 +488,7 @@ globalThis.lineSimilarityState = () => ({
   presentation: current ? session.sequence[current.index] : null, ready: !!current?.ready, attempts: current?.attempts ?? 0,
   interruptions: current?.interruptions.map(i => i.type) ?? [], storage_available: session?.storage_available ?? null,
   submitted: !!session?.submissions.some(s => s.ok && !s.unconfirmed), submissions: session?.submissions.length ?? 0,
+  demographics: session?.demographics ?? null,
 });
 try { init(); }
 catch (e) {

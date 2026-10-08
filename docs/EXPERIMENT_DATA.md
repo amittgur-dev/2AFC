@@ -36,7 +36,8 @@ the record waits in the browser for a later visit.
 | `design` | The `config.design` block plus the random `seed` and `interleaved` (true/false: whether the no-consecutive-family constraint was met over the shuffled segments; null when it was not requested; a deliberate leading control block under `controlPosition: 'first'` does not count against it). `buildDesign(design, seed)` reproduces `sequence`. The app reads the inter-trial interval and response keys from this block, so the record describes what was run even if `config.js` changed later. |
 | `sequence` | The assigned presentation order (see presentation fields below), fixed at session creation. |
 | `stage_mm`, `label_mm`, `card_mm` | The physical layout constants in force. |
-| `started_at`, `consented_at`, `first_trial_at`, `ended_at` | ISO timestamps. |
+| `started_at`, `consented_at`, `first_trial_at`, `ended_at` | ISO timestamps. `consented_at` is when the consent checkbox was confirmed (studies with a consent page) or when Continue was pressed on the first page. |
+| `demographics` | `{age, gender, at}` where the study asks for them (`gender` is `male`, `female` or `non-binary`); also written to the `age` and `gender` columns of the sessions table. Null otherwise. |
 | `completion_status` | `in_progress`, `complete`; a submitted record may also carry `abandoned` (interim copy). The record becomes `complete` the moment the last response is given, before the final blank interval. |
 | `storage_available` | Whether the browser allowed localStorage. When false the participant was warned not to reload, and a failed send cannot be retried later. |
 | `calibration` | Latest `{card_width_px, pixels_per_mm, at, environment}`. `pixels_per_mm = card_width_px / 85.60`. |

@@ -28,6 +28,26 @@
       <p class="hint" id="version-line"></p>
     </section>
 
+    <section id="consent-page" class="setup" hidden>
+      <p class="eyebrow">CONSENT</p>
+      <h1>Information and consent</h1>
+      <div id="consent-text"></div>
+      <label class="consent"><input type="checkbox" id="consent-agree"> I have read the information above and I agree to take part.</label>
+      <div class="actions"><button id="consent-continue" class="primary" disabled>Continue</button></div>
+    </section>
+
+    <section id="demographics" class="setup" hidden>
+      <p class="eyebrow">ABOUT YOU</p>
+      <h1>Two questions before we start.</h1>
+      <label class="field">Age <input id="age" type="number" inputmode="numeric" min="18" max="120" step="1" autocomplete="off"></label>
+      <fieldset class="field"><legend>Gender</legend>
+        <label><input type="radio" name="gender" value="male"> Male</label>
+        <label><input type="radio" name="gender" value="female"> Female</label>
+        <label><input type="radio" name="gender" value="non-binary"> Non-binary</label>
+      </fieldset>
+      <div class="actions"><button id="demographics-continue" class="primary" disabled>Continue</button></div>
+    </section>
+
     <section id="calibration" class="setup" hidden>
       <p class="eyebrow">SCREEN CALIBRATION</p>
       <h1>Match your card to the outline.</h1>

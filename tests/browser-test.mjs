@@ -72,6 +72,12 @@ const errors = [];
 page.on('pageerror', e => errors.push(String(e)));
 page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 const state = () => page.evaluate(() => lineSimilarityState());
+// Gets a page from the first screen to calibration: code (when asked), consent (when shown), age and gender (when shown).
+async function intro(p, {age = '34', gender = 'female'} = {}) {
+  await p.click('#begin');
+  if (await p.isVisible('#consent-page')) { assert.ok(await p.isDisabled('#consent-continue')); await p.check('#consent-agree'); await p.click('#consent-continue'); }
+  if (await p.isVisible('#demographics')) { await p.fill('#age', age); await p.check(`input[name=gender][value=${gender}]`); await p.click('#demographics-continue'); }
+}
 const target = 5.11; let ppmm = target; // the card slider snaps to 0.25 px, so the realised scale is read back after calibration
 const shots = process.env.SCREENSHOTS; if (shots) fs.mkdirSync(shots, {recursive: true});
 
@@ -80,7 +86,23 @@ assert.equal((await state()).mode, 'information');
 assert.ok(await page.isHidden('#consent-row'), 'pilot has no consent checkbox');
 assert.ok(await page.isHidden('#code-row'), 'a link with a participant id asks for no code');
 await page.click('#begin');
+// Consent page: text from the config, Continue only after agreeing.
+assert.equal((await state()).mode, 'consent-page');
+const consentText = await page.textContent('#consent-text');
+assert.ok(consentText.includes('study on visual perception') && consentText.includes('about 5 minutes') && consentText.includes('please contact the researcher who sent you this link'), consentText.slice(0, 200));
+assert.ok(await page.isDisabled('#consent-continue'));
+await page.check('#consent-agree'); await page.click('#consent-continue');
+// Age and gender, both required, age at least 18.
+assert.equal((await state()).mode, 'demographics');
+assert.ok(await page.isDisabled('#demographics-continue'));
+await page.fill('#age', '17'); await page.check('input[name=gender][value=non-binary]');
+assert.ok(await page.isDisabled('#demographics-continue'), 'age 17 is refused');
+await page.fill('#age', '34');
+assert.ok(!(await page.isDisabled('#demographics-continue')));
+await page.check('input[name=gender][value=female]');
+await page.click('#demographics-continue');
 assert.equal((await state()).mode, 'calibration');
+assert.deepEqual((await state()).demographics && [(await state()).demographics.age, (await state()).demographics.gender], [34, 'female']);
 // Calibrate at 5.11 px/mm by setting the card width directly.
 await page.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 // Stimuli that cannot be downloaded leave a message and a retry, not a dead end.
@@ -98,7 +120,7 @@ if ((await state()).mode === 'instructions') await page.click('#start');
 await page.waitForFunction(() => lineSimilarityState().mode === 'experiment');
 // Back to the instructions flow check from a clean session.
 await page.goto(exp1 + '?pid=TEST-001&STUDY_ID=S1&reset=1');
-await page.click('#begin');
+await intro(page);
 await page.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page.click('#confirm-card');
 assert.equal((await state()).mode, 'instructions');
@@ -158,6 +180,7 @@ assert.equal((await state()).mode, 'information');
 assert.ok(!(await page.isHidden('#resume-notice')));
 assert.ok((await page.textContent('#resume-notice')).includes('3 of 19'));
 await page.click('#begin');
+assert.equal((await state()).mode, 'calibration', 'consent and demographics are not asked again on resume');
 await page.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page.click('#confirm-card');
 await page.waitForFunction(() => lineSimilarityState().mode === 'experiment' && lineSimilarityState().ready);
@@ -229,6 +252,8 @@ assert.equal(abandonedRow.submitted_status, 'abandoned'); assert.equal(abandoned
 assert.equal(completeRow.submitted_status, 'complete'); assert.equal(completeRow.completion_status, 'complete'); assert.equal(completeRow.trials_completed, 19); assert.equal(completeRow.attempt, 2);
 assert.equal(completeRow.experiment_id, 'exp1-lines-with-edges'); assert.equal(completeRow.experiment_name, 'Lines with edges'); assert.equal(completeRow.participant_id, 'TEST-001');
 assert.equal(completeRow.session_id, saved.session_id); assert.equal(completeRow.pixels_per_mm, saved.calibration.pixels_per_mm); assert.equal(completeRow.record.trials.length, 19); assert.ok(completeRow.design.seed !== undefined);
+assert.equal(completeRow.age, 34); assert.equal(completeRow.gender, 'female'); assert.deepEqual([abandonedRow.age, abandonedRow.gender], [34, 'female']);
+assert.ok(saved.consented_at && saved.demographics.at && saved.events.some(e => e.type === 'demographics'));
 const [partialTrials, fullTrials] = sb('lines_with_edges_trials').map(p => p.rows);
 assert.equal(partialTrials.length, 3); assert.ok(!('viewport' in partialTrials[0]) && partialTrials[0].reaction_time_ms > 0 && partialTrials[0].trial_id);
 assert.equal(fullTrials.length, 19);
@@ -256,7 +281,7 @@ assert.equal((await state()).mode, 'information');
 assert.equal((await state()).participant_id, 'TEST-002'); assert.equal((await state()).completed, 0);
 assert.ok(await page.isHidden('#resume-notice'));
 // Safari-style zoom (viewport width changes, window width does not) forces recalibration.
-await page.click('#begin');
+await intro(page);
 await page.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page.click('#confirm-card');
 const outer = await page.evaluate(() => outerWidth);
@@ -272,7 +297,7 @@ const page2 = await context.newPage();
 page2.on('pageerror', e => errors.push(String(e)));
 await page2.route('**/*', route => route.request().method() === 'POST' ? route.fulfill({status: 500, body: 'no'}) : route.continue());
 await page2.goto(exp1 + '?reset=1&pid=TEST-FAIL');
-await page2.click('#begin');
+await intro(page2);
 await page2.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page2.click('#confirm-card');
 await page2.waitForSelector('#start:not([disabled])'); await page2.click('#start');
@@ -306,7 +331,7 @@ await page3.fill('#participant-code', 'K7P3QM');
 assert.ok(await page3.isDisabled('#begin'), 'letters are not a valid code');
 await page3.fill('#participant-code', ' 12345678 ');
 assert.ok(!(await page3.isDisabled('#begin')));
-await page3.click('#begin');
+await intro(page3, {age: '41', gender: 'male'});
 assert.equal((await page3.evaluate(() => lineSimilarityState())).participant_id, '12345678', 'typed code is trimmed');
 await page3.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page3.click('#confirm-card');
@@ -320,7 +345,7 @@ const pilotSaved = await page3.evaluate(k => JSON.parse(localStorage.getItem(k))
 assert.equal(pilotSaved.experiment_id, 'exp1-lines-with-edges'); assert.equal(pilotSaved.trials.length, 19);
 assert.equal(pilotSaved.participant_id, '12345678'); assert.equal(pilotSaved.participant_id_source, 'typed');
 assert.deepEqual(sbPosts.slice(before).map(p => [p.table, p.rows.length]), [['lines_with_edges_sessions', 1], ['lines_with_edges_trials', 19]], 'the deployed config records the run');
-assert.equal(sbPosts[before].rows[0].participant_id, '12345678');
+assert.equal(sbPosts[before].rows[0].participant_id, '12345678'); assert.deepEqual([sbPosts[before].rows[0].age, sbPosts[before].rows[0].gender], [41, 'male']);
 await page3.goto(exp1);
 assert.equal(sbPosts.length, before + 2, 'a confirmed save is not re-sent on the next visit');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');
@@ -334,6 +359,7 @@ page4.on('pageerror', e => errors.push(String(e)));
 await page4.goto(base + '2/?reset=1&pid=K7P3QM');
 assert.ok(await page4.isHidden('#code-row'));
 await page4.click('#begin');
+assert.equal((await page4.evaluate(() => lineSimilarityState())).mode, 'calibration', 'study 2 has no consent or demographics pages');
 await page4.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page4.click('#confirm-card');
 await page4.waitForSelector('#start:not([disabled])'); await page4.click('#start');
@@ -401,7 +427,7 @@ await new Promise(r => server1.listen(0, r));
 const page6 = await pilot.newPage();
 page6.on('pageerror', e => errors.push(String(e)));
 await page6.goto(`http://127.0.0.1:${server1.address().port}/?pid=BUILT2`);
-await page6.click('#begin');
+await intro(page6);
 await page6.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page6.click('#confirm-card');
 await page6.waitForSelector('#start:not([disabled])'); await page6.click('#start');

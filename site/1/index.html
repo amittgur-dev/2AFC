@@ -28,6 +28,26 @@
       <p class="hint" id="version-line"></p>
     </section>
 
+    <section id="consent-page" class="setup" hidden>
+      <p class="eyebrow">CONSENT</p>
+      <h1>Information and consent</h1>
+      <div id="consent-text"></div>
+      <label class="consent"><input type="checkbox" id="consent-agree"> I have read the information above and I agree to take part.</label>
+      <div class="actions"><button id="consent-continue" class="primary" disabled>Continue</button></div>
+    </section>
+
+    <section id="demographics" class="setup" hidden>
+      <p class="eyebrow">ABOUT YOU</p>
+      <h1>Two questions before we start.</h1>
+      <label class="field">Age <input id="age" type="number" inputmode="numeric" min="18" max="120" step="1" autocomplete="off"></label>
+      <fieldset class="field"><legend>Gender</legend>
+        <label><input type="radio" name="gender" value="male"> Male</label>
+        <label><input type="radio" name="gender" value="female"> Female</label>
+        <label><input type="radio" name="gender" value="non-binary"> Non-binary</label>
+      </fieldset>
+      <div class="actions"><button id="demographics-continue" class="primary" disabled>Continue</button></div>
+    </section>
+
     <section id="calibration" class="setup" hidden>
       <p class="eyebrow">SCREEN CALIBRATION</p>
       <h1>Match your card to the outline.</h1>
@@ -44,10 +64,13 @@
       <details><summary>About physical size</summary><p>The outline represents a standard <a href="https://www.iso.org/standard/31432.html" target="_blank" rel="noopener">85.60 × 53.98 mm card</a>. The match determines pixels per millimetre for this screen so that the objects appear at their intended physical size. Recalibrate after changing screen or zoom.</p></details>
     </section>
 
-    <section id="instructions" class="setup" hidden>
+    <section id="instructions" class="setup instructions-large" hidden>
       <p class="eyebrow">INSTRUCTIONS</p>
-      <h1>Which is more similar to A?</h1>
-      <p>Click <strong>B</strong> or <strong>C</strong>, or press <kbd>←</kbd> for B and <kbd>→</kbd> for C. Each choice is final. <span id="trial-count">19</span> screens.</p>
+      <p>You will see a reference object on top of the screen and two comparison objects below it.</p>
+      <p>You have to choose which one looks more similar to the reference object.</p>
+      <p>There are no right or wrong responses. It is a study on perception, so what counts is your first visual impression.</p>
+      <p>You can answer with the keyboard, by pressing <kbd>←</kbd> for the left object or <kbd>→</kbd> for the right object, or with the mouse, by clicking on the object you choose.</p>
+      <p>There are <span id="trial-count">19</span> screens.</p>
       <p id="instructions-notice" class="notice" role="status"></p>
       <p id="preload-status" class="hint" role="status"></p>
       <div class="actions"><button id="start" class="primary">Start</button><button class="fullscreen">Full screen</button><button id="adjust-again">Adjust calibration</button></div>

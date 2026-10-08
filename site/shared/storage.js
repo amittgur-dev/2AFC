@@ -110,6 +110,7 @@ export function sessionRow(session, status, record = {...session, completion_sta
     design: session.design ?? null, calibration: session.calibration ?? null,
     environment_at_start: session.environment_at_start ?? null, environment_at_end: session.environment_at_end ?? null,
     storage_available: session.storage_available ?? null,
+    age: session.demographics?.age ?? null, gender: session.demographics?.gender ?? null,
     record,
   };
 }

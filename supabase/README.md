@@ -15,7 +15,9 @@ be read, changed or deleted with it.
    - `lines_with_edges_sessions`, `lines_with_edges_trials`, `lines_with_edges_latest_sessions`
    - `similarity_with_rotation_sessions`, `similarity_with_rotation_trials`, `similarity_with_rotation_latest_sessions`
 
-   It is safe to run again.
+   It is safe to run again, and must be run again after an update that adds
+   columns (such as `age` and `gender`); rows sent before that lack those
+   columns but keep the values inside `record`.
 2. The project URL and publishable (anon) key are in `site/1/config.js` and
    `site/2/config.js` (`storage.supabase.url`, `storage.supabase.anonKey`)
    with `storage.mode: 'supabase'`. If the key is ever rotated, update both
@@ -32,8 +34,9 @@ be read, changed or deleted with it.
   `reaction_time_ms` (from stimulus onset, monotonic clock), timestamps,
   `attempts` and `interruptions`, and the calibration (`pixels_per_mm`).
 - `*_sessions`: one row per send (`attempt`), with the participant id,
-  versions, design (including the randomisation `seed`), calibration,
-  environment and the full session JSON in `record`. A participant who leaves
+  `age` and `gender` where the study asks for them, versions, design
+  (including the randomisation `seed`), calibration, environment and the full
+  session JSON in `record`. A participant who leaves
   mid-study produces a row with `submitted_status = 'abandoned'`; completion
   produces `'complete'`. Use `*_latest_sessions` (latest attempt per session)
   for analysis.

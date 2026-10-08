@@ -25,7 +25,20 @@ export const config = {
     // DECISION: the pilot uses a plain Continue button. Set true to require an
     // "I agree to take part" checkbox before continuing.
     requireConsentCheckbox: false,
-    consentVersion: '2026-10-06-v1',
+    // DECISION: a separate consent page with the text below and an "I agree"
+    // checkbox before anything else (consentPage), and an age and gender page
+    // (demographics) before calibration.
+    consentPage: true,
+    consentText: [
+      'You are invited to take part in a study on visual perception. You will see a series of screens, each showing a reference object and two comparison objects, and on each screen you choose which comparison object looks more similar to the reference. The study takes about DURATION minutes.',
+      'Taking part is voluntary. You can stop at any time by closing the page, without giving a reason and without any disadvantage.',
+      'The study records your choices and how long each takes, your age and gender, your screen calibration and technical details of your display and browser. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
+      'There are no known risks. If you have questions about the study, CONTACT',
+    ],
+    demographics: true,
+    minAge: 18,
+    maxAge: 120,
+    consentVersion: '2026-10-08-v2',
   },
 
   design: {

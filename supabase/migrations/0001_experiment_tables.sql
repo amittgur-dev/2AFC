@@ -9,7 +9,8 @@
 -- sessions: append-only, one row per send (attempt). The app sends a row at
 --   completion and, if the participant leaves early, an interim row flagged
 --   'abandoned'. Use the *_latest_sessions view (latest attempt per
---   session_id) for analysis. `record` holds the full session JSON.
+--   session_id) for analysis. `record` holds the full session JSON; `age` and
+--   `gender` are the participant's answers where the study asks for them.
 -- trials: exactly one row per answered screen (unique on session_id +
 --   presentation_index; re-sends are ignored). Reaction time is
 --   reaction_time_ms, measured from stimulus onset.
@@ -51,9 +52,14 @@ begin
         environment_at_start jsonb,
         environment_at_end jsonb,
         storage_available boolean,
+        age integer,
+        gender text,
         record jsonb,
         unique (session_id, attempt)
       )$f$, p || '_sessions');
+    -- Columns added after the first version (no-ops on a fresh install).
+    execute format('alter table %I add column if not exists age integer', p || '_sessions');
+    execute format('alter table %I add column if not exists gender text', p || '_sessions');
 
     execute format($f$
       create table if not exists %I (

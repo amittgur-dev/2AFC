@@ -111,16 +111,22 @@ black. `python3 tools/build_rotation_stimuli.py` regenerates
 
 ## Participant flow
 
-1. **Information** — the pilot text: "Similarity judgment", one sentence of
-   instructions, Continue. (Set `study.requireConsentCheckbox: true` to add
-   a consent checkbox.)
-2. **Calibration** — match a card to the outline; pixels per mm = matched
+1. **Information** — "Similarity judgment", one sentence, the participant
+   code when the link carries none, Continue.
+2. **Consent** (study 1; `study.consentPage`) — the consent text from
+   `study.consentText` and an "I agree" checkbox. Asked once per session.
+3. **Age and gender** (study 1; `study.demographics`) — age (18 to 120) and
+   gender (male, female, non-binary), both required. Stored with the session
+   and in the `age`/`gender` columns of the sessions table.
+4. **Calibration** — match a card to the outline; pixels per mm = matched
    width / 85.60. The separate 1 mm ruler check was removed at the
    researcher's request; every thin line in the study is 1 mm thick.
-3. **Instructions** — one sentence; all SVGs are preloaded and decoded here.
-   If the window is too small for the stage at this calibration, a notice says
-   how many pixels are needed.
-4. **Trials** — one response each, by click/tap on B or C or the ← / →
+5. **Instructions** — study 1 shows the researcher's text in large type
+   (reference on top, two comparisons below, no right or wrong responses,
+   first visual impression, keys or mouse); study 2 a one-line version. All
+   SVGs are preloaded and decoded here. If the window is too small for the
+   stage at this calibration, a notice says how many pixels are needed.
+6. **Trials** — one response each, by click/tap on B or C or the ← / →
    (also b / c) keys. Timing starts in the frame that first paints the three
    decoded images. A 500 ms blank follows each response. No back navigation.
    If the window becomes too small, the tab is hidden, or an image fails to
@@ -130,7 +136,7 @@ black. `python3 tools/build_rotation_stimuli.py` regenerates
    change forces recalibration (Safari's zoom is detected from the viewport
    width since it does not change the device pixel ratio). Objects are never
    scaled to fit.
-5. **Completion** — the record is sent to Supabase while the page shows
+7. **Completion** — the record is sent to Supabase while the page shows
    "Finished. Thank you." and nothing else. If `completion.showCode` or
    `storage.allowDownload` is on, a completion code (the session id unless
    `completion.code` is set), download buttons and an optional return link
@@ -162,7 +168,7 @@ mixed together is reflected in the first three rows.
 | Timing | No response deadline; 500 ms blank between screens; RT from onset. | `interTrialIntervalMs`. |
 | Response input | Click/tap or keyboard; method recorded. | `design.keys`. |
 | Breaks | None (19 screens, a few minutes). | — |
-| Consent / instructions | Minimal pilot text, no checkbox, no duration or "no right or wrong" sentence. | `study.requireConsentCheckbox`, text fields in `study`, and the HTML in `index.html`. |
+| Consent / instructions | Study 1: consent page with form text and checkbox, age and gender page, long instructions in large type. Study 2: minimal text only. | `study.consentPage`, `study.consentText`, `study.demographics`, `study.minAge`; instruction text in each study's `index.html`. |
 | Session memory | Off for the pilot: every visit is a new session. | `participant.rememberSession: true` for real data collection. |
 | Participant ID | From `?pid=`, `?PROLIFIC_PID=` or `?participant=`; otherwise an 8-digit number the participant makes up on the first page. `STUDY_ID`, `SESSION_ID`, `source` pass through. A stored session is resumed only for the same participant id. | `participant.idParams`, `participant.requireCode`, `participant.codePattern`, `participant.passthroughParams`. |
 | Completion / return | "Finished. Thank you." only; no code, no redirect. | `completion.showCode`, `completion.code`, `completion.redirectUrl`. |
