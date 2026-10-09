@@ -127,6 +127,7 @@ await page.click('#confirm-card');
 assert.equal((await state()).mode, 'instructions');
 await page.waitForSelector('#start:not([disabled])');
 assert.equal(await page.textContent('#trial-count'), '19');
+assert.ok((await page.textContent('#instructions')).includes('series of 19 screens') && (await page.textContent('#instructions')).includes('lasts 1 to 3 minutes'));
 await page.click('#start');
 await page.waitForFunction(() => lineSimilarityState().ready);
 let s = await state();
