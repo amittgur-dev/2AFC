@@ -89,7 +89,7 @@ await page.click('#begin');
 // Consent page: text from the config, Continue only after agreeing.
 assert.equal((await state()).mode, 'consent-page');
 const consentText = await page.textContent('#consent-text');
-assert.ok(consentText.includes('consent to record your study data') && consentText.includes('1 to 3 minutes') && consentText.includes('Amit.Gur@UAntwerp.be') && !consentText.includes('LEFT arrow'), consentText.slice(0, 200));
+assert.ok(consentText.includes('consent to record your study data') && consentText.includes('1 to 3 minutes') && consentText.includes('Amit.Gur@UAntwerpen.be') && !consentText.includes('LEFT arrow'), consentText.slice(0, 200));
 assert.equal(await page.textContent('#consent-page h1'), 'Consent');
 assert.ok(await page.isDisabled('#consent-continue'));
 await page.check('#consent-agree'); await page.click('#consent-continue');
