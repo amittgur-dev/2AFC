@@ -90,6 +90,7 @@ await page.click('#begin');
 assert.equal((await state()).mode, 'consent-page');
 const consentText = await page.textContent('#consent-text');
 assert.ok(consentText.includes('consent to record your study data') && consentText.includes('1 to 3 minutes') && consentText.includes('Amit.Gur@UAntwerpen.be') && !consentText.includes('LEFT arrow'), consentText.slice(0, 200));
+assert.ok(consentText.startsWith('You will see a series of 19 images') && consentText.includes('a perception task, not an intelligence test'), 'the consent page says what the task is');
 assert.equal(await page.textContent('#consent-page h1'), 'Consent');
 assert.ok(await page.isDisabled('#consent-continue'));
 await page.check('#consent-agree'); await page.click('#consent-continue');

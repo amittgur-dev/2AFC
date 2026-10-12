@@ -427,7 +427,7 @@ function renderConsent() {
   const who = contact ? 'please contact ' + contact + (config.study.contactEmail ? ' at ' + config.study.contactEmail : '') + '.' : config.study.contactEmail ? 'please contact ' + config.study.contactEmail + '.' : 'please contact the researcher who sent you this link.';
   $('consent-text').replaceChildren(...(config.study.consentText ?? []).map(text => {
     const p = document.createElement('p');
-    p.textContent = text.replace('DURATION', String(config.study.durationMinutes)).replace('CONTACT', who);
+    p.textContent = text.replace('DURATION', String(config.study.durationMinutes)).replace('COUNT', String(session.sequence.length)).replace('CONTACT', who);
     return p;
   }));
   $('consent-agree').checked = false; $('consent-continue').disabled = true;
