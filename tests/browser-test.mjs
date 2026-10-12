@@ -86,8 +86,8 @@ assert.equal((await state()).mode, 'information');
 assert.ok(await page.isHidden('#consent-row'), 'pilot has no consent checkbox');
 assert.ok(await page.isHidden('#code-row'), 'a link with a participant id asks for no code');
 const intro1 = await page.textContent('#information');
-assert.ok(intro1.includes('This is a study in visual perception: you will see a reference object (A) and two comparison objects (B and C).') && intro1.includes('Before starting, you will see a consent page, a short screen calibration, and further instructions.') && intro1.includes('Questions about the experiment can be sent to Amit.Gur@UAntwerpen.be.'), 'study 1 introduction');
-assert.ok(intro1.indexOf('The experiment lasts 1 to 3 minutes.') > intro1.indexOf('Amit.Gur@UAntwerpen.be'), 'duration comes last');
+assert.ok(intro1.includes('This is a study in visual perception: you will see a reference object (A) and two comparison objects (B and C).') && intro1.includes("Next, you will have to approve participation in the consent page, go through a brief screen calibration procedure, and read the experiment's instructions. The experiment will last 1 to 3 minutes.") && intro1.includes('Questions about the experiment can be sent to Amit.Gur@UAntwerpen.be.'), 'study 1 introduction');
+assert.ok(intro1.indexOf('Questions about the experiment') > intro1.indexOf('Continue'), 'contact line at the bottom');
 await page.click('#begin');
 // Consent page: text from the config, Continue only after agreeing.
 assert.equal((await state()).mode, 'consent-page');
