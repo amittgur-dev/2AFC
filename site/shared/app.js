@@ -395,7 +395,7 @@ function init() {
   $('code-row').hidden = !(config.participant.requireCode && !session.participant_id);
   updateBegin();
   const contact = [config.study.researcher, config.study.institution].filter(Boolean).join(', ');
-  $('contact-line').textContent = [contact && 'This study is run by ' + contact + '.', config.study.ethicsReference && 'Ethics reference: ' + config.study.ethicsReference + '.', config.study.contactEmail && 'Questions: ' + config.study.contactEmail + '.'].filter(Boolean).join(' ');
+  $('contact-line').textContent = [contact && 'This study is run by ' + contact + '.', config.study.ethicsReference && 'Ethics reference: ' + config.study.ethicsReference + '.', config.study.contactEmail && 'Questions about the experiment can be sent to ' + config.study.contactEmail + '.'].filter(Boolean).join(' ');
   $('version-line').textContent = 'Protocol ' + config.protocolVersion + ' · stimulus set ' + config.stimulusSetVersion;
   updateCard(324);
   show('information');
