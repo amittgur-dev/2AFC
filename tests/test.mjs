@@ -272,12 +272,12 @@ for (const field of [...storageSource.matchAll(/params\.set\('([a-z_-]+)'/g)].ma
 assert.ok(!html.includes('id="previous"') && !html.includes('id="next"'), 'no preview navigation');
 assert.ok(!html.includes('id="verification"') && !/no photo|about .* minutes/i.test(html), 'pilot text trimmed');
 // Study 1 asks for consent, age and gender, and shows the long instructions; study 2 does not (yet).
-assert.ok(config.study.consentPage && config.study.demographics && Array.isArray(config.study.consentText) && config.study.consentText.length >= 3, 'study 1 consent and demographics on');
+assert.ok(config.study.consentPage && config.study.demographics && Array.isArray(config.study.consentText) && config.study.consentText.length >= 2, 'study 1 consent and demographics on');
 assert.ok(!rotConfig.study.consentPage && !rotConfig.study.demographics, 'study 2 unchanged');
 for (const h of [html, rotHtml]) assert.ok(h.includes('id="consent-page"') && h.includes('id="demographics"') && h.includes('name="gender" value="non-binary"') && h.includes('id="age"'), 'both pages carry the consent and demographics sections');
 assert.ok(html.includes('each featuring a reference object') && html.includes('press the <kbd>←</kbd> LEFT arrow') && html.includes('click on the comparison object') && html.includes('no right or wrong answers') && html.includes('instructions-large'), 'study 1 instructions text');
 assert.ok(config.study.consentText.join(' ').includes('consent to record your study data') && !config.study.consentText.join(' ').includes('arrow') && config.study.contactEmail === 'Amit.Gur@UAntwerpen.be', 'study 1 consent text');
-assert.ok(config.study.consentText[0].startsWith('You will see a series of COUNT images') && config.study.consentText[0].includes('not an intelligence test'), 'the consent page describes the task before asking for consent');
+assert.ok(config.study.consentText[0].startsWith('By ticking the box below') && config.study.consentText.length === 2, 'the consent page carries the consent statement and the contact');
 assert.ok(config.study.minAge === 18 && config.study.consentVersion !== rotConfig.study.consentVersion || true);
 assert.ok(config.experiment.id && config.storage.localKey, 'experiment identified');
 console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (57 files, 48 questions, relations verified), randomisation in both, Supabase rows vs migration columns, physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');

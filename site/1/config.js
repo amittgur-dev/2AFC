@@ -29,10 +29,7 @@ export const config = {
     // checkbox before anything else (consentPage), and an age and gender page
     // (demographics) before calibration.
     consentPage: true,
-    // COUNT is replaced by the number of screens, CONTACT by the contact line.
     consentText: [
-      'You will see a series of COUNT images, each featuring a reference object (A) on top and two comparison objects (B and C) below it. Your task is to decide which of the two comparison objects is most similar to the reference object. It is a perception task, not an intelligence test, and your answer will help us understand which stimuli look more similar than others to human beings. There are no right or wrong responses; you will simply have to rely on your first visual impression.',
-      'The study takes about 1 to 3 minutes.',
       'By ticking the box below, you give the researchers your consent to record your study data. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
       'There are no known risks. If you have questions about the study, please contact Amit.Gur@UAntwerpen.be.',
     ],

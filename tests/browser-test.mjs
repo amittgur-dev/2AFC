@@ -86,14 +86,13 @@ assert.equal((await state()).mode, 'information');
 assert.ok(await page.isHidden('#consent-row'), 'pilot has no consent checkbox');
 assert.ok(await page.isHidden('#code-row'), 'a link with a participant id asks for no code');
 const intro1 = await page.textContent('#information');
-assert.ok(intro1.includes('This is a study in visual perception: you will see a reference object (A) and two comparison objects (B and C).') && intro1.includes("Next, you will have to approve participation in the consent page, go through a brief screen calibration procedure, and read the experiment's instructions. The experiment will last 1 to 3 minutes.") && intro1.includes('Questions about the experiment can be sent to Amit.Gur@UAntwerpen.be.'), 'study 1 introduction');
+assert.ok(intro1.includes('This is a study in visual perception: you will be presented with a similarity judgement question, in which you will have to decide which of two comparison objects is most similar to a reference object.') && intro1.includes("Next, you will have to approve participation in the consent page, go through a brief screen calibration procedure, and read the experiment's instructions. The experiment will last 1 to 3 minutes.") && intro1.includes('Questions about the experiment can be sent to Amit.Gur@UAntwerpen.be.'), 'study 1 introduction');
 assert.ok(intro1.indexOf('Questions about the experiment') > intro1.indexOf('Continue'), 'contact line at the bottom');
 await page.click('#begin');
 // Consent page: text from the config, Continue only after agreeing.
 assert.equal((await state()).mode, 'consent-page');
 const consentText = await page.textContent('#consent-text');
-assert.ok(consentText.includes('consent to record your study data') && consentText.includes('1 to 3 minutes') && consentText.includes('Amit.Gur@UAntwerpen.be') && !consentText.includes('LEFT arrow'), consentText.slice(0, 200));
-assert.ok(consentText.startsWith('You will see a series of 19 images') && consentText.includes('a perception task, not an intelligence test'), 'the consent page says what the task is');
+assert.ok(consentText.startsWith('By ticking the box below') && consentText.includes('consent to record your study data') && consentText.includes('Amit.Gur@UAntwerpen.be') && !consentText.includes('19 images') && !consentText.includes('minutes'), consentText.slice(0, 200));
 assert.equal(await page.textContent('#consent-page h1'), 'Consent');
 assert.ok(await page.isDisabled('#consent-continue'));
 await page.check('#consent-agree'); await page.click('#consent-continue');
@@ -326,7 +325,7 @@ page3.on('pageerror', e => errors.push(String(e)));
 const before = sbPosts.length;
 await page3.goto(exp1 + '?reset=1');
 assert.equal(await page3.textContent('#study-title'), 'Similarity judgment');
-assert.ok((await page3.textContent('#information')).includes('reference object (A)'));
+assert.ok((await page3.textContent('#information')).includes('similarity judgement question'));
 // No participant id in the link: a code is required before continuing.
 assert.ok(await page3.isVisible('#code-row'));
 assert.ok(await page3.isDisabled('#begin'));

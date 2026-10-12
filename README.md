@@ -114,8 +114,9 @@ black. `python3 tools/build_rotation_stimuli.py` regenerates
 1. **Information** — "Similarity judgment", one sentence, the participant
    code when the link carries none, Continue.
 2. **Consent** (study 1; `study.consentPage`) — the consent text from
-   `study.consentText` (what the task is, duration, data use, no known
-   risks, contact) and an "I agree" checkbox. Asked once per session.
+   `study.consentText` (data use, no known risks, contact) and an "I agree"
+   checkbox. Asked once per session; the task itself is described on the
+   first page.
 3. **Age and gender** (study 1; `study.demographics`) — age (18 to 120) and
    gender (male, female, non-binary), both required. Stored with the session
    and in the `age`/`gender` columns of the sessions table.
