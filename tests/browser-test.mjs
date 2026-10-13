@@ -86,7 +86,8 @@ assert.equal((await state()).mode, 'information');
 assert.ok(await page.isHidden('#consent-row'), 'pilot has no consent checkbox');
 assert.ok(await page.isHidden('#code-row'), 'a link with a participant id asks for no code');
 const intro1 = await page.textContent('#information');
-assert.ok(intro1.includes('This is a study in visual perception: you will be presented with a similarity judgement question, in which you will have to decide which of two comparison objects is most similar to a reference object.') && intro1.includes("Next, you will have to approve participation in the consent page, go through a brief screen calibration procedure, and read the experiment's instructions. The experiment will last 1 to 3 minutes.") && intro1.includes('Questions about the experiment can be sent to Amit.Gur@UAntwerpen.be.'), 'study 1 introduction');
+assert.ok(intro1.includes('This is a study in visual perception. You will see a series of images, each featuring a reference object (A) at the top') && intro1.includes('not an intelligence test') && intro1.includes('The data will be treated anonymously.') && intro1.includes('Before you start, if you agree to participate') && intro1.includes('The experiment will only take 1–3 minutes.') && intro1.includes('Questions about the experiment can be sent to Amit.Gur@UAntwerpen.be.'), 'study 1 introduction');
+assert.ok(await page.isHidden('#study-title'), 'no title on the first page of study 1');
 assert.ok(intro1.indexOf('Questions about the experiment') > intro1.indexOf('Continue'), 'contact line at the bottom');
 await page.click('#begin');
 // Consent page: text from the config, Continue only after agreeing.
@@ -325,7 +326,7 @@ page3.on('pageerror', e => errors.push(String(e)));
 const before = sbPosts.length;
 await page3.goto(exp1 + '?reset=1');
 assert.equal(await page3.textContent('#study-title'), 'Similarity judgment');
-assert.ok((await page3.textContent('#information')).includes('similarity judgement question'));
+assert.ok((await page3.textContent('#information')).includes('series of images'));
 // No participant id in the link: a code is required before continuing.
 assert.ok(await page3.isVisible('#code-row'));
 assert.ok(await page3.isDisabled('#begin'));
