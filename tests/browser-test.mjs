@@ -88,6 +88,7 @@ assert.ok(await page.isHidden('#code-row'), 'a link with a participant id asks f
 const intro1 = await page.textContent('#information');
 assert.ok(intro1.includes('This is a study in visual perception. You will see a series of images, each featuring a reference object (A) at the top') && intro1.includes('not an intelligence test') && intro1.includes('The data will be treated anonymously.') && intro1.includes('Before you start, if you agree to participate') && intro1.includes('The experiment will only take 1–3 minutes.') && intro1.includes('Questions about the experiment can be sent to Amit.Gur@UAntwerpen.be.'), 'study 1 introduction');
 assert.ok(await page.isHidden('#study-title'), 'no title on the first page of study 1');
+assert.ok(!intro1.includes('PILOT STUDY'), 'no label above the first page text');
 assert.ok(intro1.indexOf('Questions about the experiment') > intro1.indexOf('Continue'), 'contact line at the bottom');
 await page.click('#begin');
 // Consent page: text from the config, Continue only after agreeing.
