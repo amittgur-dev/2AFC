@@ -13,6 +13,9 @@
     "build:pdf": "node tools/build_questions_pdf.mjs 1",
     "build:pdf:rotation": "node tools/build_questions_pdf.mjs 2",
     "build": "node tools/build_site.mjs",
-    "build:study2": "node tools/build_site.mjs 2"
+    "build:study2": "node tools/build_site.mjs 2",
+    "build:handoff": "python3 tools/build_analysis_handoff.py",
+    "examples:rows": "node tools/make_example_rows.mjs",
+    "previews": "node tools/screenshot_trials.mjs"
   }
 }

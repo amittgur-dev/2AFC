@@ -4,3 +4,5 @@ rebuilt-assets/
 *.log
 participants-private*
 dist/
+dist-handoff/
+__pycache__/

@@ -268,6 +268,20 @@ the specification says the edge is lengthened at unchanged thickness. The
 control has no edges (`B`, `Bext`, `Benl`). Dimensions come from
 `data/measurements.csv`.
 
+## Analysis handoff
+
+`handoff/analysis/` holds a self-contained package for whoever analyses the
+data (written for an analysis session with Claude): what the two experiments
+are, a dictionary of every Supabase column, how to export the tables
+(`supabase/pull_supabase.py` with a secret key, or the dashboard), analysis
+SQL validated against the schema, a pandas loader (`python/load_data.py`),
+the stimuli with their metadata, example rows and screenshots.
+`npm run build:handoff` assembles it with the artwork, stimulus tables, PDFs
+and the relevant app source into `dist-handoff/2afc-analysis-handoff.zip`
+(git-ignored); `npm run examples:rows` regenerates the example rows in a
+headless browser and `npm run previews` the screenshots (both need
+Playwright, see `npm run test:browser`).
+
 ## Before recruiting
 
 The handoff's cautions still apply. No human physical-size validation or
