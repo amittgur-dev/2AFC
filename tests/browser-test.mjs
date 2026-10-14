@@ -86,7 +86,7 @@ assert.equal((await state()).mode, 'information');
 assert.ok(await page.isHidden('#consent-row'), 'pilot has no consent checkbox');
 assert.ok(await page.isHidden('#code-row'), 'a link with a participant id asks for no code');
 const intro1 = await page.textContent('#information');
-assert.ok(intro1.includes('This is a study in visual perception. You will see a series of images, each featuring a reference object (A) at the top') && intro1.includes('not an intelligence test') && intro1.includes('The data will be treated anonymously.') && intro1.includes('Before you start, if you agree to participate') && intro1.includes('The experiment will only take 1–3 minutes.') && intro1.includes('Questions about the experiment can be sent to Amit.Gur@UAntwerpen.be.'), 'study 1 introduction');
+assert.ok(intro1.includes('This is a study in visual perception. You will see a series of images, each featuring a reference object (A) at the top') && intro1.includes('not an intelligence test') && intro1.includes('The data will be treated anonymously.') && intro1.includes('Before you start, if you agree to participate') && intro1.includes('The experiment will only take 1–3 minutes.') && intro1.includes('Questions about the experiment can be sent to Amit.Gur@UAntwerpen.be') && !intro1.includes('Amit.Gur@UAntwerpen.be.'), 'study 1 introduction');
 assert.ok(await page.isHidden('#study-title'), 'no title on the first page of study 1');
 assert.ok(!intro1.includes('PILOT STUDY'), 'no label above the first page text');
 assert.ok(await page.isHidden('#version-line') && !(await page.evaluate(() => document.getElementById('information').innerText)).includes('Protocol '), 'no version line on the first page');
@@ -95,7 +95,7 @@ await page.click('#begin');
 // Consent page: text from the config, Continue only after agreeing.
 assert.equal((await state()).mode, 'consent-page');
 const consentText = await page.textContent('#consent-text');
-assert.ok(consentText.startsWith('By ticking the box below') && consentText.includes('consent to record your study data') && consentText.includes('Amit.Gur@UAntwerpen.be') && !consentText.includes('19 images') && !consentText.includes('minutes'), consentText.slice(0, 200));
+assert.ok(consentText.startsWith('By ticking the box below') && consentText.includes('consent to record your study data') && consentText.includes('Amit.Gur@UAntwerpen.be') && !consentText.includes('Amit.Gur@UAntwerpen.be.') && !consentText.includes('19 images') && !consentText.includes('minutes'), consentText.slice(0, 200));
 assert.equal(await page.textContent('#consent-page h1'), 'Consent');
 assert.ok(await page.isDisabled('#consent-continue'));
 await page.check('#consent-agree'); await page.click('#consent-continue');

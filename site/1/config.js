@@ -31,7 +31,7 @@ export const config = {
     consentPage: true,
     consentText: [
       'By ticking the box below, you give the researchers your consent to record your study data. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
-      'There are no known risks. If you have questions about the study, please contact Amit.Gur@UAntwerpen.be.',
+      'There are no known risks. If you have questions about the study, please contact Amit.Gur@UAntwerpen.be',
     ],
     demographics: true,
     minAge: 18,
