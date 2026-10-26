@@ -33,7 +33,8 @@ export const config = {
       'By ticking the box below, you give the researchers your consent to record your study data. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
       'There are no known risks. If you have questions about the study, please contact Amit.Gur@UAntwerpen.be',
     ],
-    demographics: true,
+    // Age and gender come from Prolific, so the page is off.
+    demographics: false,
     minAge: 18,
     maxAge: 120,
     consentVersion: '2026-10-08-v2',
@@ -81,7 +82,10 @@ export const config = {
     // No list ties codes to people unless they tell you their code. Set
     // false to allow anonymous runs. (Links made by
     // tools/make_participant_links.py carry the code and skip the question.)
-    requireCode: true,
+    // Participants are recruited through Prolific, whose link carries
+    // PROLIFIC_PID, so no code is asked for (false). Set true to ask for an
+    // 8-digit code when the link carries no identifier.
+    requireCode: false,
     // Accepted code pattern for a typed code: exactly 8 digits.
     codePattern: '^[0-9]{8}$',
     // Additional URL parameters copied verbatim into the session record.
@@ -122,6 +126,10 @@ export const config = {
     code: '',
     // If set, a link/redirect offered after submission (e.g. a Prolific
     // completion URL). Leave empty for none.
+    // Prolific completion URL, e.g. 'https://app.prolific.com/submissions/complete?cc=XXXXXXXX'
+    // (the completion code from the Prolific study page). The final page
+    // redirects there after redirectDelayMs once the responses are saved.
     redirectUrl: '',
+    redirectDelayMs: 5000,
   },
 };

@@ -36,7 +36,7 @@ const configFor = variant => {
   let c = configSource;
   if (variant === 'deployed') c = fakeSupabase(c);
   else {
-    c = c.replace('allowDownload: false', 'allowDownload: true').replace('showCode: false', 'showCode: true').replace('rememberSession: false', 'rememberSession: true');
+    c = c.replace('allowDownload: false', 'allowDownload: true').replace('showCode: false', 'showCode: true').replace('rememberSession: false', 'rememberSession: true').replace('demographics: false', 'demographics: true'); // the test runs keep exercising the age and gender page
     c = variant === 'supabase' ? fakeSupabase(c) : c.replace("mode: 'supabase'", "mode: 'netlify-forms'");
   }
   assert.notEqual(c, configSource);
@@ -329,31 +329,24 @@ const before = sbPosts.length;
 await page3.goto(exp1 + '?reset=1');
 assert.equal(await page3.textContent('#study-title'), 'Similarity judgment');
 assert.ok((await page3.textContent('#information')).includes('series of images'));
-// No participant id in the link: a code is required before continuing.
-assert.ok(await page3.isVisible('#code-row'));
-assert.ok(await page3.isDisabled('#begin'));
-assert.ok((await page3.textContent('#code-row')).includes('Before we begin, please make up an 8-digit number'));
-await page3.fill('#participant-code', '1234567');
-assert.ok(await page3.isDisabled('#begin'), 'seven digits is not a valid code');
-await page3.fill('#participant-code', 'K7P3QM');
-assert.ok(await page3.isDisabled('#begin'), 'letters are not a valid code');
-await page3.fill('#participant-code', ' 12345678 ');
+// Prolific recruitment: no participant id in the link asks for no code (the Prolific link carries PROLIFIC_PID).
+assert.ok(await page3.isHidden('#code-row'), 'study 1 asks for no code');
 assert.ok(!(await page3.isDisabled('#begin')));
 await intro(page3, {age: '41', gender: 'male'});
-assert.equal((await page3.evaluate(() => lineSimilarityState())).participant_id, '12345678', 'typed code is trimmed');
+assert.equal((await page3.evaluate(() => lineSimilarityState())).participant_id ?? null, null, 'no code, no participant id');
 await page3.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page3.click('#confirm-card');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'instructions');
 await page3.waitForSelector('#start:not([disabled])'); await page3.click('#start');
 for (let i = 0; i < 19; i++) { await page3.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page3.keyboard.press('ArrowRight'); }
 await page3.waitForFunction(() => lineSimilarityState().mode === 'complete' && lineSimilarityState().submitted);
-assert.equal((await page3.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you.', 'a successful save shows nothing extra');
+assert.equal((await page3.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you for taking part in the experiment and helping us in our study. For questions, you can email Amit.Gur@UAntwerpen.be. Please remain on this screen — in a few seconds you will be redirected to Prolific.', 'a successful save shows the thank-you text and the Prolific note');
 assert.ok(await page3.isHidden('#completion-code') && await page3.isHidden('#download-csv'));
 const pilotSaved = await page3.evaluate(k => JSON.parse(localStorage.getItem(k)), 'line-similarity:session:v1');
 assert.equal(pilotSaved.experiment_id, 'exp1-lines-with-edges'); assert.equal(pilotSaved.trials.length, 19);
-assert.equal(pilotSaved.participant_id, '12345678'); assert.equal(pilotSaved.participant_id_source, 'typed');
+assert.equal(pilotSaved.participant_id ?? null, null);
 assert.deepEqual(sbPosts.slice(before).map(p => [p.table, p.rows.length]), [['lines_with_edges_sessions', 1], ['lines_with_edges_trials', 19]], 'the deployed config records the run');
-assert.equal(sbPosts[before].rows[0].participant_id, '12345678'); assert.deepEqual([sbPosts[before].rows[0].age, sbPosts[before].rows[0].gender], [41, 'male']);
+assert.equal(sbPosts[before].rows[0].participant_id, null); assert.deepEqual([sbPosts[before].rows[0].age, sbPosts[before].rows[0].gender], [null, null], 'deployed: no age or gender page');
 await page3.goto(exp1);
 assert.equal(sbPosts.length, before + 2, 'a confirmed save is not re-sent on the next visit');
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');
@@ -364,8 +357,17 @@ configVariant2 = 'supabase';
 const sbBefore = sbPosts.length;
 const page4 = await pilot.newPage();
 page4.on('pageerror', e => errors.push(String(e)));
-await page4.goto(base + '2/?reset=1&pid=K7P3QM');
-assert.ok(await page4.isHidden('#code-row'));
+await page4.goto(base + '2/?reset=1');
+// Study 2 (no Prolific): without an id in the link a code is required before continuing.
+assert.ok(await page4.isVisible('#code-row'));
+assert.ok(await page4.isDisabled('#begin'));
+assert.ok((await page4.textContent('#code-row')).includes('make up an 8-digit number'));
+await page4.fill('#participant-code', '1234567');
+assert.ok(await page4.isDisabled('#begin'), 'seven digits is not a valid code');
+await page4.fill('#participant-code', 'K7P3QM');
+assert.ok(await page4.isDisabled('#begin'), 'letters are not a valid code');
+await page4.fill('#participant-code', ' 12345678 ');
+assert.ok(!(await page4.isDisabled('#begin')));
 await page4.click('#begin');
 assert.equal((await page4.evaluate(() => lineSimilarityState())).mode, 'calibration', 'study 2 has no consent or demographics pages');
 await page4.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
@@ -387,12 +389,12 @@ assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.eq
 assert.equal(rotSaved.submissions.at(-1).status, 'supabase'); assert.equal(rotSaved.submissions.at(-1).ok, true);
 const rotPosts = sbPosts.slice(sbBefore);
 assert.deepEqual(rotPosts.map(p => p.table), ['similarity_with_rotation_sessions', 'similarity_with_rotation_trials'], 'study 2 writes to its own tables');
-assert.equal(rotPosts[0].rows[0].submitted_status, 'complete'); assert.equal(rotPosts[0].rows[0].trials_completed, 48); assert.equal(rotPosts[0].rows[0].experiment_name, 'Similarity with rotation'); assert.equal(rotPosts[0].rows[0].participant_id, 'K7P3QM');
+assert.equal(rotPosts[0].rows[0].submitted_status, 'complete'); assert.equal(rotPosts[0].rows[0].trials_completed, 48); assert.equal(rotPosts[0].rows[0].experiment_name, 'Similarity with rotation'); assert.equal(rotPosts[0].rows[0].participant_id, '12345678');
 assert.equal(rotPosts[1].rows.length, 48);
-assert.ok(rotPosts[1].rows.every(r => ['sub', 'whole', 'shape'].includes(r.chosen_condition) && r.family_name && r.reaction_time_ms > 0 && r.participant_id === 'K7P3QM' && r.experiment_id === 'exp2-similarity-with-rotation'));
+assert.ok(rotPosts[1].rows.every(r => ['sub', 'whole', 'shape'].includes(r.chosen_condition) && r.family_name && r.reaction_time_ms > 0 && r.participant_id === '12345678' && r.experiment_id === 'exp2-similarity-with-rotation'));
 assert.equal(new Set(rotPosts[1].rows.map(r => r.trial_id)).size, 48, 'every one of the 48 questions answered once');
 configVariant2 = null;
-assert.equal(rotSaved.participant_id, 'K7P3QM'); assert.equal(rotSaved.participant_id_source, 'url');
+assert.equal(rotSaved.participant_id, '12345678', 'typed code is trimmed'); assert.equal(rotSaved.participant_id_source, 'typed');
 assert.ok(rotSaved.design.randomizeTrialOrder && rotSaved.design.sideAssignment === 'random' && rotSaved.design.controlPosition === 'random');
 
 // The deployed form of a study: built into its own folder and served at the root.

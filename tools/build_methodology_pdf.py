@@ -42,18 +42,17 @@ def shot(pattern):
 PAGES = [
     ('1. Welcome page', None, shot('01-first-page.png')),
     ('2. Participant information and consent', None, shot('02-consent-information.png')),
-    ('3. Age and gender', None, shot('03-age-gender.png')),
-    ('4. Screen calibration',
+    ('3. Screen calibration',
      'The participant holds a bank card against the screen and adjusts the outline until it matches the card. '
      'This tells the program the size of a pixel on that screen, so that the objects in the experiment are shown at their true physical size. '
      'Nothing about the card is recorded.',
      shot('04b-calibration-matched.png')),
-    ('5. Instructions', None, shot('05-instructions.png')),
-    ('6. Similarity judgement question (example)',
+    ('4. Instructions', None, shot('05-instructions.png')),
+    ('5. Similarity judgement question (example)',
      'One of the 19 screens, which are presented in random order. The participant chooses B or C by clicking it or by pressing the left or right arrow key. '
      'There is no time limit and no feedback.',
      shot('06-trial-*-0.1-*.png')),
-    ('7. End', None, shot('07-finished.png')),
+    ('6. End', None, shot('07-finished.png')),
 ]
 
 c = canvas.Canvas(out, pagesize=PAGE)
@@ -74,7 +73,7 @@ c.setFillColor(INK)
 body = ParagraphStyle('body', fontName='Sans', fontSize=11, leading=16, textColor=INK)
 intro = Paragraph('This document shows every page a participant sees, in the order in which the pages appear. '
                   'The experiment runs in the participant\'s own web browser and takes 1 to 3 minutes. '
-                  'Pages 1 to 5 are shown once; page 6 is repeated for each of the 19 questions.', body)
+                  'Pages 1 to 4 are shown once; page 5 is repeated for each of the 19 questions.', body)
 w, h = intro.wrap(W - 2 * M - 200, H)
 intro.drawOn(c, M, H - 200 - h)
 y = H - 215 - h

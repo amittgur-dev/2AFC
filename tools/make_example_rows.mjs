@@ -58,7 +58,7 @@ async function newPage(study) {
   return page;
 }
 async function intro(page, code, demo) {
-  await page.fill('#participant-code', code);
+  if (await page.isVisible('#code-row')) await page.fill('#participant-code', code);
   await page.click('#begin');
   if (await page.isVisible('#consent-page')) { await page.check('#consent-agree'); await page.click('#consent-continue'); }
   if (await page.isVisible('#demographics')) { await page.fill('#age', String(demo.age)); await page.check(`input[name=gender][value=${demo.gender}]`); await page.click('#demographics-continue'); }

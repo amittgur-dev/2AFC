@@ -332,7 +332,12 @@ function showSaved(alreadyDone = false) {
     : local ? (config.storage.allowDownload ? 'Your responses are complete. Please download the file below and send it to the researcher.' : '') : 'Your responses have been saved.';
   $('completion-code').hidden = !config.completion.showCode;
   $('completion-code').textContent = 'Completion code: ' + code;
-  if (config.completion.redirectUrl) { $('redirect-link').hidden = false; $('redirect-link').href = config.completion.redirectUrl; }
+  // Automatic return to the recruitment platform (Prolific): a note on the
+  // page and, when a URL is configured, the redirect after a short delay.
+  const note = $('redirect-note');
+  if (note) note.hidden = false;
+  if (config.completion.redirectUrl && config.completion.redirectDelayMs > 0) setTimeout(() => location.assign(config.completion.redirectUrl), config.completion.redirectDelayMs);
+  else if (config.completion.redirectUrl) { $('redirect-link').hidden = false; $('redirect-link').href = config.completion.redirectUrl; }
   $('complete-note').textContent = quiet || (local && !config.storage.allowDownload) ? '' : 'You can close this page.';
   $('retry-submit').hidden = true;
   $('download-json').hidden = $('download-csv').hidden = !config.storage.allowDownload;
@@ -350,6 +355,7 @@ async function submit(status) {
   $('retry-submit').disabled = false;
   if (result.ok) { showSaved(); return; }
   $('completion-code').hidden = !config.completion.showCode;
+  if ($('redirect-note')) $('redirect-note').hidden = true;
   $('submit-status').textContent = 'Your responses could not be sent (' + result.status + '). Please try again, or download the file and send it to the researcher' + (config.study.contactEmail ? ' at ' + config.study.contactEmail : '') + '.';
   $('retry-submit').hidden = false;
   $('download-json').hidden = false; $('download-csv').hidden = false;

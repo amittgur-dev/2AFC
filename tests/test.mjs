@@ -209,7 +209,7 @@ for (const [label, cfg, t] of [['lines with edges', config, trials], ['similarit
   assert.ok(orders.size === 50 && sides.size === 50, label + ': different participants get different orders and sides');
 }
 assert.deepEqual([config.experiment.id, config.experiment.name, rotConfig.experiment.id, rotConfig.experiment.name], ['exp1-lines-with-edges', 'Lines with edges', 'exp2-similarity-with-rotation', 'Similarity with rotation']);
-assert.ok(config.participant.requireCode && rotConfig.participant.requireCode, 'both experiments ask for a participant code when the link has none');
+assert.ok(!config.participant.requireCode && rotConfig.participant.requireCode, 'lines with edges (Prolific links) asks for no code; similarity with rotation still does');
 for (const good of ['12345678', '00000000']) assert.ok(new RegExp(config.participant.codePattern).test(good), good);
 for (const bad of ['', '1234567', '123456789', 'K7P3QM', '1234 5678', '=1234567']) assert.ok(!new RegExp(config.participant.codePattern).test(bad), 'rejects ' + JSON.stringify(bad));
 assert.equal(rotConfig.participant.codePattern, config.participant.codePattern);
@@ -272,7 +272,7 @@ for (const field of [...storageSource.matchAll(/params\.set\('([a-z_-]+)'/g)].ma
 assert.ok(!html.includes('id="previous"') && !html.includes('id="next"'), 'no preview navigation');
 assert.ok(!html.includes('id="verification"') && !/no photo|about .* minutes/i.test(html), 'pilot text trimmed');
 // Study 1 asks for consent, age and gender, and shows the long instructions; study 2 does not (yet).
-assert.ok(config.study.consentPage && config.study.demographics && Array.isArray(config.study.consentText) && config.study.consentText.length >= 2, 'study 1 consent and demographics on');
+assert.ok(config.study.consentPage && !config.study.demographics && Array.isArray(config.study.consentText) && config.study.consentText.length >= 2, 'study 1 consent on; age and gender come from Prolific');
 assert.ok(!rotConfig.study.consentPage && !rotConfig.study.demographics, 'study 2 unchanged');
 for (const h of [html, rotHtml]) assert.ok(h.includes('id="consent-page"') && h.includes('id="demographics"') && h.includes('name="gender" value="non-binary"') && h.includes('id="age"'), 'both pages carry the consent and demographics sections');
 assert.ok(html.includes('each featuring a reference object') && html.includes('press the <kbd>←</kbd> LEFT arrow') && html.includes('click on the comparison object') && html.includes('no right or wrong answers') && html.includes('instructions-large'), 'study 1 instructions text');
