@@ -16,6 +16,8 @@
     "build:study2": "node tools/build_site.mjs 2",
     "build:handoff": "python3 tools/build_analysis_handoff.py",
     "examples:rows": "node tools/make_example_rows.mjs",
-    "previews": "node tools/screenshot_trials.mjs"
+    "previews": "node tools/screenshot_trials.mjs",
+    "methodology:screens": "node tools/screenshot_methodology.mjs methodology-screens",
+    "methodology:pdf": "python3 tools/build_methodology_pdf.py methodology-screens"
   }
 }
