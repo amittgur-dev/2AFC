@@ -58,7 +58,7 @@ PAGES = [
 
 c = canvas.Canvas(out, pagesize=PAGE)
 c.setTitle('Experiment Methodology')
-c.setAuthor('Amit Gur')
+c.setAuthor('Amit Gur, Ivana Bianchi')
 c.setSubject('Similarity judgement: an online two-alternative forced-choice experiment')
 
 # Title page.
@@ -69,7 +69,7 @@ c.setFont('Sans', 14)
 c.drawString(M, H - 140, 'Similarity judgement: an online two-alternative forced-choice experiment')
 c.setFont('Sans', 11)
 c.setFillColor(GREY)
-c.drawString(M, H - 162, 'Amit Gur, University of Antwerp  ·  October 2026')
+c.drawString(M, H - 162, 'Amit Gur, University of Antwerp  ·  Ivana Bianchi, University of Macerata  ·  October 2026')
 c.setFillColor(INK)
 body = ParagraphStyle('body', fontName='Sans', fontSize=11, leading=16, textColor=INK)
 intro = Paragraph('This document shows every page a participant sees, in the order in which the pages appear. '
