@@ -110,12 +110,27 @@ function calibrate(message = '', reason = 'recalibration') {
   show('calibration');
   updateCard($('card-size').value);
 }
+// A card match can be shared between studies served from one site (the
+// colleagues' preview: config.calibration.shared). It is reused only on the
+// same screen at the same zoom; a recalibration replaces it.
+const SHARED_CALIBRATION_KEY = 'line-similarity:shared-calibration:v1';
+function sharedCalibration() {
+  if (!config.calibration?.shared) return null;
+  try {
+    const saved = JSON.parse(localStorage.getItem(SHARED_CALIBRATION_KEY) ?? 'null');
+    if (!saved?.card_width_px || !saved.fingerprint) return null;
+    const current = snapshot();
+    if (changedScreen(saved.fingerprint, current) || zoomSuspected(saved.fingerprint, current) || saved.card_width_px > innerWidth - 40) return null;
+    return saved;
+  } catch { return null; }
+}
 function confirmCard() {
   const width = $('card').getBoundingClientRect().width;
   scale = pixelsPerMm(width);
   fingerprint = snapshot();
   const record = {card_width_px: width, pixels_per_mm: scale, at: now(), environment: environment()};
   session.calibration = record; session.calibration_history.push(record); persist();
+  if (config.calibration?.shared) { try { localStorage.setItem(SHARED_CALIBRATION_KEY, JSON.stringify({card_width_px: width, fingerprint, at: record.at})); } catch {} }
   if (resumeAfterCalibration || session.trials.length) start();
   else { show('instructions'); preload(); }
 }
@@ -426,6 +441,8 @@ function demographicsReady() { return !config.study.demographics || !!(session.d
 function nextIntroStep() {
   if (!consentReady()) { renderConsent(); show('consent-page'); return; }
   if (!demographicsReady()) { updateDemographics(); show('demographics'); return; }
+  const shared = sharedCalibration();
+  if (shared) { show('calibration'); updateCard(shared.card_width_px); logEvent('shared-calibration'); confirmCard(); return; }
   calibrate();
 }
 function renderConsent() {

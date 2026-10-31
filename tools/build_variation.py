@@ -1,0 +1,99 @@
+"""Build a preview variation from a stimulus handoff package (the format of
+the prompt given to the designer's assistant: images/, stimuli.csv,
+questions.csv, README.txt).
+
+Usage: python3 tools/build_variation.py <handoff-dir> <variation-id> "<name>"
+  e.g. python3 tools/build_variation.py data/preview/squares-diamonds/handoff squares-diamonds "Squares and diamonds"
+
+Writes site/preview/variations/<id>/assets/*.svg (fills verified black),
+site/preview/variations/<id>/stimuli.js (same shape as the studies' stimuli.js:
+assets keyed <question>-<condition>, trials <question>.<pair>) and
+data/preview/<id>/{stimuli,comparisons}.csv. Every question with N comparison
+objects yields N*(N-1)/2 screens in the handoff's pair order (B-C, B-D, C-D).
+Add the variation to site/preview/variations.js afterwards.
+"""
+from pathlib import Path
+import csv, json, re, sys
+
+if len(sys.argv) < 4:
+    sys.exit(__doc__)
+src, vid, name = Path(sys.argv[1]).resolve(), sys.argv[2], sys.argv[3]
+if not re.fullmatch(r'[a-z0-9-]+', vid):
+    sys.exit('variation id: lowercase letters, digits and hyphens only')
+root = Path(__file__).resolve().parents[1]
+site = root / 'site/preview/variations' / vid
+data = root / 'data/preview' / vid
+(site / 'assets').mkdir(parents=True, exist_ok=True)
+data.mkdir(parents=True, exist_ok=True)
+
+CODES = {'sub-shapes rotated 45°': 'sub', 'whole rotated 45°': 'whole', 'global shape rotated 45°': 'shape'}
+stimuli = {r['file']: r for r in csv.DictReader((src / 'stimuli.csv').open(encoding='utf-8'))}
+questions = list(csv.DictReader((src / 'questions.csv').open(encoding='utf-8')))
+image_mm = {round(float(r['canvas_width_mm']), 2) for r in stimuli.values()} | {round(float(r['canvas_height_mm']), 2) for r in stimuli.values()}
+assert len(image_mm) == 1, f'all images must share one physical size, got {image_mm}'
+image_mm = image_mm.pop()
+
+# Assets: copy the SVGs, checking they are plain black-on-white drawings.
+for f in stimuli:
+    svg = (src / 'images' / f).read_text(encoding='utf-8')
+    assert '<svg' in svg and '<text' not in svg and 'fill="#111"' not in svg, f
+    (site / 'assets' / f).write_text(svg, encoding='utf-8')
+
+by_q = {}
+for r in questions:
+    by_q.setdefault(int(r['question_number']), []).append(r)
+assets, trials, comparisons = {}, [], []
+for q in sorted(by_q):
+    rows = by_q[q]
+    ref = rows[0]['reference_file']
+    assert all(r['reference_file'] == ref for r in rows)
+    group = rows[0]['group'].replace('_', ' ')
+    qname = rows[0]['question_name']
+    def meta(file, relation, label):
+        s = stimuli[file]
+        return {'src': f'assets/{file}', 'widthMm': image_mm, 'heightMm': image_mm, 'stimulus': s['stimulus_id'],
+                'shape': s['base_shape'], 'sub': s['sub_shape'], 'arrangement': s['arrangement'], 'elementCount': int(s['element_count']),
+                'baseRot': float(s['base_rotation_deg']), 'subRot': float(s['sub_rotation_deg']), 'frame': s['frame'],
+                'figureWidthMm': round(float(s['figure_width_mm']), 2), 'figureHeightMm': round(float(s['figure_height_mm']), 2),
+                'relationToReference': relation, 'description': label,
+                'dimensions': f"figure {float(s['figure_width_mm']):.2f} × {float(s['figure_height_mm']):.2f} mm in a {image_mm} mm image"}
+    assets[f'{q}-A'] = meta(ref, 'A', 'Reference')
+    codes = {}
+    for r in rows:
+        code = CODES[r['relation_to_reference']]
+        assert code not in codes.values(), f'question {q}: two comparisons with the relation {code}'
+        codes[r['comparison_letter']] = code
+        a = meta(r['comparison_file'], code, r['relation_to_reference'][0].upper() + r['relation_to_reference'][1:])
+        a['baseRotationDelta'] = float(r['base_rotation_delta_deg']); a['subRotationDelta'] = float(r['sub_rotation_delta_deg'])
+        a['sourceLetter'] = r['comparison_letter']
+        assets[f'{q}-{code}'] = a
+    letters = sorted(codes)
+    pair = 0
+    for i in range(len(letters)):
+        for j in range(i + 1, len(letters)):
+            pair += 1
+            left, right = codes[letters[i]], codes[letters[j]]
+            trials.append({'id': f'{q}.{pair}', 'family': q, 'name': f'{qname} ({group})', 'group': group, 'source': f'question {q} {letters[i]} vs {letters[j]}', 'left': left, 'right': right})
+            comparisons.append({'trial_id': f'{q}.{pair}', 'question': q, 'name': qname, 'group': group, 'reference': stimuli[ref]['stimulus_id'],
+                                'comparison_1': left, 'comparison_1_letter': letters[i], 'comparison_1_stimulus': assets[f'{q}-{left}']['stimulus'],
+                                'comparison_2': right, 'comparison_2_letter': letters[j], 'comparison_2_stimulus': assets[f'{q}-{right}']['stimulus'],
+                                'comparison': f"{assets[f'{q}-{left}']['description']}  vs  {assets[f'{q}-{right}']['description']}"})
+
+header = f"""// Preview variation "{name}" ({vid}). Generated by tools/build_variation.py
+// from data/preview/{vid}/handoff (questions.csv, stimuli.csv, images/).
+// Every image is shown as a {image_mm} mm square; figures are centred on their
+// rotation centre. Conditions: A reference; sub = sub-shapes rotated 45°;
+// whole = whole object rotated 45°; shape = global shape rotated 45°.
+"""
+(site / 'stimuli.js').write_text(header + 'export const assets = ' + json.dumps(assets, indent=2, ensure_ascii=False) + ';\nexport const trials = ' + json.dumps(trials, indent=2, ensure_ascii=False) + ';\n', encoding='utf-8')
+with (data / 'stimuli.csv').open('w', newline='', encoding='utf-8') as f:
+    cols = ['asset_id', 'question', 'name', 'group', 'variant', 'relation_to_reference', 'description', 'stimulus', 'file', 'shape', 'sub_shape', 'arrangement', 'element_count', 'base_rotation', 'sub_rotation', 'frame', 'figure_width_mm', 'figure_height_mm', 'image_mm']
+    w = csv.DictWriter(f, fieldnames=cols); w.writeheader()
+    for aid, a in assets.items():
+        q = int(aid.split('-')[0]); t = next(t for t in trials if t['family'] == q)
+        w.writerow({'asset_id': aid, 'question': q, 'name': t['name'], 'group': t['group'], 'variant': aid.split('-')[1], 'relation_to_reference': a['relationToReference'], 'description': a['description'],
+                    'stimulus': a['stimulus'], 'file': a['src'], 'shape': a['shape'], 'sub_shape': a['sub'], 'arrangement': a['arrangement'], 'element_count': a['elementCount'],
+                    'base_rotation': a['baseRot'], 'sub_rotation': a['subRot'], 'frame': a['frame'], 'figure_width_mm': a['figureWidthMm'], 'figure_height_mm': a['figureHeightMm'], 'image_mm': image_mm})
+with (data / 'comparisons.csv').open('w', newline='', encoding='utf-8') as f:
+    w = csv.DictWriter(f, fieldnames=list(comparisons[0])); w.writeheader(); w.writerows(comparisons)
+print(f'{vid}: {len(by_q)} questions, {len(trials)} screens, {len(stimuli)} images at {image_mm} mm; wrote {site} and {data}')

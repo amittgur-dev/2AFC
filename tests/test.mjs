@@ -281,3 +281,52 @@ assert.ok(config.study.consentText[0].startsWith('By ticking the box below') && 
 assert.ok(config.study.minAge === 18 && config.study.consentVersion !== rotConfig.study.consentVersion || true);
 assert.ok(config.experiment.id && config.storage.localKey, 'experiment identified');
 console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (57 files, 48 questions, relations verified), randomisation in both, Supabase rows vs migration columns, physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');
+
+// Preview variations: every variation's stimuli are complete and consistent.
+{
+  const {variations} = await import(path.join(APP, 'preview/variations.js'));
+  assert.ok(variations.length >= 1);
+  for (const v of variations) {
+    const folder = v.stimuli ?? v.id;
+    const {assets, trials} = await import(path.join(APP, 'preview/variations', folder, 'stimuli.js'));
+    const questions = new Set(trials.map(t => t.family));
+    assert.equal(trials.length, questions.size * 3, v.id + ': three screens per question');
+    for (const t of trials) {
+      for (const side of ['left', 'right']) assert.ok(assets[t.family + '-' + t[side]], v.id + ': asset for ' + t.id + ' ' + side);
+      assert.ok(assets[t.family + '-A'] && t.left !== t.right && ['sub', 'whole', 'shape'].includes(t.left) && ['sub', 'whole', 'shape'].includes(t.right));
+    }
+    for (const q of questions) assert.deepEqual(trials.filter(t => t.family === q).map(t => [t.left, t.right].sort().join('-')).sort(), ['shape-sub', 'shape-whole', 'sub-whole'], v.id + ': all three pairs of question ' + q);
+    const sizes = new Set(Object.values(assets).map(a => a.widthMm + 'x' + a.heightMm));
+    assert.equal(sizes.size, 1, v.id + ': one image size');
+    for (const a of Object.values(assets)) assert.ok(fs.existsSync(path.join(APP, 'preview/variations', folder, a.src)), v.id + ': ' + a.src);
+    assert.ok(buildSequence({controlPosition: 'random', randomizeTrialOrder: true, avoidConsecutiveSameFamily: true, sideAssignment: 'random', repetitions: 1}, 7, trials).length === trials.length);
+  }
+}
+
+// Presentation orders of the preview variations.
+{
+  const {assets, trials} = await import(path.join(APP, 'preview/variations/squares-diamonds/stimuli.js'));
+  const base = {controlPosition: 'random', randomizeTrialOrder: true, avoidConsecutiveSameFamily: true, sideAssignment: 'random', repetitions: 1};
+  const blocks = seq => seq.reduce((b, p) => (b.length && b[b.length - 1][0] === p.group ? b[b.length - 1][1]++ : b.push([p.group, 1]), b), []);
+  const firstGroups = new Set(), sides = new Set();
+  for (let seed = 0; seed < 40; seed++) {
+    const grouped = buildDesign({...base, order: 'blocked-by-group', groupOrder: ['texture', 'four figurative parts']}, seed, trials);
+    assert.deepEqual(blocks(grouped.sequence), [['texture', 12], ['four figurative parts', 12]], 'blocked by group, textures first');
+    assert.equal(grouped.interleaved, true);
+    const byRef = buildDesign({...base, order: 'blocked-by-family', groupOrder: 'random', avoidConsecutiveSameFamily: false}, seed, trials);
+    const b = blocks(byRef.sequence);
+    assert.equal(b.length, 2); assert.deepEqual(b.map(x => x[1]), [12, 12]);
+    firstGroups.add(b[0][0]);
+    const fams = byRef.sequence.map(p => p.family_id);
+    const runs = fams.reduce((r, f) => (r.length && r[r.length - 1][0] === f ? r[r.length - 1][1]++ : r.push([f, 1]), r), []);
+    assert.deepEqual(runs.map(r => r[1]), Array(8).fill(3), 'each reference: its three screens consecutive');
+    assert.equal(byRef.interleaved, null);
+    sides.add(byRef.sequence.map(p => p.side_assignment[0]).join(''));
+    assert.equal(byRef.sequence.length, 24);
+  }
+  assert.equal(firstGroups.size, 2, 'the group order varies between participants');
+  assert.ok(sides.size > 30, 'sides random');
+  assert.throws(() => buildDesign({...base, order: 'blocked-by-group', groupOrder: ['texture']}, 1, trials), /does not list/);
+  assert.throws(() => buildDesign({...base, order: 'by-colour'}, 1, trials), /design.order/);
+  assert.ok(Object.keys(assets).length === 32);
+}

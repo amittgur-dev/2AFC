@@ -22,6 +22,9 @@ fs.rmSync(out, {recursive: true, force: true});
 fs.mkdirSync(out, {recursive: true});
 fs.cpSync(src, out, {recursive: true});
 fs.cpSync(path.join(ROOT, 'site', 'shared'), path.join(out, 'shared'), {recursive: true});
+// The colleagues' preview module rides along with the rotation study at /preview/
+// (its pages reference ../shared/, which resolves the same way there).
+if (study === '2' && fs.existsSync(path.join(ROOT, 'site', 'preview'))) fs.cpSync(path.join(ROOT, 'site', 'preview'), path.join(out, 'preview'), {recursive: true});
 for (const f of ['index.html', 'main.js']) {
   const p = path.join(out, f);
   fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replaceAll('../shared/', './shared/'));

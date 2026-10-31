@@ -43,8 +43,11 @@ function presentation(trial, reversed, repetition) {
 
 const CONTROL_POSITIONS = ['random', 'first', 'excluded'];
 const SIDE_ASSIGNMENTS = ['random', 'fixed', 'both'];
+const ORDERS = ['interleaved', 'blocked-by-group', 'blocked-by-family'];
 export function validateDesign(design) {
   if (!CONTROL_POSITIONS.includes(design.controlPosition)) throw new Error(`design.controlPosition must be one of ${CONTROL_POSITIONS.join(', ')}; got "${design.controlPosition}"`);
+  if (design.order !== undefined && !ORDERS.includes(design.order)) throw new Error(`design.order must be one of ${ORDERS.join(', ')}; got "${design.order}"`);
+  if (design.groupOrder !== undefined && design.groupOrder !== 'random' && !Array.isArray(design.groupOrder)) throw new Error('design.groupOrder must be "random" or an array of group names');
   if (!SIDE_ASSIGNMENTS.includes(design.sideAssignment)) throw new Error(`design.sideAssignment must be one of ${SIDE_ASSIGNMENTS.join(', ')}; got "${design.sideAssignment}"`);
   if (!Number.isInteger(design.repetitions) || design.repetitions < 1) throw new Error(`design.repetitions must be a positive integer; got ${design.repetitions}`);
 }
@@ -111,6 +114,36 @@ export function buildDesign(design, seed, trials) {
     if (constrained && (hasConsecutiveSameFamily(mixed) || (prev && mixed.length && mixed[0].family_id === prev.family_id))) interleaved = false;
     return mixed;
   };
+  // Presentation order (design.order):
+  //   'interleaved' (default): every screen shuffled together, the control
+  //     placed per controlPosition.
+  //   'blocked-by-group': one block per trial group (design.groupOrder: the
+  //     group names in order, or 'random'); the screens of a block shuffled.
+  //   'blocked-by-family': blocks per group as above; within a block the
+  //     families (references) in random order and each family's screens
+  //     consecutive, in random order. The same-family constraint is moot.
+  const order = design.order ?? 'interleaved';
+  const groupsOf = items => {
+    const names = [...new Set(items.map(t => t.group))];
+    if (Array.isArray(design.groupOrder)) {
+      const unknown = names.filter(g => !design.groupOrder.includes(g));
+      if (unknown.length) throw new Error('design.groupOrder does not list the group(s) ' + unknown.join(', '));
+      return design.groupOrder.filter(g => names.includes(g));
+    }
+    return shuffle(names, random);
+  };
+  if (order !== 'interleaved') {
+    if (order === 'blocked-by-family') interleaved = null;
+    const all = design.controlPosition === 'excluded' ? others : trials;
+    for (let rep = 0; rep < design.repetitions; rep++) {
+      for (const g of groupsOf(all)) {
+        const block = all.filter(t => t.group === g).flatMap(t => variants(t, design, random, rep));
+        if (order === 'blocked-by-group') sequence.push(...mix(block));
+        else for (const f of shuffle([...new Set(block.map(p => p.family_id))], random)) sequence.push(...shuffle(block.filter(p => p.family_id === f), random));
+      }
+    }
+    return {sequence: sequence.map((p, i) => ({presentation_index: i, ...p})), interleaved};
+  }
   for (let rep = 0; rep < design.repetitions; rep++) {
     const pool = others.flatMap(t => variants(t, design, random, rep));
     const controls = design.controlPosition === 'excluded' ? [] : control.flatMap(t => variants(t, design, random, rep));

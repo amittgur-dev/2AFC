@@ -1,0 +1,33 @@
+asset_id,question,name,group,variant,relation_to_reference,description,stimulus,file,shape,sub_shape,arrangement,element_count,base_rotation,sub_rotation,frame,figure_width_mm,figure_height_mm,image_mm
+1-A,1,Square of squares (texture),texture,A,A,Reference,S001,assets/S001.svg,square,square,texture,16,0.0,0.0,screen,24.17,24.17,42.64
+1-sub,1,Square of squares (texture),texture,sub,sub,Sub-shapes rotated 45°,S002,assets/S002.svg,square,square,texture,16,0.0,45.0,screen,25.27,25.27,42.64
+1-whole,1,Square of squares (texture),texture,whole,whole,Whole rotated 45°,S003,assets/S003.svg,square,square,texture,16,45.0,45.0,screen,34.18,34.18,42.64
+1-shape,1,Square of squares (texture),texture,shape,shape,Global shape rotated 45°,S004,assets/S004.svg,square,square,texture,16,45.0,0.0,screen,33.07,33.07,42.64
+2-A,2,Square of diamonds (texture),texture,A,A,Reference,S002,assets/S002.svg,square,square,texture,16,0.0,45.0,screen,25.27,25.27,42.64
+2-sub,2,Square of diamonds (texture),texture,sub,sub,Sub-shapes rotated 45°,S001,assets/S001.svg,square,square,texture,16,0.0,0.0,screen,24.17,24.17,42.64
+2-whole,2,Square of diamonds (texture),texture,whole,whole,Whole rotated 45°,S004,assets/S004.svg,square,square,texture,16,45.0,0.0,screen,33.07,33.07,42.64
+2-shape,2,Square of diamonds (texture),texture,shape,shape,Global shape rotated 45°,S003,assets/S003.svg,square,square,texture,16,45.0,45.0,screen,34.18,34.18,42.64
+3-A,3,Diamond of squares (texture),texture,A,A,Reference,S004,assets/S004.svg,square,square,texture,16,45.0,0.0,screen,33.07,33.07,42.64
+3-sub,3,Diamond of squares (texture),texture,sub,sub,Sub-shapes rotated 45°,S003,assets/S003.svg,square,square,texture,16,45.0,45.0,screen,34.18,34.18,42.64
+3-whole,3,Diamond of squares (texture),texture,whole,whole,Whole rotated 45°,S002,assets/S002.svg,square,square,texture,16,0.0,45.0,screen,25.27,25.27,42.64
+3-shape,3,Diamond of squares (texture),texture,shape,shape,Global shape rotated 45°,S001,assets/S001.svg,square,square,texture,16,0.0,0.0,screen,24.17,24.17,42.64
+4-A,4,Diamond of diamonds (texture),texture,A,A,Reference,S003,assets/S003.svg,square,square,texture,16,45.0,45.0,screen,34.18,34.18,42.64
+4-sub,4,Diamond of diamonds (texture),texture,sub,sub,Sub-shapes rotated 45°,S004,assets/S004.svg,square,square,texture,16,45.0,0.0,screen,33.07,33.07,42.64
+4-whole,4,Diamond of diamonds (texture),texture,whole,whole,Whole rotated 45°,S001,assets/S001.svg,square,square,texture,16,0.0,0.0,screen,24.17,24.17,42.64
+4-shape,4,Diamond of diamonds (texture),texture,shape,shape,Global shape rotated 45°,S002,assets/S002.svg,square,square,texture,16,0.0,45.0,screen,25.27,25.27,42.64
+5-A,5,Square of squares (four figurative parts),four figurative parts,A,A,Reference,S005,assets/S005.svg,square,square,vertices,4,0.0,0.0,screen,25.33,25.33,42.64
+5-shape,5,Square of squares (four figurative parts),four figurative parts,shape,shape,Global shape rotated 45°,S006,assets/S006.svg,square,square,vertices,4,45.0,0.0,screen,32.23,32.23,42.64
+5-whole,5,Square of squares (four figurative parts),four figurative parts,whole,whole,Whole rotated 45°,S007,assets/S007.svg,square,square,vertices,4,45.0,45.0,screen,35.82,35.82,42.64
+5-sub,5,Square of squares (four figurative parts),four figurative parts,sub,sub,Sub-shapes rotated 45°,S008,assets/S008.svg,square,square,vertices,4,0.0,45.0,screen,28.92,28.92,42.64
+6-A,6,Square of diamonds (four figurative parts),four figurative parts,A,A,Reference,S008,assets/S008.svg,square,square,vertices,4,0.0,45.0,screen,28.92,28.92,42.64
+6-shape,6,Square of diamonds (four figurative parts),four figurative parts,shape,shape,Global shape rotated 45°,S007,assets/S007.svg,square,square,vertices,4,45.0,45.0,screen,35.82,35.82,42.64
+6-whole,6,Square of diamonds (four figurative parts),four figurative parts,whole,whole,Whole rotated 45°,S006,assets/S006.svg,square,square,vertices,4,45.0,0.0,screen,32.23,32.23,42.64
+6-sub,6,Square of diamonds (four figurative parts),four figurative parts,sub,sub,Sub-shapes rotated 45°,S005,assets/S005.svg,square,square,vertices,4,0.0,0.0,screen,25.33,25.33,42.64
+7-A,7,Diamond of squares (four figurative parts),four figurative parts,A,A,Reference,S006,assets/S006.svg,square,square,vertices,4,45.0,0.0,screen,32.23,32.23,42.64
+7-shape,7,Diamond of squares (four figurative parts),four figurative parts,shape,shape,Global shape rotated 45°,S005,assets/S005.svg,square,square,vertices,4,0.0,0.0,screen,25.33,25.33,42.64
+7-whole,7,Diamond of squares (four figurative parts),four figurative parts,whole,whole,Whole rotated 45°,S008,assets/S008.svg,square,square,vertices,4,0.0,45.0,screen,28.92,28.92,42.64
+7-sub,7,Diamond of squares (four figurative parts),four figurative parts,sub,sub,Sub-shapes rotated 45°,S007,assets/S007.svg,square,square,vertices,4,45.0,45.0,screen,35.82,35.82,42.64
+8-A,8,Diamond of diamonds (four figurative parts),four figurative parts,A,A,Reference,S007,assets/S007.svg,square,square,vertices,4,45.0,45.0,screen,35.82,35.82,42.64
+8-shape,8,Diamond of diamonds (four figurative parts),four figurative parts,shape,shape,Global shape rotated 45°,S008,assets/S008.svg,square,square,vertices,4,0.0,45.0,screen,28.92,28.92,42.64
+8-whole,8,Diamond of diamonds (four figurative parts),four figurative parts,whole,whole,Whole rotated 45°,S005,assets/S005.svg,square,square,vertices,4,0.0,0.0,screen,25.33,25.33,42.64
+8-sub,8,Diamond of diamonds (four figurative parts),four figurative parts,sub,sub,Sub-shapes rotated 45°,S006,assets/S006.svg,square,square,vertices,4,45.0,0.0,screen,32.23,32.23,42.64

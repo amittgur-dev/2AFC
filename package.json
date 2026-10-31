@@ -18,6 +18,8 @@
     "examples:rows": "node tools/make_example_rows.mjs",
     "previews": "node tools/screenshot_trials.mjs",
     "methodology:screens": "node tools/screenshot_methodology.mjs methodology-screens",
-    "methodology:pdf": "python3 tools/build_methodology_pdf.py methodology-screens"
+    "methodology:pdf": "python3 tools/build_methodology_pdf.py methodology-screens",
+    "test:preview": "node tests/preview-test.mjs",
+    "build:variation": "python3 tools/build_variation.py"
   }
 }

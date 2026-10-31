@@ -1,0 +1,132 @@
+// Study configuration. Everything a researcher is expected to change lives here.
+// Values marked DECISION are protocol choices made as working defaults; review
+// them against README.md before recruiting.
+export const config = {
+  // Which of the two 2AFC experiments this deployment runs. Recorded in every
+  // session and submission. The second experiment reuses this app with its own
+  // stimuli.js / assets and its own experiment id (see README).
+  experiment: {id: 'preview', name: 'Preview'}, // set per variation by main.js
+  // Bump protocolVersion whenever the design or participant-facing procedure
+  // changes. A session stored in a participant's browser is continued only if
+  // protocolVersion, stimulusSetVersion, layoutVersion and the whole `design`
+  // block match; otherwise a fresh session starts.
+  protocolVersion: '2026-10-06-v1',
+  stimulusSetVersion: 'preview', // set per variation by main.js
+  layoutVersion: '2026-10-07-unit-lines-v2',
+
+  study: {
+    title: 'Similarity judgment',
+    // Shown on the information/consent page. Fill these in before recruiting.
+    institution: '',
+    researcher: '',
+    contactEmail: '',
+    ethicsReference: '',
+    durationMinutes: 5,
+    // DECISION: the pilot uses a plain Continue button. Set true to require an
+    // "I agree to take part" checkbox before continuing.
+    requireConsentCheckbox: false,
+    // DECISION: a separate consent page with the text below and an "I agree"
+    // checkbox before anything else (consentPage), and an age and gender page
+    // (demographics) before calibration.
+    consentPage: false,
+    consentText: [
+      'You are invited to take part in a study on visual perception. You will see a series of screens, each showing a reference object and two comparison objects, and on each screen you choose which comparison object looks more similar to the reference. The study takes about DURATION minutes.',
+      'Taking part is voluntary. You can stop at any time by closing the page, without giving a reason and without any disadvantage.',
+      'The study records your choices and how long each takes, your age and gender, your screen calibration and technical details of your display and browser. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
+      'There are no known risks. If you have questions about the study, CONTACT',
+    ],
+    demographics: false,
+    minAge: 18,
+    maxAge: 120,
+    consentVersion: '2026-10-08-v2',
+  },
+
+  design: {
+    // DECISION: where the plain-line control (trial 0.1) is presented.
+    // 'random' mixes it in with every other question (researcher's choice:
+    // all 2AFC questions interleaved); 'first' opens with it; 'excluded' drops it.
+    controlPosition: 'random',
+    // DECISION: shuffle all presentations per participant (seeded, recorded),
+    // so families and pair types (E/L, E/P, L/P) are fully interleaved rather
+    // than grouped by object.
+    randomizeTrialOrder: true,
+    // Reject shuffles where two consecutive screens show the same object family.
+    avoidConsecutiveSameFamily: true,
+    // DECISION: left/right assignment of the two comparison conditions.
+    // 'random'  - a recorded coin flip per presentation (19 presentations)
+    // 'fixed'   - the canonical order from data/trials.json (19 presentations)
+    // 'both'    - every pair in both orders (38 presentations). The interim
+    //             record sent on leaving is then too large for the browser's
+    //             64 KiB beacon limit, so a compact version is sent (a minimal
+    //             one from about 70 answered screens); see EXPERIMENT_DATA.md.
+    sideAssignment: 'random',
+    // DECISION: how many times the whole set is presented. Each pass is
+    // interleaved separately; the family constraint is also enforced across
+    // the boundary between passes.
+    repetitions: 1,
+    // Blank stage between a response and the next presentation.
+    interTrialIntervalMs: 500,
+    // Keys accepted for the left (B) and right (C) object.
+    keys: {left: ['ArrowLeft', 'b', 'B'], right: ['ArrowRight', 'c', 'C']},
+  },
+
+  participant: {
+    // Remember a participant's session in their browser so a reload resumes
+    // it and a finished participant sees the completion page again. Off for
+    // the pilot: every visit starts a fresh run.
+    rememberSession: false,
+    // URL parameters searched, in order, for a participant identifier.
+    // e.g. ?pid=123 or Prolific's ?PROLIFIC_PID={{%PROLIFIC_PID%}}
+    idParams: ['pid', 'PROLIFIC_PID', 'participant'],
+    // DECISION: when the link carries no identifier, ask the participant to
+    // make up a code on the first page and to reuse it in the other study.
+    // No list ties codes to people unless they tell you their code. Set
+    // false to allow anonymous runs. (Links made by
+    // tools/make_participant_links.py carry the code and skip the question.)
+    requireCode: false,
+    // Accepted code pattern for a typed code: exactly 8 digits.
+    codePattern: '^[0-9]{8}$',
+    // Additional URL parameters copied verbatim into the session record.
+    passthroughParams: ['STUDY_ID', 'SESSION_ID', 'source'],
+  },
+
+  storage: {
+    // DECISION: where completed sessions are sent.
+    // 'supabase'      - inserts into this experiment's tables in Supabase
+    //                   (created by supabase/migrations/0001_experiment_tables.sql).
+    // 'netlify-forms' - posts to the Netlify Forms endpoint of this site
+    //                   (form "line-similarity-responses" in index.html).
+    // 'endpoint'      - POSTs the session as JSON to `endpoint` below.
+    // 'local'         - nothing is sent; participants download their file.
+    mode: 'local', // previews record nothing
+    // Supabase project URL (https://<ref>.supabase.co) and anon/publishable
+    // key, from the project's API settings. The anon key is public by design;
+    // row level security lets it insert only.
+    supabase: {url: 'https://yrgwlvqkqgqxcfcyxkta.supabase.co', anonKey: 'sb_publishable_xHK8bsu5oSo-xhYo8bk2lg_HIv6fHy2', sessionsTable: 'similarity_with_rotation_sessions', trialsTable: 'similarity_with_rotation_trials'},
+    endpoint: '',
+    formName: 'line-similarity-responses',
+    // Send an interim record (flagged 'abandoned') if the participant leaves
+    // after answering at least one screen but before the final record was
+    // sent. Nothing is sent for dropouts before the first response. Each
+    // reload mid-study sends one; records share the session_id.
+    submitPartialOnLeave: true,
+    // Offer a JSON/CSV download of the session on the completion page.
+    allowDownload: false,
+    // localStorage key for crash/reload recovery.
+    localKey: 'line-similarity:preview:session:v1', // keep distinct per experiment
+  },
+
+  // The card match is shared between the variations (see app.js).
+  calibration: {shared: true},
+
+  completion: {
+    // Show a completion code on the final page (config.completion.code, or
+    // the session id when that is empty). Off for the pilot.
+    showCode: false,
+    // The completion code. Leave empty to use the session id.
+    code: '',
+    // If set, a link/redirect offered after submission (e.g. a Prolific
+    // completion URL). Leave empty for none.
+    redirectUrl: './', // back to the list of variations
+  },
+};

@@ -268,6 +268,29 @@ the specification says the edge is lengthened at unchanged thickness. The
 control has no edges (`B`, `Bext`, `Benl`). Dimensions come from
 `data/measurements.csv`.
 
+## Previews for colleagues (`site/preview/`)
+
+A module for trying variations of the experiment, served from the rotation
+study's site at `https://2afc-study-2.netlify.app/preview/` (the study 2
+build copies it; nothing links to it from the study). It lists the
+variations in `site/preview/variations.js`; each runs through the shared
+runner with no consent, no demographics and no recording (`storage.mode:
+'local'`), and returns to the list at the end. The card match is remembered
+between variations on the same screen (`calibration.shared`). A variation is
+a stimulus set plus a `design` override; the set comes from a handoff
+package (images/, stimuli.csv, questions.csv, README.txt) kept under
+`data/preview/<set>/handoff` and built with
+
+```sh
+python3 tools/build_variation.py data/preview/<set>/handoff <set> "<Name>"
+```
+
+Presentation orders (`design.order`): `interleaved` (all screens mixed),
+`blocked-by-group` (one block per group, `groupOrder` fixed or random) and
+`blocked-by-family` (blocks per group, references in random order, each
+reference's screens consecutive). `npm run test:preview` runs the module in
+a browser.
+
 ## Analysis handoff
 
 `handoff/analysis/` holds a self-contained package for whoever analyses the
