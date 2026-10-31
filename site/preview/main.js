@@ -12,8 +12,9 @@ if (!chosen) {
   for (const v of variations) {
     const li = document.createElement('li');
     const a = document.createElement('a'); a.className = 'button primary'; a.href = '?v=' + encodeURIComponent(v.id) + '&reset=1'; a.textContent = v.name;
-    const p = document.createElement('p'); p.textContent = v.description;
-    li.append(a, p); list.append(li);
+    const ul = document.createElement('ul'); ul.className = 'points';
+    for (const point of v.points) { const li2 = document.createElement('li'); li2.textContent = point; ul.append(li2); }
+    li.append(a, ul); list.append(li);
   }
 } else {
   $('menu').hidden = true;
@@ -24,7 +25,7 @@ if (!chosen) {
   config.study.title = chosen.name;
   config.stimulusSetVersion = folder + '-' + chosen.version;
   config.design = {...config.design, ...(chosen.design ?? {})};
-  $('variation-note').textContent = chosen.description;
+  for (const point of chosen.points) { const li = document.createElement('li'); li.textContent = point; $('variation-note').append(li); }
   const {run} = await import('../shared/app.js');
   run({config, assets: located, trials});
 }

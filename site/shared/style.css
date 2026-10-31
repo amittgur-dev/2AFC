@@ -72,4 +72,5 @@ summary{cursor:pointer;text-decoration:underline;text-underline-offset:4px}
 @media(max-width:650px){.setup{margin-top:28px}.card-area{min-height:220px}h1{font-size:27px}.trial-footer span{font-size:11px}}
 .variation-list{list-style:none;padding:0;margin:0 0 1rem}
 .variation-list li{margin:0 0 1.25rem}
-.variation-list p{margin:.4rem 0 0;color:#444}
+.points{margin:.5rem 0 0;padding-left:1.25rem;color:#333}
+.points li{margin:.2rem 0}
