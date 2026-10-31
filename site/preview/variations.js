@@ -14,13 +14,13 @@ export const variations = [
   {
     id: 'blocked-by-type', stimuli: 'squares-diamonds', version: '2026-10-31',
     name: 'Blocks by type of form',
-    points: ['First a block of forms made of texture, then a block of forms made of figurative parts', 'The 2AFC trials within each block in random order'],
-    design: {order: 'blocked-by-group', groupOrder: ['texture', 'four figurative parts'], avoidConsecutiveSameFamily: true},
+    points: ['Two blocks: forms made of texture and forms made of figurative parts, in random order', 'The 2AFC trials within each block in random order'],
+    design: {order: 'blocked-by-group', groupOrder: 'random', avoidConsecutiveSameFamily: true},
   },
   {
     id: 'blocked-by-reference', stimuli: 'squares-diamonds', version: '2026-10-31',
     name: 'Blocks by reference',
-    points: ['The three 2AFC trials of a reference in a row, in random order', 'References in random order', 'All texture forms before or after all figurative-part forms, at random'],
+    points: ['The three 2AFC trials of a reference in a row, in random order', 'References in random order', 'Two blocks: forms made of texture and forms made of figurative parts, in random order'],
     design: {order: 'blocked-by-family', groupOrder: 'random', avoidConsecutiveSameFamily: false},
   },
 ];

@@ -308,11 +308,13 @@ console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (57
   const {assets, trials} = await import(path.join(APP, 'preview/variations/squares-diamonds/stimuli.js'));
   const base = {controlPosition: 'random', randomizeTrialOrder: true, avoidConsecutiveSameFamily: true, sideAssignment: 'random', repetitions: 1};
   const blocks = seq => seq.reduce((b, p) => (b.length && b[b.length - 1][0] === p.group ? b[b.length - 1][1]++ : b.push([p.group, 1]), b), []);
-  const firstGroups = new Set(), sides = new Set();
+  const firstGroups = new Set(), firstGroupsOfBlocks = new Set(), sides = new Set();
   for (let seed = 0; seed < 40; seed++) {
     const grouped = buildDesign({...base, order: 'blocked-by-group', groupOrder: ['texture', 'four figurative parts']}, seed, trials);
-    assert.deepEqual(blocks(grouped.sequence), [['texture', 12], ['four figurative parts', 12]], 'blocked by group, textures first');
+    assert.deepEqual(blocks(grouped.sequence), [['texture', 12], ['four figurative parts', 12]], 'blocked by group, fixed order');
     assert.equal(grouped.interleaved, true);
+    const groupedRandom = buildDesign({...base, order: 'blocked-by-group', groupOrder: 'random'}, seed, trials);
+    assert.deepEqual(blocks(groupedRandom.sequence).map(x => x[1]), [12, 12]); firstGroupsOfBlocks.add(blocks(groupedRandom.sequence)[0][0]);
     const byRef = buildDesign({...base, order: 'blocked-by-family', groupOrder: 'random', avoidConsecutiveSameFamily: false}, seed, trials);
     const b = blocks(byRef.sequence);
     assert.equal(b.length, 2); assert.deepEqual(b.map(x => x[1]), [12, 12]);
@@ -325,6 +327,7 @@ console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (57
     assert.equal(byRef.sequence.length, 24);
   }
   assert.equal(firstGroups.size, 2, 'the group order varies between participants');
+  assert.equal(firstGroupsOfBlocks.size, 2, 'blocked by group with random group order: both orders occur');
   assert.ok(sides.size > 30, 'sides random');
   assert.throws(() => buildDesign({...base, order: 'blocked-by-group', groupOrder: ['texture']}, 1, trials), /does not list/);
   assert.throws(() => buildDesign({...base, order: 'by-colour'}, 1, trials), /design.order/);
