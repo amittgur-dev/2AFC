@@ -68,60 +68,52 @@ Participant flow: first page (task description, 8-digit code), consent page
 
 ## Experiment 2: Similarity with rotation
 
-`experiment_id = 'exp2-similarity-with-rotation'`, 48 screens, stimulus set
-`exp2-similarity-with-rotation-v2`.
+`experiment_id = 'exp2-similarity-with-rotation'`, 24 screens, stimulus set
+`squares-diamonds-2026-10-31` (an earlier pilot used a 48-screen set,
+`exp2-similarity-with-rotation-v2`, with triangles; tell the sets apart by
+`stimulus_set_version`).
 
-Sixteen questions. Each reference is a texture-like figure: a base shape
-(square, diamond, upward or downward pointing triangle) filled with a grid of
-small sub-shapes (squares, diamonds, upward or downward pointing triangles).
-Three comparisons differ from the reference by one 45 degree rotation:
+Eight questions. Each reference is a figure made of small squares: in
+questions 1 to 4 a 4 x 4 texture of 16 small squares (`group_name =
+'texture'`), in questions 5 to 8 four larger squares at the corners of a
+square configuration (`group_name = 'four figurative parts'`). A square
+rotated 45° is called a diamond; the question name gives the global
+configuration and the local parts. Three comparisons differ from the
+reference by one 45° rotation:
 
 | Condition | Description shown in the PDF | What changed relative to A |
 |---|---|---|
-| `sub` | Sub-shapes rotated 45° | every sub-shape rotated 45° in place; the base shape (global outline) unchanged |
-| `whole` | Whole rotated 45° | the entire figure rotated 45° (base shape and sub-shapes) |
-| `shape` | Global shape rotated 45° | the base shape rotated 45°; the sub-shapes keep their orientation |
+| `sub` | Sub-shapes rotated 45° | every small square rotated 45° in place; the arrangement unchanged |
+| `whole` | Whole rotated 45° | the entire figure rotated 45° |
+| `shape` | Global shape rotated 45° | the arrangement rotated 45°; the small squares keep their orientation |
 
-Each question yields three screens: sub vs whole, sub vs shape, whole vs shape
-(`trial_id` = `question.pair`, pairs 1, 2, 3 in that order; 16 x 3 = 48).
-Asset ids are `question-condition` (`7-A`, `7-sub`, `7-whole`, `7-shape`). The
-same drawing can serve several questions (for example S003, a diamond of
-diamonds, is `3-A`, `1-whole`, `2-shape` and `4-sub`), so
-`stimuli/exp2_similarity_with_rotation/assets.csv` maps every asset id to its
-stimulus file (`S001` to `S057`) and to the base and sub-shape rotations.
+Each question yields three screens (`trial_id` = `question.pair`): pairs in
+the designer's letter order, B vs C, B vs D, C vs D, which in questions 1 to
+4 means sub vs whole, sub vs shape, whole vs shape and in questions 5 to 8
+shape vs whole, shape vs sub, whole vs sub (`trials.source` records the
+letters). Asset ids are `question-condition` (`3-A`, `3-sub`, `3-whole`,
+`3-shape`). Only eight drawings exist (`S001` to `S008`); square symmetry
+makes the same drawing serve several questions in different roles, which
+`stimuli/exp2_similarity_with_rotation/assets.csv` maps out.
 
 | Question | Reference | Group |
 |---|---|---|
-| 1 | Square of squares | squares and diamonds |
-| 2 | Square of diamonds | squares and diamonds |
-| 3 | Diamond of diamonds | squares and diamonds |
-| 4 | Diamond of squares | squares and diamonds |
-| 5 | Upward pointing triangle of upward pointing triangles | triangles |
-| 6 | Upward pointing triangle of downward pointing triangles | triangles |
-| 7 | Downward pointing triangle of downward pointing triangles | triangles |
-| 8 | Downward pointing triangle of upward pointing triangles | triangles |
-| 9 | Square of upward pointing triangles | squares and triangles |
-| 10 | Square of downward pointing triangles | squares and triangles |
-| 11 | Upward pointing triangle of squares | squares and triangles |
-| 12 | Downward pointing triangle of squares | squares and triangles |
-| 13 | Diamond of upward pointing triangles | diamonds and triangles |
-| 14 | Diamond of downward pointing triangles | diamonds and triangles |
-| 15 | Upward pointing triangle of diamonds | diamonds and triangles |
-| 16 | Downward pointing triangle of diamonds | diamonds and triangles |
+| 1 | Square of squares | texture |
+| 2 | Square of diamonds | texture |
+| 3 | Diamond of squares | texture |
+| 4 | Diamond of diamonds | texture |
+| 5 | Square of squares | four figurative parts |
+| 6 | Square of diamonds | four figurative parts |
+| 7 | Diamond of squares | four figurative parts |
+| 8 | Diamond of diamonds | four figurative parts |
 
-`family_id` / `family_name` / `group_name` in the data carry the question
-number, name and group. `stimuli.csv` also lists `handoff_question`, the
-designer's original numbering of the same question (the designer's canvas and
-manifest use that numbering; the experiment uses the order above).
-
-Every image is a 41.33 mm square (the designer's calibrated size) with the
+Every image is a 42.64 mm square (the designer's calibrated size) with the
 figure centred on its rotation centre, so A, B and C align; the figures
-themselves are 24 to 34 mm wide (`figure_width_mm`). Fill colour was
-normalised to pure black. No control question.
+themselves are 24 to 36 mm wide (`figure_width_mm`). No control question.
 
-Participant flow: first page with the code, calibration, a one-line
-instruction, the 48 screens, "Finished. Thank you." No consent or demographic
-pages (pilot).
+Participant flow: the same as experiment 1 (welcome page, consent page,
+calibration, instructions, the 24 screens, the final page with the Prolific
+return); no age and gender page.
 
 ## Randomisation and counterbalancing (both experiments)
 

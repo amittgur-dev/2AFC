@@ -3,7 +3,7 @@
 // 1300 x 820 window, 2x device pixel ratio, calibrated at 5.11 px/mm, with the
 // deployed configuration pointed at a fake Supabase endpoint on this machine so
 // the completion page looks exactly as deployed.
-// Run: PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node tools/screenshot_methodology.mjs <out-dir>
+// Run: PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node tools/screenshot_methodology.mjs <out-dir> [study]
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
@@ -11,6 +11,7 @@ import {fileURLToPath} from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const APP = path.join(ROOT, 'site');
 const OUT = path.resolve(process.argv[2] ?? 'methodology-screens');
+const STUDY = process.argv[3] ?? '1';
 const {chromium} = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright');
 const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml'};
 let base = '';
@@ -39,7 +40,7 @@ const state = page => page.evaluate(() => lineSimilarityState());
 // Study 1: every page in order.
 const page = await context.newPage();
 page.on('pageerror', e => { throw e; });
-await page.goto(`${base}1/?reset=1`);
+await page.goto(`${base}${STUDY}/?reset=1`);
 await shot(page, '01-first-page', {fullPage: true});
 if (await page.isVisible('#code-row')) await page.fill('#participant-code', '12345678');
 await page.click('#begin');
@@ -67,28 +68,9 @@ await page.waitForFunction(() => lineSimilarityState().mode === 'complete' && li
 await shot(page, '07-finished');
 await page.close();
 
-// Study 2: first page, instructions and two trial screens.
-const page2 = await context.newPage();
-page2.on('pageerror', e => { throw e; });
-await page2.goto(`${base}2/?reset=1`);
-await shot(page2, '20-study2-first-page', {fullPage: true});
-if (await page2.isVisible('#code-row')) await page2.fill('#participant-code', '12345678');
-await page2.click('#begin');
-await page2.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * 5.11);
-await page2.click('#confirm-card');
-await page2.waitForSelector('#start:not([disabled])');
-await shot(page2, '21-study2-instructions', {fullPage: true});
-await page2.click('#start');
-for (let i = 0; i < 2; i++) {
-  await page2.waitForFunction(k => lineSimilarityState().ready && lineSimilarityState().completed === k, i);
-  await page2.waitForTimeout(150);
-  const s = await state(page2);
-  await shot(page2, `22-study2-trial-${i + 1}-${s.presentation.trial_id}-${s.presentation.left_condition}-vs-${s.presentation.right_condition}`);
-  await page2.keyboard.press('ArrowLeft');
-}
 // The participant information and consent page prepared for the ethics application.
 const consent = await context.newPage();
-await consent.goto('file://' + path.join(ROOT, 'docs/methodology/consent-page.html'));
+await consent.goto('file://' + path.join(ROOT, 'docs/methodology', STUDY === '1' ? 'consent-page.html' : `consent-page-${STUDY}.html`));
 await consent.waitForTimeout(200);
 await shot(consent, '02-consent-information', {fullPage: true});
 await browser.close(); server.close();

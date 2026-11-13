@@ -158,34 +158,34 @@ assert.equal(buildDesign({...config.design, controlPosition: 'first', sideAssign
 assert.equal(buildDesign({...config.design, avoidConsecutiveSameFamily: false}, 5).interleaved, null);
 assert.equal(buildDesign({...config.design, randomizeTrialOrder: false}, 5).interleaved, null);
 
-// Experiment 2: Similarity with Rotation. 16 questions x 3 pairs, every
-// comparison classified from the rotation parameters, same stage.
+// Experiment 2: Similarity with rotation, the squares-and-diamonds set: 8
+// questions (4 textures, 4 figures of four parts) x 3 pairs, 8 drawings.
 const rot = await import(path.join(APP, '2/stimuli.js'));
 const rotConfig = (await import(path.join(APP, '2/config.js'))).config;
-assert.equal(rot.trials.length, 48);
-assert.equal(Object.keys(rot.assets).length, 64);
+assert.equal(rot.trials.length, 24);
+assert.equal(Object.keys(rot.assets).length, 32);
 assert.equal(rotConfig.experiment.id, 'exp2-similarity-with-rotation');
 assert.notEqual(rotConfig.storage.localKey, config.storage.localKey, 'experiments do not share stored sessions');
-for (let q = 1; q <= 16; q++) {
-  assert.deepEqual(rot.trials.filter(t => t.family === q).map(t => t.left + '/' + t.right), ['sub/whole', 'sub/shape', 'whole/shape']);
+for (let q = 1; q <= 8; q++) {
+  assert.deepEqual(rot.trials.filter(t => t.family === q).map(t => [t.left, t.right].sort().join('/')).sort(), ['shape/sub', 'shape/whole', 'sub/whole'], `question ${q}: all three pairs`);
   const a = rot.assets[`${q}-A`];
+  assert.equal(a.relationToReference, 'A');
   for (const v of ['sub', 'whole', 'shape']) {
     const c = rot.assets[`${q}-${v}`];
-    assert.ok(fs.existsSync(path.join(APP, '2', c.src)) && c.widthMm === 41.33 && c.heightMm === 41.33);
-    assert.equal(c.shape, a.shape); assert.equal(c.sub, a.sub);
-    const db = (c.baseRot - a.baseRot + 360) % 360, ds = (c.subRot - a.subRot + 360) % 360;
-    assert.deepEqual([db, ds], {sub: [0, 45], whole: [45, 45], shape: [45, 0]}[v], `question ${q} ${v}`);
+    assert.ok(fs.existsSync(path.join(APP, '2', c.src)) && c.widthMm === 42.64 && c.heightMm === 42.64 && a.widthMm === 42.64);
+    assert.equal(c.shape, a.shape); assert.equal(c.sub, a.sub); assert.equal(c.arrangement, a.arrangement);
+    assert.deepEqual([c.baseRotationDelta, c.subRotationDelta], {sub: [0, 45], whole: [45, 45], shape: [45, 0]}[v], `question ${q} ${v}`);
     assert.equal(c.relationToReference, v);
+    assert.notEqual(c.stimulus, a.stimulus);
   }
 }
+assert.equal(new Set(Object.values(rot.assets).map(a => a.src)).size, 8, 'eight distinct drawings shared between questions');
 assert.ok(!Object.values(rot.assets).some(a => fs.readFileSync(path.join(APP, '2', a.src), 'utf8').includes('#111')), 'pure black artwork');
-// Questions follow the researcher's order and naming (base of sub-shapes).
-const UP = 'upward pointing triangle', DOWN = 'downward pointing triangle';
-const expectedNames = [['Square', 'square'], ['Square', 'diamond'], ['Diamond', 'diamond'], ['Diamond', 'square'], ['Upward pointing triangle', UP], ['Upward pointing triangle', DOWN], ['Downward pointing triangle', DOWN], ['Downward pointing triangle', UP],
-  ['Square', UP], ['Square', DOWN], ['Upward pointing triangle', 'square'], ['Downward pointing triangle', 'square'], ['Diamond', UP], ['Diamond', DOWN], ['Upward pointing triangle', 'diamond'], ['Downward pointing triangle', 'diamond']].map(([b, s]) => `${b} of ${s}s`);
+const expectedNames = ['Square of squares (texture)', 'Square of diamonds (texture)', 'Diamond of squares (texture)', 'Diamond of diamonds (texture)',
+  'Square of squares (four figurative parts)', 'Square of diamonds (four figurative parts)', 'Diamond of squares (four figurative parts)', 'Diamond of diamonds (four figurative parts)'];
 assert.deepEqual(rot.trials.filter(t => t.id.endsWith('.1')).map(t => t.name), expectedNames);
-assert.deepEqual(rot.trials.filter(t => t.id.endsWith('.1')).map(t => t.source), ['handoff Q1', 'handoff Q2', 'handoff Q4', 'handoff Q3', 'handoff Q10', 'handoff Q9', 'handoff Q11', 'handoff Q12', 'handoff Q5', 'handoff Q7', 'handoff Q13', 'handoff Q14', 'handoff Q6', 'handoff Q8', 'handoff Q15', 'handoff Q16']);
-assert.ok(!rot.trials.some(t => /triangle-|'s/.test(t.name)), 'no shorthand triangle names');
+assert.deepEqual([...new Set(rot.trials.map(t => t.group))], ['texture', 'four figurative parts']);
+assert.ok(rot.trials.every(t => /^question \d [BCD] vs [BCD]$/.test(t.source)));
 for (const t of rot.trials) for (const reversed of [false, true]) {
   const left = reversed ? t.right : t.left, right = reversed ? t.left : t.right;
   const boxes = [[`${t.family}-A`, 'A'], [`${t.family}-${left}`, 'B'], [`${t.family}-${right}`, 'C']].map(([id, label]) => { const a = rot.assets[id]; const [x, y] = STAGE.positions[label]; return {x0: x - a.widthMm / 2, x1: x + a.widthMm / 2, y0: y - a.heightMm / 2, y1: y + a.heightMm / 2}; });
@@ -194,7 +194,7 @@ for (const t of rot.trials) for (const reversed of [false, true]) {
 }
 for (let seed = 0; seed < 100; seed++) {
   const s = buildDesign(rotConfig.design, seed, rot.trials);
-  assert.equal(s.sequence.length, 48); assert.ok(s.interleaved);
+  assert.equal(s.sequence.length, 24); assert.ok(s.interleaved);
   assert.deepEqual(s.sequence.map(p => p.trial_id).sort(), rot.trials.map(t => t.id).sort());
 }
 const rotHtml = fs.readFileSync(path.join(APP, '2/index.html'), 'utf8');
@@ -209,7 +209,7 @@ for (const [label, cfg, t] of [['lines with edges', config, trials], ['similarit
   assert.ok(orders.size === 50 && sides.size === 50, label + ': different participants get different orders and sides');
 }
 assert.deepEqual([config.experiment.id, config.experiment.name, rotConfig.experiment.id, rotConfig.experiment.name], ['exp1-lines-with-edges', 'Lines with edges', 'exp2-similarity-with-rotation', 'Similarity with rotation']);
-assert.ok(!config.participant.requireCode && rotConfig.participant.requireCode, 'lines with edges (Prolific links) asks for no code; similarity with rotation still does');
+assert.ok(!config.participant.requireCode && !rotConfig.participant.requireCode, 'both studies are recruited through Prolific: no code is asked for');
 for (const good of ['12345678', '00000000']) assert.ok(new RegExp(config.participant.codePattern).test(good), good);
 for (const bad of ['', '1234567', '123456789', 'K7P3QM', '1234 5678', '=1234567']) assert.ok(!new RegExp(config.participant.codePattern).test(bad), 'rejects ' + JSON.stringify(bad));
 assert.equal(rotConfig.participant.codePattern, config.participant.codePattern);
@@ -254,7 +254,7 @@ assert.ok(!fs.existsSync(path.join(APP, 'index.html')) && !fs.existsSync(path.jo
 // Each study builds into its own publish folder with the shared runner beside it.
 const {execFileSync} = await import('node:child_process');
 const os = await import('node:os');
-for (const [study, nAssets] of [['1', 32], ['2', 57]]) {
+for (const [study, nAssets] of [['1', 32], ['2', 8]]) {
   const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'study-'));
   execFileSync('node', [path.join(APP, '../tools/build_site.mjs'), study, outDir]);
   for (const f of ['index.html', 'main.js', 'config.js', 'stimuli.js', 'shared/app.js', 'shared/design.js', 'shared/storage.js', 'shared/geometry.js', 'shared/style.css']) assert.ok(fs.existsSync(path.join(outDir, f)), `study ${study} build has ${f}`);
@@ -273,14 +273,14 @@ assert.ok(!html.includes('id="previous"') && !html.includes('id="next"'), 'no pr
 assert.ok(!html.includes('id="verification"') && !/no photo|about .* minutes/i.test(html), 'pilot text trimmed');
 // Study 1 asks for consent, age and gender, and shows the long instructions; study 2 does not (yet).
 assert.ok(config.study.consentPage && !config.study.demographics && Array.isArray(config.study.consentText) && config.study.consentText.length >= 2, 'study 1 consent on; age and gender come from Prolific');
-assert.ok(!rotConfig.study.consentPage && !rotConfig.study.demographics, 'study 2 unchanged');
+assert.ok(rotConfig.study.consentPage && !rotConfig.study.demographics, 'study 2: consent page, no age and gender');
 for (const h of [html, rotHtml]) assert.ok(h.includes('id="consent-page"') && h.includes('id="demographics"') && h.includes('name="gender" value="non-binary"') && h.includes('id="age"'), 'both pages carry the consent and demographics sections');
 assert.ok(html.includes('each featuring a reference object') && html.includes('press the <kbd>←</kbd> LEFT arrow') && html.includes('click on the comparison object') && html.includes('no right or wrong answers') && html.includes('instructions-large'), 'study 1 instructions text');
 assert.ok(config.study.consentText.join(' ').includes('consent to record your study data') && !config.study.consentText.join(' ').includes('arrow') && config.study.contactEmail === 'Amit.Gur@UAntwerpen.be', 'study 1 consent text');
 assert.ok(config.study.consentText[0].startsWith('By ticking the box below') && config.study.consentText.length === 2, 'the consent page carries the consent statement and the contact');
 assert.ok(config.study.minAge === 18 && config.study.consentVersion !== rotConfig.study.consentVersion || true);
 assert.ok(config.experiment.id && config.storage.localKey, 'experiment identified');
-console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (57 files, 48 questions, relations verified), randomisation in both, Supabase rows vs migration columns, physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');
+console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (8 drawings, 24 questions, relations verified), randomisation in both, Supabase rows vs migration columns, physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');
 
 // Preview variations: every variation's stimuli are complete and consistent.
 {

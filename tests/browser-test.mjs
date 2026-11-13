@@ -25,7 +25,7 @@ const sbPosts = []; // Supabase-style inserts: {table, query, apikey, auth, pref
 const configSource = fs.readFileSync(path.join(APP, '1/config.js'), 'utf8');
 const configSource2 = fs.readFileSync(path.join(APP, '2/config.js'), 'utf8');
 let configVariant2 = null; // study 2: null (deployed pilot config) or 'supabase'
-const configFor2 = () => { const c = configSource2.replace(/supabase: \{url: '[^']*', anonKey: '[^']*'/, `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`); assert.notEqual(c, configSource2); return c; };
+const configFor2 = () => { const c = configSource2.replace(/supabase: \{url: '[^']*', anonKey: '[^']*'/, `supabase: {url: '${base}supabase/', anonKey: 'test-anon-key'`).replace('requireCode: false', 'requireCode: true'); assert.notEqual(c, configSource2); return c; }; // study 2 run keeps exercising the typed code
 // Variants: 'supabase' (deployed settings with the download buttons, code
 // and session memory on, pointed at this server's fake Supabase), 'netlify'
 // (Netlify Forms mode, for the failure path), 'deployed' (exactly the
@@ -352,13 +352,13 @@ assert.equal(sbPosts.length, before + 2, 'a confirmed save is not re-sent on the
 assert.equal((await page3.evaluate(() => lineSimilarityState())).mode, 'information', 'a pilot visit always starts afresh');
 assert.notEqual((await page3.evaluate(() => lineSimilarityState())).session_id, pilotSaved.session_id);
 
-// Experiment 2: 48 questions, 41.33 mm images, and registration into its own tables.
+// Experiment 2: 24 questions, 42.64 mm images, consent page, and registration into its own tables.
 configVariant2 = 'supabase';
 const sbBefore = sbPosts.length;
 const page4 = await pilot.newPage();
 page4.on('pageerror', e => errors.push(String(e)));
 await page4.goto(base + '2/?reset=1');
-// Study 2 (no Prolific): without an id in the link a code is required before continuing.
+// With requireCode on (test variant): without an id in the link a code is required before continuing.
 assert.ok(await page4.isVisible('#code-row'));
 assert.ok(await page4.isDisabled('#begin'));
 assert.ok((await page4.textContent('#code-row')).includes('make up an 8-digit number'));
@@ -369,30 +369,32 @@ assert.ok(await page4.isDisabled('#begin'), 'letters are not a valid code');
 await page4.fill('#participant-code', ' 12345678 ');
 assert.ok(!(await page4.isDisabled('#begin')));
 await page4.click('#begin');
-assert.equal((await page4.evaluate(() => lineSimilarityState())).mode, 'calibration', 'study 2 has no consent or demographics pages');
+assert.equal((await page4.evaluate(() => lineSimilarityState())).mode, 'consent-page', 'study 2 has a consent page');
+await page4.check('#consent-agree'); await page4.click('#consent-continue');
+assert.equal((await page4.evaluate(() => lineSimilarityState())).mode, 'calibration', 'study 2 has no demographics page');
 await page4.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page4.click('#confirm-card');
 await page4.waitForSelector('#start:not([disabled])'); await page4.click('#start');
 await page4.waitForFunction(() => lineSimilarityState().ready);
 const s4 = await page4.evaluate(() => lineSimilarityState());
-assert.equal(s4.total, 48); assert.ok(['sub', 'whole', 'shape'].includes(s4.presentation.left_condition));
+assert.equal(s4.total, 24); assert.ok(['sub', 'whole', 'shape'].includes(s4.presentation.left_condition));
 const objs4 = await page4.$$eval('#stage .object', els => els.map(e => ({w: e.getBoundingClientRect().width, src: e.querySelector('img').currentSrc})));
 assert.equal(objs4.length, 3);
-for (const o of objs4) { assert.ok(Math.abs(o.w - 41.33 * ppmm) < .1); assert.ok(/\/2\/assets\/S\d{3}\.svg$/.test(o.src), o.src); }
+for (const o of objs4) { assert.ok(Math.abs(o.w - 42.64 * ppmm) < .1); assert.ok(/\/2\/assets\/S\d{3}\.svg$/.test(o.src), o.src); }
 if (shots) await page4.screenshot({path: path.join(shots, 'rotation-trial-1.png')});
-for (let i = 0; i < 48; i++) { await page4.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page4.keyboard.press(i % 3 ? 'ArrowLeft' : 'ArrowRight'); }
+for (let i = 0; i < 24; i++) { await page4.waitForFunction(n => lineSimilarityState().ready && lineSimilarityState().completed === n, i); await page4.keyboard.press(i % 3 ? 'ArrowLeft' : 'ArrowRight'); }
 await page4.waitForFunction(() => lineSimilarityState().mode === 'complete' && lineSimilarityState().submitted, null, {timeout: 60000})
   .catch(async e => { throw new Error('study 2 completion wait failed: state=' + JSON.stringify(await page4.evaluate(() => lineSimilarityState())) + ' status="' + await page4.textContent('#submit-status') + '" sbPosts=' + JSON.stringify(sbPosts.slice(sbBefore).map(p => [p.table, p.rows.length])) + ' ' + e.message); });
-assert.equal((await page4.evaluate(() => document.getElementById('complete').innerText)).replace(/\s+/g, ' ').trim(), 'FINISHED Thank you.');
+assert.ok((await page4.evaluate(() => document.getElementById('complete').innerText)).includes('redirected to Prolific'));
 const rotSaved = await page4.evaluate(() => JSON.parse(localStorage.getItem('line-similarity:rotation:session:v1')));
-assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.experiment_name, 'Similarity with rotation'); assert.equal(rotSaved.trials.length, 48);
+assert.equal(rotSaved.experiment_id, 'exp2-similarity-with-rotation'); assert.equal(rotSaved.experiment_name, 'Similarity with rotation'); assert.equal(rotSaved.trials.length, 24);
 assert.equal(rotSaved.submissions.at(-1).status, 'supabase'); assert.equal(rotSaved.submissions.at(-1).ok, true);
 const rotPosts = sbPosts.slice(sbBefore);
 assert.deepEqual(rotPosts.map(p => p.table), ['similarity_with_rotation_sessions', 'similarity_with_rotation_trials'], 'study 2 writes to its own tables');
-assert.equal(rotPosts[0].rows[0].submitted_status, 'complete'); assert.equal(rotPosts[0].rows[0].trials_completed, 48); assert.equal(rotPosts[0].rows[0].experiment_name, 'Similarity with rotation'); assert.equal(rotPosts[0].rows[0].participant_id, '12345678');
-assert.equal(rotPosts[1].rows.length, 48);
+assert.equal(rotPosts[0].rows[0].submitted_status, 'complete'); assert.equal(rotPosts[0].rows[0].trials_completed, 24); assert.equal(rotPosts[0].rows[0].experiment_name, 'Similarity with rotation'); assert.equal(rotPosts[0].rows[0].participant_id, '12345678');
+assert.equal(rotPosts[1].rows.length, 24);
 assert.ok(rotPosts[1].rows.every(r => ['sub', 'whole', 'shape'].includes(r.chosen_condition) && r.family_name && r.reaction_time_ms > 0 && r.participant_id === '12345678' && r.experiment_id === 'exp2-similarity-with-rotation'));
-assert.equal(new Set(rotPosts[1].rows.map(r => r.trial_id)).size, 48, 'every one of the 48 questions answered once');
+assert.equal(new Set(rotPosts[1].rows.map(r => r.trial_id)).size, 24, 'every one of the 24 questions answered once');
 configVariant2 = null;
 assert.equal(rotSaved.participant_id, '12345678', 'typed code is trimmed'); assert.equal(rotSaved.participant_id_source, 'typed');
 assert.ok(rotSaved.design.randomizeTrialOrder && rotSaved.design.sideAssignment === 'random' && rotSaved.design.controlPosition === 'random');
@@ -415,12 +417,13 @@ page5.on('pageerror', e => errors.push(String(e)));
 await page5.goto(`http://127.0.0.1:${server2.address().port}/?pid=BUILT1`);
 assert.equal(await page5.textContent('#study-title'), 'Similarity judgment');
 await page5.click('#begin');
+await page5.check('#consent-agree'); await page5.click('#consent-continue');
 await page5.evaluate(w => { const r = document.getElementById('card-size'); r.value = w; r.dispatchEvent(new Event('input')); }, 85.6 * target);
 await page5.click('#confirm-card');
 await page5.waitForSelector('#start:not([disabled])'); await page5.click('#start');
 await page5.waitForFunction(() => lineSimilarityState().ready);
 const s5 = await page5.evaluate(() => lineSimilarityState());
-assert.equal(s5.total, 48); assert.equal(s5.participant_id, 'BUILT1');
+assert.equal(s5.total, 24); assert.equal(s5.participant_id, 'BUILT1');
 const srcs5 = await page5.$$eval('#stage img', els => els.map(e => new URL(e.currentSrc).pathname));
 assert.ok(srcs5.length === 3 && srcs5.every(p => /^\/assets\/S\d{3}\.svg$/.test(p)), 'a built study serves its assets at the root: ' + srcs5.join());
 server2.close(); fs.rmSync(built, {recursive: true, force: true});

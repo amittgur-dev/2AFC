@@ -11,7 +11,7 @@ export const config = {
   // protocolVersion, stimulusSetVersion, layoutVersion and the whole `design`
   // block match; otherwise a fresh session starts.
   protocolVersion: '2026-10-06-v1',
-  stimulusSetVersion: 'exp2-similarity-with-rotation-v2',
+  stimulusSetVersion: 'squares-diamonds-2026-10-31',
   layoutVersion: '2026-10-07-unit-lines-v2',
 
   study: {
@@ -19,22 +19,21 @@ export const config = {
     // Shown on the information/consent page. Fill these in before recruiting.
     institution: '',
     researcher: '',
-    contactEmail: '',
+    contactEmail: 'Amit.Gur@UAntwerpen.be',
     ethicsReference: '',
-    durationMinutes: 5,
+    durationMinutes: 3,
     // DECISION: the pilot uses a plain Continue button. Set true to require an
     // "I agree to take part" checkbox before continuing.
     requireConsentCheckbox: false,
     // DECISION: a separate consent page with the text below and an "I agree"
     // checkbox before anything else (consentPage), and an age and gender page
     // (demographics) before calibration.
-    consentPage: false,
+    consentPage: true,
     consentText: [
-      'You are invited to take part in a study on visual perception. You will see a series of screens, each showing a reference object and two comparison objects, and on each screen you choose which comparison object looks more similar to the reference. The study takes about DURATION minutes.',
-      'Taking part is voluntary. You can stop at any time by closing the page, without giving a reason and without any disadvantage.',
-      'The study records your choices and how long each takes, your age and gender, your screen calibration and technical details of your display and browser. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
-      'There are no known risks. If you have questions about the study, CONTACT',
+      'By ticking the box below, you give the researchers your consent to record your study data. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
+      'There are no known risks. If you have questions about the study, please contact Amit.Gur@UAntwerpen.be',
     ],
+    // Age and gender come from Prolific, so the page is off.
     demographics: false,
     minAge: 18,
     maxAge: 120,
@@ -83,7 +82,10 @@ export const config = {
     // No list ties codes to people unless they tell you their code. Set
     // false to allow anonymous runs. (Links made by
     // tools/make_participant_links.py carry the code and skip the question.)
-    requireCode: true,
+    // Participants are recruited through Prolific, whose link carries
+    // PROLIFIC_PID, so no code is asked for (false). Set true to ask for an
+    // 8-digit code when the link carries no identifier.
+    requireCode: false,
     // Accepted code pattern for a typed code: exactly 8 digits.
     codePattern: '^[0-9]{8}$',
     // Additional URL parameters copied verbatim into the session record.
@@ -124,6 +126,10 @@ export const config = {
     code: '',
     // If set, a link/redirect offered after submission (e.g. a Prolific
     // completion URL). Leave empty for none.
+    // Prolific completion URL, e.g. 'https://app.prolific.com/submissions/complete?cc=XXXXXXXX'
+    // (the completion code from the Prolific study page). The final page
+    // redirects there after redirectDelayMs once the responses are saved.
     redirectUrl: '',
+    redirectDelayMs: 5000,
   },
 };

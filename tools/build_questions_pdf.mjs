@@ -7,7 +7,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const exp = process.argv[2] ?? '1';
-const DATA = {'1': 'data', '2': 'data/rotation'}[exp];
+const DATA = {'1': 'data', '2': 'data/preview/squares-diamonds'}[exp];
 if (!DATA) throw new Error('experiment must be 1 or 2');
 const SITE = path.join(ROOT, 'site', exp);
 const {assets, trials} = await import(path.join(SITE, 'stimuli.js'));

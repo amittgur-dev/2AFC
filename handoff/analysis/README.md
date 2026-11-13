@@ -16,9 +16,9 @@ the `examples/` rows were produced by an automated browser.
 | Name (internal) | Lines with edges | Similarity with rotation |
 | `experiment_id` in the data | `exp1-lines-with-edges` | `exp2-similarity-with-rotation` |
 | Study site | https://2afc-study-1.netlify.app/ | https://2afc-study-2.netlify.app/ |
-| Screens per participant | 19 | 48 |
+| Screens per participant | 19 | 24 |
 | Supabase tables | `lines_with_edges_sessions`, `lines_with_edges_trials` (view `lines_with_edges_latest_sessions`) | `similarity_with_rotation_sessions`, `similarity_with_rotation_trials` (view `similarity_with_rotation_latest_sessions`) |
-| Extra pages | consent, age and gender, instructions | none (pilot: one-line instructions) |
+| Extra pages | consent, instructions | consent, instructions |
 
 Both are two-alternative forced-choice (2AFC) similarity tasks: a reference
 object A at the top of the screen, two comparison objects B (left) and C
@@ -102,8 +102,8 @@ previews/                       screenshots of the first page, calibration, inst
   screen; 500 ms blank between screens.
 - **Interrupted screens were re-presented** (`attempts > 1`, `interruptions`
   non-empty) with timing restarted; decide whether to keep them.
-- **Age and gender exist only in experiment 1** (`age`, `gender`: `male`,
-  `female`, `non-binary`).
+- **Age and gender** were asked only in experiment 1's pilot (`age`, `gender`); the
+  Prolific runs of both experiments do not ask them (Prolific supplies them).
 - Rows created before the study links were sent to colleagues (14 October
   2026) are the researcher's own test runs; the Lines tables were to be
   emptied before dissemination. Check `created_at` and the participant codes.

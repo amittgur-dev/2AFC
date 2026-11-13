@@ -95,19 +95,22 @@ runner is identical, the data sets are directly comparable.
 
 ### Experiment 2: Similarity with rotation (`site/2/`)
 
-Built from the designer's handoff of 2026-10-07 (`data/rotation/handoff-*`,
-57 SVGs). Sixteen handoff questions each have a reference and three
-comparisons that differ from it by a 45° rotation of the sub-shapes only
-(`sub`), of the whole object (`whole`) or of the base shape only (`shape`);
-the relation is computed from each stimulus's base/sub-shape rotation, not
-from the handoff's B/C/D letters. Each question yields three 2AFC screens
-(sub vs whole, sub vs shape, whole vs shape): 48 in all, interleaved like
-experiment 1, no control question. Every image is the handoff's 512 px square
-shown at 41.33 mm (the designer's calibrated size), centred on the rotation
-centre so the three objects align; the fill was normalised from #111 to pure
-black. `python3 tools/build_rotation_stimuli.py` regenerates
-`site/2/stimuli.js`, the assets and `data/rotation/{stimuli,comparisons}.csv`;
-`npm run build:pdf:rotation` makes `data/rotation/questions-by-reference.pdf`.
+Runs the squares-and-diamonds set from the designer's handoff of 31 October
+2026 (`data/preview/squares-diamonds/handoff`, 8 drawings): 8 references,
+four 4 x 4 textures of small squares and four figures of four larger
+squares, each with three comparisons that differ by a 45° rotation of the
+sub-shapes (`sub`), of the whole object (`whole`) or of the global shape
+(`shape`). Each reference yields three 2AFC screens in the handoff's pair
+order: 24 in all, interleaved, sides random, no control question. Every
+image is a 42.64 mm square centred on its rotation centre. The pages are
+the same as experiment 1's (welcome, consent, calibration, instructions,
+Prolific return), without the age and gender page. `site/2/stimuli.js` and
+`site/2/assets/` are the output of `tools/build_variation.py` for that set;
+`npm run build:pdf:rotation` makes
+`data/preview/squares-diamonds/questions-by-reference.pdf`. The earlier
+48-screen set with triangles (`data/rotation/`, stimulus set
+`exp2-similarity-with-rotation-v2`) is kept for the pilot data recorded
+with it.
 
 ## Participant flow
 

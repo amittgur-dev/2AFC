@@ -3,9 +3,10 @@
 a participant sees, in order, with a short note only where a screen is not
 self-explanatory, plus the participant information and consent page.
 
-Usage: python3 tools/build_methodology_pdf.py <screens-dir> [output.pdf]
+Usage: python3 tools/build_methodology_pdf.py <screens-dir> [study] [output.pdf]
 The screenshots come from tools/screenshot_methodology.mjs.
 """
+import datetime
 import glob
 import os
 import sys
@@ -20,7 +21,10 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph
 
 screens = sys.argv[1]
-out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs', 'Experiment Methodology.pdf')
+study = sys.argv[2] if len(sys.argv) > 2 else '1'
+STUDIES = {'1': ('Lines with edges', 19, 'Experiment Methodology.pdf', '0.1'), '2': ('Similarity with rotation', 24, 'Experiment Methodology - Similarity with rotation.pdf', '1.1')}
+study_name, n_screens, default_name, example_trial = STUDIES[study]  # example: the plain-line control / the square of squares
+out = sys.argv[3] if len(sys.argv) > 3 else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs', default_name)
 pdfmetrics.registerFont(TTFont('Sans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
 pdfmetrics.registerFont(TTFont('Sans-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'))
 
@@ -49,31 +53,31 @@ PAGES = [
      shot('04b-calibration-matched.png')),
     ('4. Instructions', None, shot('05-instructions.png')),
     ('5. Similarity judgement question (example)',
-     'One of the 19 screens, which are presented in random order. The participant chooses B or C by clicking it or by pressing the left or right arrow key. '
+     f'One of the {n_screens} screens, which are presented in random order. The participant chooses B or C by clicking it or by pressing the left or right arrow key. '
      'There is no time limit and no feedback.',
-     shot('06-trial-*-0.1-*.png')),
+     shot(f'06-trial-*-{example_trial}-*.png')),
     ('6. End', None, shot('07-finished.png')),
 ]
 
 c = canvas.Canvas(out, pagesize=PAGE)
 c.setTitle('Experiment Methodology')
 c.setAuthor('Amit Gur, Ivana Bianchi')
-c.setSubject('Similarity judgement: an online two-alternative forced-choice experiment')
+c.setSubject(f'Similarity judgement ({study_name}): an online two-alternative forced-choice experiment')
 
 # Title page.
 c.setFillColor(INK)
 c.setFont('Sans-Bold', 30)
 c.drawString(M, H - 110, 'Experiment Methodology')
 c.setFont('Sans', 14)
-c.drawString(M, H - 140, 'Similarity judgement: an online two-alternative forced-choice experiment')
+c.drawString(M, H - 140, f'Similarity judgement ({study_name}): an online two-alternative forced-choice experiment')
 c.setFont('Sans', 11)
 c.setFillColor(GREY)
-c.drawString(M, H - 162, 'Amit Gur, University of Antwerp  ·  Ivana Bianchi, University of Macerata  ·  October 2026')
+c.drawString(M, H - 162, 'Amit Gur, University of Antwerp  ·  Ivana Bianchi, University of Macerata  ·  ' + datetime.date.today().strftime('%B %Y'))
 c.setFillColor(INK)
 body = ParagraphStyle('body', fontName='Sans', fontSize=11, leading=16, textColor=INK)
 intro = Paragraph('This document shows every page a participant sees, in the order in which the pages appear. '
                   'The experiment runs in the participant\'s own web browser and takes 1 to 3 minutes. '
-                  'Pages 1 to 4 are shown once; page 5 is repeated for each of the 19 questions.', body)
+                  f'Pages 1 to 4 are shown once; page 5 is repeated for each of the {n_screens} questions.', body)
 w, h = intro.wrap(W - 2 * M - 200, H)
 intro.drawOn(c, M, H - 200 - h)
 y = H - 215 - h

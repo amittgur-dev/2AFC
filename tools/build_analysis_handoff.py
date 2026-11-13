@@ -90,7 +90,7 @@ assets2 = js_object(root / 'site/2/stimuli.js', 'assets')
 trials2 = js_object(root / 'site/2/stimuli.js', 'trials')
 names = {t['family']: (t['name'], t['group']) for t in trials2}
 with (dest / e2 / 'assets.csv').open('w', newline='') as f:
-    cols = ['asset_id', 'question', 'question_name', 'group', 'variant', 'relation_to_reference', 'description', 'stimulus', 'file', 'shape', 'sub_shape', 'density',
+    cols = ['asset_id', 'question', 'question_name', 'group', 'variant', 'relation_to_reference', 'description', 'stimulus', 'file', 'shape', 'sub_shape', 'arrangement', 'element_count',
             'base_rotation', 'sub_rotation', 'base_rotation_delta', 'sub_rotation_delta', 'frame', 'figure_width_mm', 'figure_height_mm', 'image_width_mm', 'image_height_mm']
     w = csv.DictWriter(f, fieldnames=cols)
     w.writeheader()
@@ -99,14 +99,15 @@ with (dest / e2 / 'assets.csv').open('w', newline='') as f:
         q = int(asset_id.split('-')[0])
         w.writerow({'asset_id': asset_id, 'question': q, 'question_name': names[q][0], 'group': names[q][1], 'variant': asset_id.split('-')[1],
                     'relation_to_reference': a['relationToReference'], 'description': a['description'], 'stimulus': a['stimulus'], 'file': 'assets/' + Path(a['src']).name,
-                    'shape': a['shape'], 'sub_shape': a['sub'], 'density': a['density'], 'base_rotation': a['baseRot'], 'sub_rotation': a['subRot'],
-                    'base_rotation_delta': a['baseRotationDelta'], 'sub_rotation_delta': a['subRotationDelta'], 'frame': a['frame'],
+                    'shape': a['shape'], 'sub_shape': a['sub'], 'arrangement': a['arrangement'], 'element_count': a['elementCount'], 'base_rotation': a['baseRot'], 'sub_rotation': a['subRot'],
+                    'base_rotation_delta': a.get('baseRotationDelta', 0), 'sub_rotation_delta': a.get('subRotationDelta', 0), 'frame': a['frame'],
                     'figure_width_mm': a['figureWidthMm'], 'figure_height_mm': a['figureHeightMm'], 'image_width_mm': a['widthMm'], 'image_height_mm': a['heightMm']})
-copy(root / 'data/rotation/stimuli.csv', e2 + 'stimuli.csv')
-copy(root / 'data/rotation/comparisons.csv', e2 + 'comparisons.csv')
-copy(root / 'data/rotation/handoff-manifest.csv', e2 + 'designer-manifest.csv')
-copy(root / 'data/rotation/handoff-README.txt', e2 + 'designer-README.txt')
-copy(root / 'data/rotation/questions-by-reference.pdf', e2 + 'questions-by-reference.pdf')
+copy(root / 'data/preview/squares-diamonds/stimuli.csv', e2 + 'stimuli.csv')
+copy(root / 'data/preview/squares-diamonds/comparisons.csv', e2 + 'comparisons.csv')
+copy(root / 'data/preview/squares-diamonds/handoff/stimuli.csv', e2 + 'designer-stimuli.csv')
+copy(root / 'data/preview/squares-diamonds/handoff/questions.csv', e2 + 'designer-questions.csv')
+copy(root / 'data/preview/squares-diamonds/handoff/README.txt', e2 + 'designer-README.txt')
+copy(root / 'data/preview/squares-diamonds/questions-by-reference.pdf', e2 + 'questions-by-reference.pdf')
 
 # Zip it.
 out.mkdir(parents=True, exist_ok=True)

@@ -12,19 +12,21 @@
   <main id="app">
 
     <section id="information" class="setup">
-      <p class="eyebrow">PILOT STUDY</p>
-      <h1 id="study-title">Similarity judgment</h1>
+      <h1 id="study-title" hidden>Similarity judgment</h1>
       <p id="resume-notice" class="notice" role="status" hidden></p>
-      <p>You will see a reference object (<strong>A</strong>) and two comparison objects (<strong>B</strong> and <strong>C</strong>). Choose which comparison object looks most similar to A.</p>
-      <p id="contact-line"></p>
+      <p>This is a study in visual perception. You will see a series of images, each featuring a reference object (<strong>A</strong>) at the top and two comparison objects (<strong>B</strong> and <strong>C</strong>) below it. Your task is to decide which of the two comparison objects is most similar to the reference object. This is a perception task, not an intelligence test, and your answers will help us understand which stimuli appear more similar to human beings than others. There are no right or wrong answers, so simply rely on your first visual impression.</p>
+      <p>The data will be treated anonymously.</p>
+      <p>Before you start, if you agree to participate, you will be asked to give your consent and go through a quick calibration procedure to ensure that you see the images on your screen at a standard size.</p>
+      <p>The experiment will only take 1–3 minutes.</p>
       <span id="pid-note" hidden></span><span id="duration" hidden></span>
       <p id="storage-note" class="notice" role="status"></p>
       <label class="consent" id="consent-row" hidden><input type="checkbox" id="consent"> I agree to take part.</label>
       <div id="code-row" hidden>
-        <p>Please make up an 8-digit number as your participant code.</p>
+        <p>Before we begin, please make up an 8-digit number as your participant code.</p>
         <label class="code-row">Participant code <input id="participant-code" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="12" placeholder="8 digits"></label>
       </div>
       <div class="actions"><button id="begin" class="primary">Continue</button></div>
+      <p id="contact-line"></p>
       <p class="hint" id="version-line" hidden></p>
     </section>
 
@@ -64,10 +66,12 @@
       <details><summary>About physical size</summary><p>The outline represents a standard <a href="https://www.iso.org/standard/31432.html" target="_blank" rel="noopener">85.60 × 53.98 mm card</a>. The match determines pixels per millimetre for this screen so that the objects appear at their intended physical size. Recalibrate after changing screen or zoom.</p></details>
     </section>
 
-    <section id="instructions" class="setup" hidden>
+    <section id="instructions" class="setup instructions-large" hidden>
       <p class="eyebrow">INSTRUCTIONS</p>
-      <h1>Which is more similar to A?</h1>
-      <p>Click <strong>B</strong> or <strong>C</strong>, or press <kbd>←</kbd> for B and <kbd>→</kbd> for C. Each choice is final. <span id="trial-count">19</span> screens.</p>
+      <p>You will see a series of <span id="trial-count">19</span> screens, each featuring a reference object (<strong>A</strong>) and two comparison objects (<strong>B</strong> and <strong>C</strong>). Your task is to decide which of the comparison objects is most similar to the reference.</p>
+      <p>To choose B, press the <kbd>←</kbd> LEFT arrow; to choose C, press the <kbd>→</kbd> RIGHT arrow. Alternatively, you can use the mouse to click on the comparison object.</p>
+      <p>There are no right or wrong answers — just follow your visual impression.</p>
+      <p>The experiment lasts 1 to 3 minutes.</p>
       <p id="instructions-notice" class="notice" role="status"></p>
       <p id="preload-status" class="hint" role="status"></p>
       <div class="actions"><button id="start" class="primary">Start</button><button class="fullscreen">Full screen</button><button id="adjust-again">Adjust calibration</button></div>
@@ -82,7 +86,9 @@
 
     <section id="complete" class="setup" hidden>
       <p class="eyebrow">FINISHED</p>
-      <h1 id="complete-title">Thank you.</h1>
+      <h1 id="complete-title">Thank you for taking part in the experiment and helping us in our study.</h1>
+      <p>For questions, you can email Amit.Gur@UAntwerpen.be.</p>
+      <p id="redirect-note" hidden>Please remain on this screen — in a few seconds you will be redirected to Prolific.</p>
       <p id="submit-status" role="status"></p>
       <p id="completion-code" hidden></p>
       <div class="actions">
