@@ -22,7 +22,7 @@ from reportlab.platypus import Paragraph
 
 screens = sys.argv[1]
 study = sys.argv[2] if len(sys.argv) > 2 else '1'
-STUDIES = {'1': ('Lines with edges', 19, 'Experiment Methodology.pdf', '0.1'), '2': ('Similarity with rotation', 24, 'Experiment Methodology - Similarity with rotation.pdf', '1.1')}
+STUDIES = {'1': ('Lines with edges', 19, 'Methodology - Lines with edges.pdf', '0.1'), '2': ('Similarity with rotation', 24, 'Methodology - Similarity with rotation.pdf', '1.1')}
 study_name, n_screens, default_name, example_trial = STUDIES[study]  # example: the plain-line control / the square of squares
 out = sys.argv[3] if len(sys.argv) > 3 else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs', default_name)
 pdfmetrics.registerFont(TTFont('Sans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
@@ -45,7 +45,7 @@ def shot(pattern):
 
 PAGES = [
     ('1. Welcome page', None, shot('01-first-page.png')),
-    ('2. Participant information and consent', None, shot('02-consent-information.png')),
+    ('2. Participant information and consent', 'The text of this page is submitted separately as the informed consent document.', shot('02-consent-information.png')),
     ('3. Screen calibration',
      'The participant holds a bank card against the screen and adjusts the outline until it matches the card. '
      'This tells the program the size of a pixel on that screen, so that the objects in the experiment are shown at their true physical size. '
@@ -60,14 +60,14 @@ PAGES = [
 ]
 
 c = canvas.Canvas(out, pagesize=PAGE)
-c.setTitle('Experiment Methodology')
+c.setTitle(f'Methodology - {study_name}')
 c.setAuthor('Amit Gur, Ivana Bianchi')
 c.setSubject(f'Similarity judgement ({study_name}): an online two-alternative forced-choice experiment')
 
 # Title page.
 c.setFillColor(INK)
 c.setFont('Sans-Bold', 30)
-c.drawString(M, H - 110, 'Experiment Methodology')
+c.drawString(M, H - 110, 'Methodology of the study')
 c.setFont('Sans', 14)
 c.drawString(M, H - 140, f'Similarity judgement ({study_name}): an online two-alternative forced-choice experiment')
 c.setFont('Sans', 11)
