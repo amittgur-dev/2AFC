@@ -47,7 +47,7 @@ PAGES = [
     ('1. Welcome page', None, shot('01-first-page.png')),
     ('2. Participant information and consent', 'The text of this page is submitted separately as the informed consent document.', shot('02-consent-information.png')),
     ('3. Screen calibration',
-     'The participant holds a bank card against the screen and adjusts the outline until it matches the card. '
+     'The participant holds a card of the standard ID-card size (an ID or bank card) against the screen and adjusts the outline until it matches the card. '
      'This tells the program the size of a pixel on that screen, so that the objects in the experiment are shown at their true physical size. '
      'Nothing about the card is recorded.',
      shot('04b-calibration-matched.png')),
