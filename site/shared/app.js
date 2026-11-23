@@ -448,9 +448,17 @@ function nextIntroStep() {
 function renderConsent() {
   const contact = [config.study.researcher, config.study.institution].filter(Boolean).join(', ');
   const who = contact ? 'please contact ' + contact + (config.study.contactEmail ? ' at ' + config.study.contactEmail : '') + '.' : config.study.contactEmail ? 'please contact ' + config.study.contactEmail + '.' : 'please contact the researcher who sent you this link.';
-  $('consent-text').replaceChildren(...(config.study.consentText ?? []).map(text => {
+  const fill = text => text.replace('DURATION', String(config.study.durationMinutes)).replace('COUNT', String(session.sequence.length)).replace('CONTACT', who);
+  $('consent-text').replaceChildren(...(config.study.consentText ?? []).map(item => {
     const p = document.createElement('p');
-    p.textContent = text.replace('DURATION', String(config.study.durationMinutes)).replace('COUNT', String(session.sequence.length)).replace('CONTACT', who);
+    if (typeof item === 'string') { p.textContent = fill(item); return p; }
+    // {title, text, highlight}: a bold lead-in, and a phrase set off in red (e.g. a pending ethics reference).
+    const b = document.createElement('strong'); b.textContent = item.title + '. ';
+    p.append(b);
+    const text = fill(item.text);
+    const at = item.highlight ? text.indexOf(item.highlight) : -1;
+    if (at < 0) p.append(text);
+    else { const mark = document.createElement('span'); mark.className = 'highlight'; mark.textContent = item.highlight; p.append(text.slice(0, at), mark, text.slice(at + item.highlight.length)); }
     return p;
   }));
   $('consent-agree').checked = false; $('consent-continue').disabled = true;

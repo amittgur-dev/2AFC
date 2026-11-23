@@ -95,8 +95,9 @@ await page.click('#begin');
 // Consent page: text from the config, Continue only after agreeing.
 assert.equal((await state()).mode, 'consent-page');
 const consentText = await page.textContent('#consent-text');
-assert.ok(consentText.startsWith('By ticking the box below') && consentText.includes('consent to record your study data') && consentText.includes('Amit.Gur@UAntwerpen.be') && !consentText.includes('Amit.Gur@UAntwerpen.be.') && !consentText.includes('19 images') && !consentText.includes('minutes'), consentText.slice(0, 200));
-assert.equal(await page.textContent('#consent-page h1'), 'Consent');
+assert.ok(consentText.startsWith('You are invited to take part') && consentText.includes('kept for 10 years') && consentText.includes('already given can still be used') && consentText.includes('Amit.Gur@UAntwerpen.be') && !consentText.includes('Amit.Gur@UAntwerpen.be..'), consentText.slice(0, 200));
+assert.equal(await page.$eval('#consent-text .highlight', e => e.textContent), '(PENDING APPROVAL – reference number and date will be added later)');
+assert.equal(await page.textContent('#consent-page h1'), 'Participant information and consent');
 assert.ok(await page.isDisabled('#consent-continue'));
 await page.check('#consent-agree'); await page.click('#consent-continue');
 // Age and gender, both required, age at least 18.

@@ -276,8 +276,15 @@ assert.ok(config.study.consentPage && !config.study.demographics && Array.isArra
 assert.ok(rotConfig.study.consentPage && !rotConfig.study.demographics, 'study 2: consent page, no age and gender');
 for (const h of [html, rotHtml]) assert.ok(h.includes('id="consent-page"') && h.includes('id="demographics"') && h.includes('name="gender" value="non-binary"') && h.includes('id="age"'), 'both pages carry the consent and demographics sections');
 assert.ok(html.includes('each featuring a reference object') && html.includes('press the <kbd>←</kbd> LEFT arrow') && html.includes('click on the comparison object') && html.includes('no right or wrong answers') && html.includes('instructions-large'), 'study 1 instructions text');
-assert.ok(config.study.consentText.join(' ').includes('consent to record your study data') && !config.study.consentText.join(' ').includes('arrow') && config.study.contactEmail === 'Amit.Gur@UAntwerpen.be', 'study 1 consent text');
-assert.ok(config.study.consentText[0].startsWith('By ticking the box below') && config.study.consentText.length === 2, 'the consent page carries the consent statement and the contact');
+const consentWords = cfg => cfg.study.consentText.map(i => typeof i === 'string' ? i : i.title + '. ' + i.text).join(' ');
+for (const [label, cfg] of [['study 1', config], ['study 2', rotConfig]]) {
+  const words = consentWords(cfg);
+  assert.ok(cfg.study.consentText[0].startsWith('You are invited to take part') && cfg.study.consentText.length === 9, label + ': information and consent items');
+  for (const phrase of ['kept for 10 years', 'responses you have already given can still be used', 'Prolific participant number', 'secure, password-protected database', 'PENDING APPROVAL', 'Amit.Gur@UAntwerpen.be', 'no known risks', 'stop at any moment']) assert.ok(words.includes(phrase), label + ': consent mentions "' + phrase + '"');
+  assert.ok(!words.includes('arrow key') || words.includes('right arrow key'));
+  assert.equal(cfg.study.contactEmail, 'Amit.Gur@UAntwerpen.be');
+}
+assert.ok(consentWords(config).includes('19 screens') && consentWords(rotConfig).includes('24 screens'));
 assert.ok(config.study.minAge === 18 && config.study.consentVersion !== rotConfig.study.consentVersion || true);
 assert.ok(config.experiment.id && config.storage.localKey, 'experiment identified');
 console.log('Passed: experiment 1 (32 assets, 19 questions) and experiment 2 (8 drawings, 24 questions, relations verified), randomisation in both, Supabase rows vs migration columns, physical bounds in both left/right orders, interleaved sequences over 300 seeds (also across repetitions), design validation, zoom detection, CSV export and neutralisation, compact beacon record, Netlify form fields.');

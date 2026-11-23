@@ -91,6 +91,7 @@ assert.equal(await zoomed.evaluate(() => lineSimilarityState().mode), 'calibrati
 const study = await context.newPage();
 await study.goto(`http://127.0.0.1:${server.address().port}/?reset=1&pid=PREVIEWTEST`);
 await study.click('#begin');
+if (await study.isVisible('#consent-page')) { await study.check('#consent-agree'); await study.click('#consent-continue'); }
 assert.equal(await study.evaluate(() => lineSimilarityState().mode), 'calibration', 'the rotation study still calibrates');
 
 await browser.close(); server.close();

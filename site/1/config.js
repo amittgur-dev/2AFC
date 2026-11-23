@@ -30,14 +30,21 @@ export const config = {
     // (demographics) before calibration.
     consentPage: true,
     consentText: [
-      'By ticking the box below, you give the researchers your consent to record your study data. Your data are stored under a code, not your name, on a secure database, and are used for research purposes only.',
-      'There are no known risks. If you have questions about the study, please contact Amit.Gur@UAntwerpen.be',
+      'You are invited to take part in a scientific study on visual perception, conducted by Amit Gur and Ivana Bianchi, University of Antwerp and University of Macerata. Please read the following before deciding to participate.',
+      {title: 'What you will do', text: 'You will see a series of 19 screens, each showing a reference object (A) and two comparison objects (B and C). On each screen, you decide which of the two comparison objects is most similar to the reference, by pressing the left or right arrow key or by clicking on the object. There are no right or wrong answers; just follow your visual impression. Before the task, you will be asked to match an outline on the screen to an ID card so that the objects are shown at their true size. The whole experiment takes 1 to 3 minutes.'},
+      {title: 'Voluntary participation', text: 'Taking part is entirely voluntary. You may stop at any moment by closing this window, without giving a reason and without any disadvantage. If you stop before the end, the responses you have already given can still be used in the data analysis, because they cannot be traced back to you.'},
+      {title: 'Anonymity', text: 'No identifying information is collected: no name, e-mail address or IP address is stored. Your responses, your reaction times and technical details of your screen and browser are stored under your Prolific participant number only, which contains no personal details and is removed from the dataset before publication.'},
+      {title: 'Data storage and retention', text: 'The data are stored on a secure, password-protected database to which only the researchers have access. They will be kept for 10 years after the end of the study and then deleted.'},
+      {title: 'Use of data', text: 'The data obtained in this session will be used for a scientific study and may be published in anonymized, aggregated form in scientific journals and presentations.'},
+      {title: 'Risks', text: 'There are no known risks beyond those of ordinary computer use.'},
+      {title: 'Ethical approval', text: 'This study has been approved by the Ethics Committee for the Social Sciences and Humanities of the University of Antwerp (PENDING APPROVAL – reference number and date will be added later).', highlight: '(PENDING APPROVAL – reference number and date will be added later)'},
+      {title: 'Contact', text: 'Questions or complaints about the study may be addressed to Amit.Gur@UAntwerpen.be.'},
     ],
     // Age and gender come from Prolific, so the page is off.
     demographics: false,
     minAge: 18,
     maxAge: 120,
-    consentVersion: '2026-10-08-v2',
+    consentVersion: '2026-11-23-v3',
   },
 
   design: {
