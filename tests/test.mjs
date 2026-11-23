@@ -280,7 +280,7 @@ const consentWords = cfg => cfg.study.consentText.map(i => typeof i === 'string'
 for (const [label, cfg] of [['study 1', config], ['study 2', rotConfig]]) {
   const words = consentWords(cfg);
   assert.ok(cfg.study.consentText[0] === 'Dear participant,' && cfg.study.consentText.length === 8, label + ': the EASHW anonymous template paragraphs');
-  for (const phrase of ['kept for 10 years after the end of the study', 'All data already collected at that time can be used for data analysis', 'Prolific participant number', 'secure, password-protected database', 'PENDING APPROVAL', 'Amit.Gur@UAntwerpen.be', 'stop your participation at any time', 'share anonymous databases', 'under the direction of']) assert.ok(words.includes(phrase), label + ': consent mentions "' + phrase + '"');
+  for (const phrase of ['for up to 10 years after the end of the study', 'Data that has already been collected can be used for data analysis', 'Prolific participant number', 'secure, password-protected database', 'PENDING APPROVAL', 'Amit.Gur@UAntwerpen.be', 'stop participating in the study at any time', 'share anonymous data files', 'under the leadership of Amit Gur']) assert.ok(words.includes(phrase), label + ': consent mentions "' + phrase + '"');
   assert.equal(cfg.study.contactEmail, 'Amit.Gur@UAntwerpen.be');
 }
 assert.ok(consentWords(config).includes('19 screens') && consentWords(rotConfig).includes('24 screens'));
