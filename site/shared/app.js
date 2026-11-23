@@ -453,8 +453,7 @@ function renderConsent() {
     const p = document.createElement('p');
     if (typeof item === 'string') { p.textContent = fill(item); return p; }
     // {title, text, highlight}: a bold lead-in, and a phrase set off in red (e.g. a pending ethics reference).
-    const b = document.createElement('strong'); b.textContent = item.title + '. ';
-    p.append(b);
+    if (item.title) { const b = document.createElement('strong'); b.textContent = item.title + '. '; p.append(b); }
     const text = fill(item.text);
     const at = item.highlight ? text.indexOf(item.highlight) : -1;
     if (at < 0) p.append(text);

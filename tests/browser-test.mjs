@@ -95,8 +95,8 @@ await page.click('#begin');
 // Consent page: text from the config, Continue only after agreeing.
 assert.equal((await state()).mode, 'consent-page');
 const consentText = await page.textContent('#consent-text');
-assert.ok(consentText.startsWith('You are invited to take part') && consentText.includes('kept for 10 years') && consentText.includes('already given can still be used') && consentText.includes('Amit.Gur@UAntwerpen.be') && !consentText.includes('Amit.Gur@UAntwerpen.be..'), consentText.slice(0, 200));
-assert.equal(await page.$eval('#consent-text .highlight', e => e.textContent), '(PENDING APPROVAL – reference number and date will be added later)');
+assert.ok(consentText.startsWith('Dear participant,') && consentText.includes('kept for 10 years') && consentText.includes('All data already collected at that time can be used') && consentText.includes('Amit.Gur@UAntwerpen.be') && !consentText.includes('Amit.Gur@UAntwerpen.be..'), consentText.slice(0, 200));
+assert.deepEqual(await page.$$eval('#consent-text .highlight', es => es.map(e => e.textContent)), ['[NAME OF THE RESEARCHER ULTIMATELY RESPONSIBLE FOR THE PROJECT]', '(PENDING APPROVAL – reference number and date will be added later)']);
 assert.equal(await page.textContent('#consent-page h1'), 'Participant information and consent');
 assert.ok(await page.isDisabled('#consent-continue'));
 await page.check('#consent-agree'); await page.click('#consent-continue');

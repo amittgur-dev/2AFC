@@ -15,7 +15,7 @@ const item = i => {
   if (typeof i === 'string') return `<p>${esc(i)}</p>`;
   let text = esc(i.text);
   if (i.highlight && text.includes(esc(i.highlight))) text = text.replace(esc(i.highlight), `<span class="highlight">${esc(i.highlight)}</span>`);
-  return `<li><strong>${esc(i.title)}.</strong> ${text}</li>`;
+  return i.title ? `<li><strong>${esc(i.title)}.</strong> ${text}</li>` : `<p>${text}</p>`;
 };
 const items = config.study.consentText;
 const html = `<!doctype html>
@@ -39,13 +39,12 @@ const html = `<!doctype html>
 </head>
 <body>
 <main>
-  <h1>Participant Information &amp; Consent</h1>
+  <h1>Participant information and consent</h1>
   <div class="card">
-    ${items.filter(i => typeof i === 'string').map(item).join('\n    ')}
-    <ul>
-      ${items.filter(i => typeof i !== 'string').map(item).join('\n      ')}
-    </ul>
-    <label><input type="checkbox"> I have read and understood the information above, I am 18 years or older, and I consent to take part in this study and to the use of my data as described.</label>
+    ${items.filter(i => typeof i === 'string' || !i.title).map(item).join('\n    ')}
+    ${items.some(i => typeof i !== 'string' && i.title) ? '<ul>' + items.filter(i => typeof i !== 'string' && i.title).map(item).join('') + '</ul>' : ''}
+    <p>If you do not wish to participate in this study, simply close this window.</p>
+    <label><input type="checkbox"> I have read and understood the information above and I voluntarily agree to participate.</label>
   </div>
 </main>
 </body>
@@ -58,6 +57,6 @@ const browser = await chromium.launch();
 const page = await browser.newPage();
 await page.goto(pathToFileURL(htmlPath).href);
 await page.emulateMedia({media: 'print'});
-await page.pdf({path: out, format: 'A4', printBackground: true, margin: {top: '18mm', bottom: '18mm', left: '16mm', right: '16mm'}, scale: 0.62});
+await page.pdf({path: out, format: 'A4', printBackground: true, margin: {top: '14mm', bottom: '14mm', left: '16mm', right: '16mm'}, scale: 0.56});
 await browser.close();
 console.log(htmlPath + '\n' + out);

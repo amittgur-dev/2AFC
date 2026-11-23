@@ -276,12 +276,11 @@ assert.ok(config.study.consentPage && !config.study.demographics && Array.isArra
 assert.ok(rotConfig.study.consentPage && !rotConfig.study.demographics, 'study 2: consent page, no age and gender');
 for (const h of [html, rotHtml]) assert.ok(h.includes('id="consent-page"') && h.includes('id="demographics"') && h.includes('name="gender" value="non-binary"') && h.includes('id="age"'), 'both pages carry the consent and demographics sections');
 assert.ok(html.includes('each featuring a reference object') && html.includes('press the <kbd>←</kbd> LEFT arrow') && html.includes('click on the comparison object') && html.includes('no right or wrong answers') && html.includes('instructions-large'), 'study 1 instructions text');
-const consentWords = cfg => cfg.study.consentText.map(i => typeof i === 'string' ? i : i.title + '. ' + i.text).join(' ');
+const consentWords = cfg => cfg.study.consentText.map(i => typeof i === 'string' ? i : (i.title ? i.title + '. ' : '') + i.text).join(' ');
 for (const [label, cfg] of [['study 1', config], ['study 2', rotConfig]]) {
   const words = consentWords(cfg);
-  assert.ok(cfg.study.consentText[0].startsWith('You are invited to take part') && cfg.study.consentText.length === 9, label + ': information and consent items');
-  for (const phrase of ['kept for 10 years', 'responses you have already given can still be used', 'Prolific participant number', 'secure, password-protected database', 'PENDING APPROVAL', 'Amit.Gur@UAntwerpen.be', 'no known risks', 'stop at any moment']) assert.ok(words.includes(phrase), label + ': consent mentions "' + phrase + '"');
-  assert.ok(!words.includes('arrow key') || words.includes('right arrow key'));
+  assert.ok(cfg.study.consentText[0] === 'Dear participant,' && cfg.study.consentText.length === 8, label + ': the EASHW anonymous template paragraphs');
+  for (const phrase of ['kept for 10 years after the end of the study', 'All data already collected at that time can be used for data analysis', 'Prolific participant number', 'secure, password-protected database', 'PENDING APPROVAL', 'Amit.Gur@UAntwerpen.be', 'stop your participation at any time', 'share anonymous databases', 'under the direction of']) assert.ok(words.includes(phrase), label + ': consent mentions "' + phrase + '"');
   assert.equal(cfg.study.contactEmail, 'Amit.Gur@UAntwerpen.be');
 }
 assert.ok(consentWords(config).includes('19 screens') && consentWords(rotConfig).includes('24 screens'));
